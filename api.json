@@ -1,0 +1,291 @@
+{
+  "info": {
+    "name": "Scholarship Management System - Global Routes (Schema Accurate)",
+    "_postman_id": "d9f7e21a-4e3a-4e6f-9f1a-998877665544",
+    "description": "All global routes aligned exactly with Prisma schema. No middleware.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:5000" },
+    { "key": "user_id", "value": "USER_UUID" },
+    { "key": "user_profile_id", "value": "USER_PROFILE_UUID" },
+    { "key": "education_id", "value": "EDUCATION_UUID" },
+    { "key": "work_id", "value": "WORK_UUID" },
+    { "key": "award_id", "value": "AWARD_UUID" },
+    { "key": "challenge_id", "value": "CHALLENGE_UUID" },
+    { "key": "essay_id", "value": "ESSAY_UUID" }
+  ],
+  "item": [
+    {
+      "name": "01 Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kishor Mahmud\",\n  \"email\": \"student@test.com\",\n  \"password\": \"Password123\",\n  \"role\": \"student\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@test.com\",\n  \"password\": \"Password123\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 User",
+      "item": [
+        {
+          "name": "Get User Details",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/user-details/{{user_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 User Profile (REQUIRED FIRST)",
+      "item": [
+        {
+          "name": "Upsert User Profile",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/upsert-user-profile",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"firstName\": \"Kishor\",\n  \"bio\": \"Aspiring scholarship applicant\",\n  \"state\": \"Dhaka\",\n  \"gpa\": 4.75,\n  \"financialNeed\": true\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Education",
+      "item": [
+        {
+          "name": "Add Education",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/add-education",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userProfileId\": \"{{user_profile_id}}\",\n  \"institutionName\": \"Dhaka College\",\n  \"level\": \"Higher Secondary\",\n  \"startYear\": 2021,\n  \"endYear\": 2023\n}"
+            }
+          }
+        },
+        {
+          "name": "Edit Education",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/edit-education",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"educationId\": \"{{education_id}}\",\n  \"endYear\": 2024\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Academic Interest",
+      "item": [
+        {
+          "name": "Upsert Academic Interest",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/upsert-academic-interest",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userProfileId\": \"{{user_profile_id}}\",\n  \"intendedMajor\": \"Computer Science\",\n  \"whyThisField\": \"I enjoy problem solving and building systems\",\n  \"careerGoals\": \"Become a senior software engineer\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Family Background",
+      "item": [
+        {
+          "name": "Upsert Family Background",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/upsert-family-background",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userProfileId\": \"{{user_profile_id}}\",\n  \"firstGenStatus\": \"yes\",\n  \"householdIncomeRange\": \"Low\",\n  \"householdSize\": 5,\n  \"familySituations\": [\"single-parent\"]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Student Identity",
+      "item": [
+        {
+          "name": "Upsert Student Identity",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/upsert-student-identity",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userProfileId\": \"{{user_profile_id}}\",\n  \"raceEthnicity\": [\"Asian\"],\n  \"genderIdentity\": \"Male\",\n  \"otherIdentityFactors\": [\"ESL\"],\n  \"religionOrCulture\": \"Islam\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Work & Volunteer",
+      "item": [
+        {
+          "name": "Add Work Experience",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/add-work-experience",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userProfileId\": \"{{user_profile_id}}\",\n  \"jobTitle\": \"Intern Developer\",\n  \"employer\": \"Local Software Firm\",\n  \"isCurrent\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Add Volunteer Work",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/add-volunteer-work",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userProfileId\": \"{{user_profile_id}}\",\n  \"organization\": \"Red Crescent\",\n  \"timeline\": \"2022–2023\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Awards & Challenges",
+      "item": [
+        {
+          "name": "Add Award",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/add-award",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userProfileId\": \"{{user_profile_id}}\",\n  \"awardName\": \"National Science Fair Winner\",\n  \"reason\": \"Robotics project excellence\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Add Challenge",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/add-challenge",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userProfileId\": \"{{user_profile_id}}\",\n  \"challengeType\": \"Financial hardship\",\n  \"description\": \"Maintained GPA while supporting family\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 Essays",
+      "item": [
+        {
+          "name": "Add Essay",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/add-essay",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"userProfileId\": \"{{user_profile_id}}\",\n  \"title\": \"Why I Deserve This Scholarship\",\n  \"prompt\": \"Explain your motivation\",\n  \"contentDraft\": \"This is my draft essay\",\n  \"wordCount\": 450\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Essay Narrative & Preferences",
+      "item": [
+        {
+          "name": "Upsert Essay Narrative",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/upsert-essay-narrative",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userProfileId\": \"{{user_profile_id}}\",\n  \"influentialPerson\": \"My mother\",\n  \"failureStory\": \"Failed first competition\",\n  \"mistakeAndLesson\": \"Persistence matters\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Upsert Writing Preference",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/upsert-writing-preference",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userProfileId\": \"{{user_profile_id}}\",\n  \"writingConfidenceLevel\": 3,\n  \"writingChallenges\": [\"grammar\", \"structure\"],\n  \"aiHelpPreferences\": [\"outline\", \"edit\"]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 Unique Experience & Progress",
+      "item": [
+        {
+          "name": "Add Unique Experience",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/add-unique-experiences",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userProfileId\": \"{{user_profile_id}}\",\n  \"hobbies\": \"Robotics, Reading\",\n  \"uniqueExperiences\": \"Built solar-powered robot\",\n  \"proudMoment\": \"Winning national competition\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Profile Progress",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/update-profile-progress",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userProfileId\": \"{{user_profile_id}}\",\n  \"progressPercent\": 85,\n  \"completedSections\": [\"profile\", \"education\", \"essays\"]\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

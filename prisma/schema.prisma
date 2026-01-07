@@ -1,0 +1,365 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  student
+  admin
+  mentor
+  business
+}
+
+enum OAuthProvider {
+  email
+  google
+  facebook
+  apple
+}
+
+enum ApplicationStatus {
+  not_started
+  in_progress
+  submitted
+  won
+  rejected
+}
+
+enum SubscriptionStatus {
+  active
+  trial
+  canceled
+  past_due
+}
+
+enum FirstGenStatus {
+  yes
+  no
+  not_sure
+}
+
+enum ScholarshipDeadlineTimeline {
+  SIX_PLUS_MONTHS
+  THREE_TO_SIX_MONTHS
+  ONE_TO_THREE_MONTHS
+  LESS_THAN_ONE_MONTH
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique 
+  passwordHash String?
+  avatarUrl    String?
+  role         UserRole @default(student)
+
+  isVerified    Boolean   @default(false)
+
+  oauthProvider   OAuthProvider @default(email)
+  oauthProviderId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile       UserProfile?
+  subscriptions Subscription[]
+  applications  Application[]
+  essays        Essay[]
+  notifications Notification[]
+
+  @@index([role])
+}
+
+model UserProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  firstName     String
+  bio           String?
+  state         String?
+  gpa           Float?
+  financialNeed Boolean @default(false)
+
+  educations Education[]
+  activities StudentActivity[]
+
+  // 🔧 CHANGED HERE
+  work      StudentWork[]
+  volunteer StudentVolunteer[]
+
+  awards       StudentAward[]
+  challenges   StudentChallenge[]
+  scholarships StudentScholarshipInterest?
+  progress     ProfileProgress?
+
+  essays           Essay[]
+  academicInterest AcademicInterest?
+
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  familyBackground  FamilyBackground?
+  studentIdentity   StudentIdentity?
+  essayNarrative    EssayNarrative?
+  writingPreference WritingPreference?
+  uniqueExperience  UniqueExperience?
+}
+
+model Education {
+  id            String      @id @default(uuid())
+  userProfileId String
+  profile       UserProfile @relation(fields: [userProfileId], references: [id])
+
+  institutionName String
+  level           String
+  startYear       Int
+  endYear         Int?
+
+  createdAt DateTime @default(now())
+}
+
+model StudentActivity {
+  id            String      @id @default(uuid())
+  userProfileId String
+  profile       UserProfile @relation(fields: [userProfileId], references: [id])
+
+  activityName String
+  role         String?
+  impact       String?
+
+  createdAt DateTime @default(now())
+}
+
+model StudentWork {
+  id            String      @id @default(uuid())
+  userProfileId String
+  profile       UserProfile @relation(fields: [userProfileId], references: [id])
+
+  jobTitle  String
+  employer  String
+  isCurrent Boolean @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+model StudentVolunteer {
+  id            String      @id @default(uuid())
+  userProfileId String
+  profile       UserProfile @relation(fields: [userProfileId], references: [id])
+
+  organization String
+  timeline     String?
+
+  createdAt DateTime @default(now())
+}
+
+model StudentAward {
+  id            String      @id @default(uuid())
+  userProfileId String
+  profile       UserProfile @relation(fields: [userProfileId], references: [id])
+
+  awardName String
+  reason    String?
+
+  createdAt DateTime @default(now())
+}
+
+model StudentChallenge {
+  id            String      @id @default(uuid())
+  userProfileId String
+  profile       UserProfile @relation(fields: [userProfileId], references: [id])
+
+  challengeType String
+  description   String?
+
+  createdAt DateTime @default(now())
+}
+
+model StudentScholarshipInterest {
+  id            String      @id @default(uuid())
+  userProfileId String      @unique
+  profile       UserProfile @relation(fields: [userProfileId], references: [id])
+
+  interestTypes    Json
+  deadlineTimeline ScholarshipDeadlineTimeline?
+
+  createdAt DateTime @default(now())
+}
+
+model ProfileProgress {
+  id            String      @id @default(uuid())
+  userProfileId String      @unique
+  profile       UserProfile @relation(fields: [userProfileId], references: [id])
+
+  progressPercent   Int
+  completedSections Json?
+
+  updatedAt DateTime @updatedAt
+}
+
+model Scholarship {
+  id          String    @id @default(uuid())
+  title       String
+  provider    String?
+  awardAmount Int?
+  deadline    DateTime?
+
+  applications Application[]
+  essays       Essay[]
+}
+
+model Application {
+  id            String  @id @default(uuid())
+  userId        String
+  scholarshipId String?
+
+  user        User         @relation(fields: [userId], references: [id])
+  scholarship Scholarship? @relation(fields: [scholarshipId], references: [id])
+
+  status ApplicationStatus @default(not_started)
+
+  createdAt DateTime @default(now())
+}
+
+model Plan {
+  id           String @id @default(uuid())
+  internalName String @unique
+  monthlyPrice Float
+  yearlyPrice  Float
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id     String @id @default(uuid())
+  userId String
+  planId String
+
+  user User @relation(fields: [userId], references: [id])
+  plan Plan @relation(fields: [planId], references: [id])
+
+  status SubscriptionStatus @default(active)
+
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  title   String
+  message String
+  type    String
+
+  createdAt DateTime @default(now())
+}
+
+model Essay {
+  id            String  @id @default(uuid())
+  userId        String
+  userProfileId String?
+  scholarshipId String?
+
+  title        String
+  prompt       String?
+  contentDraft String?
+  contentFinal String?
+  status       String  @default("draft")
+  wordCount    Int?
+
+  user        User         @relation(fields: [userId], references: [id])
+  profile     UserProfile? @relation(fields: [userProfileId], references: [id])
+  scholarship Scholarship? @relation(fields: [scholarshipId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AcademicInterest {
+  id            String      @id @default(uuid())
+  userProfileId String      @unique
+  profile       UserProfile @relation(fields: [userProfileId], references: [id])
+
+  intendedMajor String
+  whyThisField  String // long narrative
+  careerGoals   String // 5–10 year vision
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FamilyBackground {
+  id            String      @id @default(uuid())
+  userProfileId String      @unique
+  profile       UserProfile @relation(fields: [userProfileId], references: [id])
+
+  firstGenStatus       FirstGenStatus?
+  householdIncomeRange String?
+  householdSize        Int?
+  familySituations     Json? // single-parent, immigrant, military, etc.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StudentIdentity {
+  id            String      @id @default(uuid())
+  userProfileId String      @unique
+  profile       UserProfile @relation(fields: [userProfileId], references: [id])
+
+  raceEthnicity        Json?
+  genderIdentity       String?
+  otherIdentityFactors Json? // LGBTQ+, disability, ESL, DACA
+  religionOrCulture    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EssayNarrative {
+  id            String      @id @default(uuid())
+  userProfileId String      @unique
+  profile       UserProfile @relation(fields: [userProfileId], references: [id])
+
+  influentialPerson     String?
+  mistakeAndLesson      String?
+  failureStory          String?
+  issueYouCareAbout     String?
+  whatMakesYouDifferent String?
+  communityChangeIdea   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WritingPreference {
+  id            String      @id @default(uuid())
+  userProfileId String      @unique
+  profile       UserProfile @relation(fields: [userProfileId], references: [id])
+
+  writingConfidenceLevel Int? // 1–5
+  writingChallenges      Json? // writer's block, grammar, structure
+  aiHelpPreferences      Json? // brainstorm, outline, edit, examples
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UniqueExperience {
+  id            String      @id @default(uuid())
+  userProfileId String      @unique
+  profile       UserProfile @relation(fields: [userProfileId], references: [id])
+
+  hobbies           String?
+  uniqueExperiences String?
+  proudMoment       String?
+  additionalNotes   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
