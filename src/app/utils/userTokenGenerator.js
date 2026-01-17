@@ -4,9 +4,7 @@ import { envVars } from "../config/env.js";
 import { generateToken, verifyToken } from "./jwt.js";
 import DevBuildError from "../lib/DevBuildError.js";
 
-/* -------------------------------------------------------------------------- */
-/*                           CREATE USER TOKENS                                */
-/* -------------------------------------------------------------------------- */
+//  CREATE USER TOKENS
 
 export const createUserTokens = (user) => {
   const jwtPayload = {
@@ -29,10 +27,7 @@ export const createUserTokens = (user) => {
 
   return { accessToken, refreshToken };
 };
-
-/* -------------------------------------------------------------------------- */
-/*               CREATE NEW ACCESS TOKEN USING REFRESH TOKEN                  */
-/* -------------------------------------------------------------------------- */
+//  CREATE NEW ACCESS TOKEN USING REFRESH TOKEN
 
 export const createNewAccessTokenUsingRefreshToken = async (
   prisma,

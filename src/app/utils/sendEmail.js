@@ -10,9 +10,7 @@ import DevBuildError from "../lib/DevBuildError.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/* -------------------------------------------------------------------------- */
-/*                              MAIL TRANSPORTER                               */
-/* -------------------------------------------------------------------------- */
+//         MAIL TRANSPORTER  
 
 const transporter = nodemailer.createTransport({
   host: envVars.EMAIL_SENDER.SMTP_HOST,
@@ -24,9 +22,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-/* -------------------------------------------------------------------------- */
-/*                                SEND EMAIL                                  */
-/* -------------------------------------------------------------------------- */
+// SEND EMAIL      
 
 export const sendEmail = async ({
   to,
