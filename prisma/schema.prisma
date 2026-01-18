@@ -1,17 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
+/* =========================
+   ENUMS
+========================= */
 
 enum UserRole {
-  SYSTEM_OWNER   @map("system_owner")
-  BUSINESS_OWNER @map("business_owner")
-  STAFF          @map("staff")
-  CUSTOMER       @map("customer")
+  SYSTEM_OWNER
+  BUSINESS_OWNER
+  STAFF
+  CUSTOMER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BLOCKED
+}
+
+enum StaffRole {
+  MANAGER
+  CASHIER
+  STAFF
 }
 
 enum OAuthProvider {
@@ -21,23 +37,240 @@ enum OAuthProvider {
   apple
 }
 
+enum TicketPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TransactionType {
+  EARN
+  REDEEM
+  ADJUST
+}
+
+enum BillingStatus {
+  PAID
+  PENDING
+  FAILED
+}
+
+/* =========================
+   USER
+========================= */
+
 model User {
   id           String   @id @default(uuid())
   name         String
   email        String   @unique
   passwordHash String?
   avatarUrl    String?
-  role         UserRole @default(CUSTOMER)
+
+  role   UserRole   @default(CUSTOMER)
+  status UserStatus @default(ACTIVE)
 
   isVerified Boolean @default(false)
 
   oauthProvider   OAuthProvider @default(email)
   oauthProviderId String?
-  
+
   forgotPasswordStatus Boolean @default(false)
+
+  phone   String?
+  address String?
+
+  // Relations
+  businessesOwned Business[]     @relation("BusinessOwner")
+  staffProfile    Staff?
+  ticketsCreated  SupportTicket[] @relation("TicketCreator")
+  activityLogs    ActivityLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([role])
+}
+
+/* =========================
+   BUSINESS (TENANT)
+========================= */
+
+model Business {
+  id        String  @id @default(uuid())
+  ownerId   String
+  name      String
+  industry  String?
+  phone     String?
+  address   String?
+  city      String?
+  country   String?
+
+  qrCode       String   @unique
+  isActive     Boolean  @default(true)
+  trialEndsAt  DateTime?   // ✅ ADD THIS
+
+  // Relations
+  owner          User              @relation("BusinessOwner", fields: [ownerId], references: [id])
+  branches       Branch[]
+  staff          Staff[]
+  loyaltyRule    LoyaltyRule?
+  rewards        Reward[]
+  transactions   PointTransaction[]
+  supportTickets SupportTicket[]
+  billings       Billing[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/* =========================
+   BRANCH
+========================= */
+
+model Branch {
+  id         String   @id @default(uuid())
+  businessId String
+  name       String?
+  address    String
+  city       String?
+  country    String?
+  isActive   Boolean @default(true)
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/* =========================
+   STAFF
+========================= */
+
+model Staff {
+  id         String    @id @default(uuid())
+  userId     String    @unique
+  businessId String
+  role       StaffRole
+  isActive   Boolean   @default(true)
+
+  user     User     @relation(fields: [userId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/* =========================
+   LOYALTY RULE
+========================= */
+
+model LoyaltyRule {
+  id         String   @id @default(uuid())
+  businessId String   @unique
+  pointsRate Int
+  minSpend   Float?
+  isActive   Boolean  @default(true)
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/* =========================
+   REWARD
+========================= */
+
+model Reward {
+  id          String   @id @default(uuid())
+  businessId  String
+  title       String
+  pointsCost  Int
+  description String?
+  isActive    Boolean  @default(true)
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/* =========================
+   POINT TRANSACTION
+========================= */
+
+model PointTransaction {
+  id          String          @id @default(uuid())
+  businessId  String
+  staffId     String?
+  customerRef String
+  points      Int
+  type        TransactionType
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+/* =========================
+   SUPPORT TICKET
+========================= */
+
+model SupportTicket {
+  id          String         @id @default(uuid())
+  businessId  String?
+  createdBy  String
+  subject     String
+  description String
+  priority    TicketPriority
+  status      TicketStatus   @default(OPEN)
+
+  business Business? @relation(fields: [businessId], references: [id])
+  creator  User      @relation("TicketCreator", fields: [createdBy], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([priority])
+}
+
+/* =========================
+   BILLING
+========================= */
+
+model Billing {
+  id         String        @id @default(uuid())
+  businessId String
+  status     BillingStatus @default(PENDING)
+  issue      Boolean       @default(false)
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([businessId])
+  @@index([issue])
+}
+
+/* =========================
+   ACTIVITY LOG
+========================= */
+
+model ActivityLog {
+  id       String @id @default(uuid())
+  userId   String
+  action   String
+  metadata Json?
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
 }

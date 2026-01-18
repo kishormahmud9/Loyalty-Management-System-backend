@@ -8,3 +8,4 @@ prisma
   .catch((err) => console.error("❌ Prisma connection error:", err));
 
 export default prisma;
+
