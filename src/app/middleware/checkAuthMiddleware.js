@@ -1,5 +1,3 @@
-
-
 import jwt from "jsonwebtoken";
 import prisma from "../prisma/client.js";
 import { envVars } from "../config/env.js";
