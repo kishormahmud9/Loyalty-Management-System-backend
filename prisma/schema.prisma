@@ -7,9 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/* =========================
-   ENUMS
-========================= */
+/**
+ * =========================
+ * ENUMS
+ * =========================
+ */
 
 enum UserRole {
   SYSTEM_OWNER
@@ -62,14 +64,16 @@ enum BillingStatus {
   FAILED
 }
 
-/* =========================
-   USER
-========================= */
+/**
+ * =========================
+ * USER
+ * =========================
+ */
 
 model User {
-  id           String   @id @default(uuid())
+  id           String  @id @default(uuid())
   name         String
-  email        String   @unique
+  email        String  @unique
   passwordHash String?
   avatarUrl    String?
 
@@ -87,37 +91,95 @@ model User {
   address String?
 
   // Relations
-  businessesOwned Business[]     @relation("BusinessOwner")
+  businessesOwned Business[]      @relation("BusinessOwner")
   staffProfile    Staff?
   ticketsCreated  SupportTicket[] @relation("TicketCreator")
   activityLogs    ActivityLog[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  support         Support[]
+    rewards   Reward[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   @@index([role])
 }
 
-/* =========================
-   BUSINESS (TENANT)
-========================= */
+// Business Owner Starts 
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Support {
+  id       Int    @id @default(autoincrement())
+  ticketId String @unique
+
+  userId     String
+  businessId String
+  branchId   String
+
+  date     DateTime
+  issue    String
+  priority Priority
+
+  user     User     @relation(fields: [userId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+  branch   Branch   @relation(fields: [branchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Reward {
+  id           String   @id @default(uuid())
+
+  rewardName   String
+  rewardPoints Int
+  rewardType   String
+  expiryDays   Int
+  earningRule  String
+  reward       String
+
+  userId       String
+  businessId   String
+  branchId     String
+
+  user     User     @relation(fields: [userId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+  branch   Branch   @relation(fields: [branchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([businessId])
+  @@index([branchId])
+}
+
+// Business Owner ends 
+
+/**
+ * =========================
+ * BUSINESS (TENANT)
+ * =========================
+ */
 
 model Business {
-  id        String  @id @default(uuid())
-  ownerId   String
-  name      String
-  industry  String?
-  phone     String?
-  address   String?
-  city      String?
-  country   String?
+  id       String  @id @default(uuid())
+  ownerId  String
+  name     String
+  industry String?
+  phone    String?
+  address  String?
+  city     String?
+  country  String?
 
-  qrCode       String   @unique
-  isActive     Boolean  @default(true)
-  trialEndsAt  DateTime?   // ✅ ADD THIS
+  qrCode      String    @unique
+  isActive    Boolean   @default(true)
+  trialEndsAt DateTime? // ✅ ADD THIS
 
   // Relations
-  owner          User              @relation("BusinessOwner", fields: [ownerId], references: [id])
+  owner          User               @relation("BusinessOwner", fields: [ownerId], references: [id])
   branches       Branch[]
   staff          Staff[]
   loyaltyRule    LoyaltyRule?
@@ -125,17 +187,20 @@ model Business {
   transactions   PointTransaction[]
   supportTickets SupportTicket[]
   billings       Billing[]
+  supports       Support[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-/* =========================
-   BRANCH
-========================= */
+/**
+ * =========================
+ * BRANCH
+ * =========================
+ */
 
 model Branch {
-  id         String   @id @default(uuid())
+  id         String  @id @default(uuid())
   businessId String
   name       String?
   address    String
@@ -145,13 +210,17 @@ model Branch {
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  supports  Support[]
+    rewards Reward[]
 }
 
-/* =========================
-   STAFF
-========================= */
+/**
+ * =========================
+ * STAFF
+ * =========================
+ */
 
 model Staff {
   id         String    @id @default(uuid())
@@ -167,16 +236,18 @@ model Staff {
   updatedAt DateTime @updatedAt
 }
 
-/* =========================
-   LOYALTY RULE
-========================= */
+/**
+ * =========================
+ * LOYALTY RULE
+ * =========================
+ */
 
 model LoyaltyRule {
-  id         String   @id @default(uuid())
-  businessId String   @unique
+  id         String  @id @default(uuid())
+  businessId String  @unique
   pointsRate Int
   minSpend   Float?
-  isActive   Boolean  @default(true)
+  isActive   Boolean @default(true)
 
   business Business @relation(fields: [businessId], references: [id])
 
@@ -184,27 +255,14 @@ model LoyaltyRule {
   updatedAt DateTime @updatedAt
 }
 
-/* =========================
-   REWARD
-========================= */
 
-model Reward {
-  id          String   @id @default(uuid())
-  businessId  String
-  title       String
-  pointsCost  Int
-  description String?
-  isActive    Boolean  @default(true)
 
-  business Business @relation(fields: [businessId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-/* =========================
-   POINT TRANSACTION
-========================= */
+/**
+ * =========================
+ * POINT TRANSACTION
+ * =========================
+ */
 
 model PointTransaction {
   id          String          @id @default(uuid())
@@ -219,14 +277,16 @@ model PointTransaction {
   createdAt DateTime @default(now())
 }
 
-/* =========================
-   SUPPORT TICKET
-========================= */
+/**
+ * =========================
+ * SUPPORT TICKET
+ * =========================
+ */
 
 model SupportTicket {
   id          String         @id @default(uuid())
   businessId  String?
-  createdBy  String
+  createdBy   String
   subject     String
   description String
   priority    TicketPriority
@@ -241,9 +301,11 @@ model SupportTicket {
   @@index([priority])
 }
 
-/* =========================
-   BILLING
-========================= */
+/**
+ * =========================
+ * BILLING
+ * =========================
+ */
 
 model Billing {
   id         String        @id @default(uuid())
@@ -260,9 +322,11 @@ model Billing {
   @@index([issue])
 }
 
-/* =========================
-   ACTIVITY LOG
-========================= */
+/**
+ * =========================
+ * ACTIVITY LOG
+ * =========================
+ */
 
 model ActivityLog {
   id       String @id @default(uuid())
