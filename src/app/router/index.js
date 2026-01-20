@@ -7,6 +7,8 @@ import tenantRouter from "../modules/tenant/tenant.route.js";
 import { BusinessOwnerSupport } from "../modules/businessOwner/sendSupport/support.route.js";
 import { SubscriptionRoutes } from "../modules/businessOwner/buySubscription/subscription.route.js";
 import { RewardRoutes } from "../modules/businessOwner/rewards/reward.route.js";
+import { BranchRoute } from "../modules/businessOwner/branchs/branchs.route.js";
+import { ManageStaffRoute } from "../modules/businessOwner/manageStaff/manageStaff.route.js";
 
 export const router = Router();
 
@@ -28,7 +30,7 @@ const moduleRoutes = [
 
   // business owner starts
   {
-    path: "/business-owner-support",
+    path: "/business-owner/support",
     route: BusinessOwnerSupport,
   },
   {
@@ -36,8 +38,16 @@ const moduleRoutes = [
     route: SubscriptionRoutes,
   },
   {
-    path: "/reward",
+    path: "/business-owner/reward",
     route: RewardRoutes,
+  },
+  {
+    path: "/business-owner/branchs",
+    route: BranchRoute,
+  },
+  {
+    path: "/business-owner/manage-staff",
+    route: ManageStaffRoute,
   },
   // business owner ends
   // system owner starts

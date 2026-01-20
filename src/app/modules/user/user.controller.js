@@ -39,8 +39,10 @@ const getUserInfo = async (req, res, next) => {
       throw new DevBuildError("User not found", 404);
     }
 
-    res.json({
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
       success: true,
+      message: "User information retrieved successfully",
       data: user,
     });
   } catch (error) {
@@ -58,14 +60,18 @@ const userDetails = async (req, res, next) => {
     const user = await UserService.findByIdWithProfile(prisma, id);
 
     if (!user) {
-      return res.status(404).json({
+      return sendResponse(res, {
+        statusCode: 404,
         success: false,
         message: "User not found",
+        data: null,
       });
     }
 
-    res.status(200).json({
+    sendResponse(res, {
+      statusCode: 200,
       success: true,
+      message: "User details retrieved successfully",
       data: user,
     });
   } catch (error) {
@@ -77,15 +83,19 @@ const getAllUsersWithProfile = async (req, res) => {
   try {
     const users = await UserService.findAllWithProfile(prisma);
 
-    return res.json({
+    return sendResponse(res, {
+      statusCode: 200,
       success: true,
+      message: "Users retrieved successfully",
       data: users,
     });
   } catch (error) {
     console.error("getAllUsersWithProfile error:", error);
-    return res.status(500).json({
+    return sendResponse(res, {
+      statusCode: 500,
       success: false,
       message: "Failed to fetch users",
+      data: null,
     });
   }
 };
@@ -95,7 +105,12 @@ const updateUser = async (req, res) => {
     const { userId, ...data } = req.body;
 
     if (!userId) {
-      return res.status(400).json({ message: "userId required" });
+      return sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "userId required",
+        data: null,
+      });
     }
 
     const updatedUser = await prisma.user.update({
@@ -103,16 +118,19 @@ const updateUser = async (req, res) => {
       data,
     });
 
-    return res.json({
+    return sendResponse(res, {
+      statusCode: 200,
       success: true,
       message: "User updated successfully",
       data: updatedUser,
     });
   } catch (error) {
     console.error("updateUser error:", error);
-    return res.status(500).json({
+    return sendResponse(res, {
+      statusCode: 500,
       success: false,
       message: "Failed to update user",
+      data: null,
     });
   }
 };
