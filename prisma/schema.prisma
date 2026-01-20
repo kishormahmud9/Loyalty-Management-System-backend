@@ -216,6 +216,7 @@ model Branch {
   updatedAt DateTime  @updatedAt
   supports  Support[]
   rewards   Reward[]
+  staff Staff[]
 }
 
 /**
@@ -228,12 +229,13 @@ model Staff {
   id         String    @id @default(uuid())
   userId     String    @unique
   businessId String
+  branchId String
   role       StaffRole
   isActive   Boolean   @default(true)
 
   user     User     @relation(fields: [userId], references: [id])
   business Business @relation(fields: [businessId], references: [id])
-
+branch Branch @relation(fields: [ branchId] , references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
