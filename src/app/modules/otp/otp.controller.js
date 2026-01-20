@@ -1,5 +1,6 @@
 import { OtpService } from "./otp.service.js";
 import DevBuildError from "../../lib/DevBuildError.js";
+import { sendResponse } from "../../utils/sendResponse.js";
 
 //        SEND OTP   
 
@@ -9,15 +10,18 @@ const sendOtp = async (req, res) => {
     const { email, name } = req.body;
 
     if (!email) {
-      return res.status(400).json({
+      return sendResponse(res, {
+        statusCode: 400,
         success: false,
         message: "Email is required",
+        data: null,
       });
     }
 
     await OtpService.sendOtp(prisma, email, name);
 
-    return res.json({
+    return sendResponse(res, {
+      statusCode: 200,
       success: true,
       message: "OTP sent successfully",
       data: null,
@@ -26,15 +30,19 @@ const sendOtp = async (req, res) => {
     console.error("sendOtp error:", error);
 
     if (error instanceof DevBuildError) {
-      return res.status(error.statusCode).json({
+      return sendResponse(res, {
+        statusCode: error.statusCode,
         success: false,
         message: error.message,
+        data: null,
       });
     }
 
-    return res.status(500).json({
+    return sendResponse(res, {
+      statusCode: 500,
       success: false,
       message: "Failed to send OTP",
+      data: null,
     });
   }
 };
@@ -49,15 +57,18 @@ const verifyOtp = async (req, res) => {
     const { email, otp } = req.body;
 
     if (!email || !otp) {
-      return res.status(400).json({
+      return sendResponse(res, {
+        statusCode: 400,
         success: false,
         message: "Email and OTP are required",
+        data: null,
       });
     }
 
     await OtpService.verifyOtp(prisma, email, otp);
 
-    return res.json({
+    return sendResponse(res, {
+      statusCode: 200,
       success: true,
       message: "OTP verified successfully",
       data: null,
@@ -66,15 +77,19 @@ const verifyOtp = async (req, res) => {
     console.error("verifyOtp error:", error);
 
     if (error instanceof DevBuildError) {
-      return res.status(error.statusCode).json({
+      return sendResponse(res, {
+        statusCode: error.statusCode,
         success: false,
         message: error.message,
+        data: null,
       });
     }
 
-    return res.status(500).json({
+    return sendResponse(res, {
+      statusCode: 500,
       success: false,
       message: "Failed to verify OTP",
+      data: null,
     });
   }
 };
