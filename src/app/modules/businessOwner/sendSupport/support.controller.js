@@ -1,4 +1,5 @@
 import SupportService from "./support.service.js";
+import { sendResponse } from "../../../utils/sendResponse.js";
 
 class SupportController {
   static async create(req, res) {
@@ -7,18 +8,38 @@ class SupportController {
         ...req.body,
         userId: req.user.id,
       });
-      res.status(201).json(support);
+      sendResponse(res, {
+        statusCode: 201,
+        success: true,
+        message: "Support ticket created successfully",
+        data: support,
+      });
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: error.message,
+        data: null,
+      });
     }
   }
 
   static async getAll(req, res) {
     try {
       const supports = await SupportService.getAllSupport();
-      res.json(supports);
+      sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Support tickets retrieved successfully",
+        data: supports,
+      });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      sendResponse(res, {
+        statusCode: 500,
+        success: false,
+        message: error.message,
+        data: null,
+      });
     }
   }
 
@@ -27,12 +48,27 @@ class SupportController {
       const support = await SupportService.getSupportById(req.params.id);
 
       if (!support) {
-        return res.status(404).json({ message: "Support ticket not found" });
+        return sendResponse(res, {
+          statusCode: 404,
+          success: false,
+          message: "Support ticket not found",
+          data: null,
+        });
       }
 
-      res.json(support);
+      sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Support ticket retrieved successfully",
+        data: support,
+      });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      sendResponse(res, {
+        statusCode: 500,
+        success: false,
+        message: error.message,
+        data: null,
+      });
     }
   }
 }

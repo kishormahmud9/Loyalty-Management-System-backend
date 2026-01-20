@@ -7,6 +7,7 @@ import tenantRouter from "../modules/tenant/tenant.route.js";
 import { BusinessOwnerSupport } from "../modules/businessOwner/sendSupport/support.route.js";
 import { SubscriptionRoutes } from "../modules/businessOwner/buySubscription/subscription.route.js";
 import { RewardRoutes } from "../modules/businessOwner/rewards/reward.route.js";
+import { BranchRoute } from "../modules/businessOwner/branchs/branchs.route.js";
 
 export const router = Router();
 
@@ -38,6 +39,10 @@ const moduleRoutes = [
   {
     path: "/reward",
     route: RewardRoutes,
+  },
+  {
+    path: "/branchs",
+    route: BranchRoute,
   },
   // business owner ends
   // system owner starts

@@ -1,10 +1,12 @@
 import { getSystemOwnerDashboardOverviewService } from "./dashboard.service.js";
+import { sendResponse } from "../../utils/sendResponse.js";
 
 export const getSystemOwnerDashboardOverview = async (req, res) => {
   try {
     const data = await getSystemOwnerDashboardOverviewService();
 
-    return res.status(200).json({
+    return sendResponse(res, {
+      statusCode: 200,
       success: true,
       message: "System owner dashboard overview fetched successfully",
       data,
@@ -12,7 +14,8 @@ export const getSystemOwnerDashboardOverview = async (req, res) => {
   } catch (error) {
     console.error("Dashboard Controller Error:", error.message);
 
-    return res.status(200).json({
+    return sendResponse(res, {
+      statusCode: 500,
       success: false,
       message: "Failed to load dashboard data",
       data: null,

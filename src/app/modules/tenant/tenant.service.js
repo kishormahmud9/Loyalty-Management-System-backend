@@ -24,7 +24,7 @@ export const getTenantListService = async (prisma, query) => {
         },
         _count: {
           select: {
-            branches: {
+            branche: {
               where: { isActive: true },
             },
           },
@@ -50,7 +50,7 @@ export const getTenantListService = async (prisma, query) => {
         email: b.owner.email,
         createdOn: b.createdAt,
         subscription,
-        location: `${b._count.branches} Location`,
+        location: `${b._count.branche} Location`,
         status: b.isActive ? "Active" : "Inactive",
       };
     }),
@@ -146,7 +146,7 @@ export const getTenantDetailsService = async (prisma, tenantId) => {
           address: true,
         },
       },
-      branches: {
+      branche: {
         orderBy: { createdAt: "asc" },
         select: {
           id: true,
@@ -191,9 +191,9 @@ export const getTenantDetailsService = async (prisma, tenantId) => {
       isActive: business.isActive,
       trialEndsAt: business.trialEndsAt,
     },
-    branches: business.branches,
+    branches: business.branche,
     stats: {
-      totalBranches: business.branches.length,
+      totalBranches: business.branche.length,
       planType,
       billingStatus,
     },
