@@ -6,30 +6,37 @@ import {
   getTenantListService,
   updateTenantService,
 } from "./tenant.service.js";
+import { sendResponse } from "../../utils/sendResponse.js";
 
 export const getTenantList = async (req, res) => {
   try {
     // 🔐 SYSTEM OWNER ONLY
     // if (req.user.role !== "SYSTEM_OWNER") {
-    //   return res.status(403).json({
+    //   return sendResponse(res, {
+    //     statusCode: 403,
     //     success: false,
     //     message: "Access denied",
+    //     data: null,
     //   });
     // }
 
     const result = await getTenantListService(req.prisma, req.query);
 
-    return res.status(200).json({
+    return sendResponse(res, {
+      statusCode: 200,
       success: true,
       message: "Tenant list fetched successfully",
-      ...result,
+      data: result.data,
+      meta: result.meta,
     });
   } catch (error) {
     console.error("GET TENANT LIST ERROR:", error);
 
-    return res.status(error.statusCode || 500).json({
+    return sendResponse(res, {
+      statusCode: error.statusCode || 500,
       success: false,
       message: error.message || "Failed to fetch tenant list",
+      data: null,
     });
   }
 };
@@ -38,7 +45,8 @@ export const createTenant = async (req, res) => {
   try {
     const result = await createTenantService(req.prisma, req.body);
 
-    return res.status(201).json({
+    return sendResponse(res, {
+      statusCode: 201,
       success: true,
       message: "Tenant created successfully",
       data: {
@@ -50,9 +58,11 @@ export const createTenant = async (req, res) => {
   } catch (error) {
     console.error("CREATE TENANT ERROR:", error);
 
-    return res.status(400).json({
+    return sendResponse(res, {
+      statusCode: 400,
       success: false,
       message: error.message || "Failed to create tenant",
+      data: null,
     });
   }
 };
@@ -63,7 +73,8 @@ export const getTenantDetails = async (req, res) => {
 
     const data = await getTenantDetailsService(req.prisma, tenantId);
 
-    return res.status(200).json({
+    return sendResponse(res, {
+      statusCode: 200,
       success: true,
       message: "Tenant details fetched successfully",
       data,
@@ -71,9 +82,11 @@ export const getTenantDetails = async (req, res) => {
   } catch (error) {
     console.error("GET TENANT DETAILS ERROR:", error);
 
-    return res.status(error.statusCode || 500).json({
+    return sendResponse(res, {
+      statusCode: error.statusCode || 500,
       success: false,
       message: error.message || "Failed to fetch tenant details",
+      data: null,
     });
   }
 };
@@ -84,16 +97,20 @@ export const updateTenant = async (req, res) => {
 
     await updateTenantService(req.prisma, tenantId, req.body);
 
-    return res.status(200).json({
+    return sendResponse(res, {
+      statusCode: 200,
       success: true,
       message: "Tenant updated successfully",
+      data: null,
     });
   } catch (error) {
     console.error("UPDATE TENANT ERROR:", error);
 
-    return res.status(error.statusCode || 500).json({
+    return sendResponse(res, {
+      statusCode: error.statusCode || 500,
       success: false,
       message: error.message || "Failed to update tenant",
+      data: null,
     });
   }
 };
@@ -104,16 +121,20 @@ export const deleteTenant = async (req, res) => {
 
     await deleteTenantService(req.prisma, tenantId);
 
-    return res.status(200).json({
+    return sendResponse(res, {
+      statusCode: 200,
       success: true,
       message: "Tenant and all related branches deleted successfully",
+      data: null,
     });
   } catch (error) {
     console.error("DELETE TENANT ERROR:", error);
 
-    return res.status(error.statusCode || 500).json({
+    return sendResponse(res, {
+      statusCode: error.statusCode || 500,
       success: false,
       message: error.message || "Failed to delete tenant",
+      data: null,
     });
   }
 };
@@ -130,7 +151,8 @@ export const updateBranchStatus = async (req, res) => {
       Number(count),
     );
 
-    return res.status(200).json({
+    return sendResponse(res, {
+      statusCode: 200,
       success: true,
       message: `Branch(es) ${action}d successfully`,
       data: result,
@@ -138,9 +160,11 @@ export const updateBranchStatus = async (req, res) => {
   } catch (error) {
     console.error("UPDATE BRANCH STATUS ERROR:", error);
 
-    return res.status(error.statusCode || 500).json({
+    return sendResponse(res, {
+      statusCode: error.statusCode || 500,
       success: false,
       message: error.message || "Failed to update branch status",
+      data: null,
     });
   }
 };

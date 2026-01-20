@@ -96,7 +96,7 @@ model User {
   ticketsCreated  SupportTicket[] @relation("TicketCreator")
   activityLogs    ActivityLog[]
   support         Support[]
-    rewards   Reward[]
+  rewards         Reward[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -132,7 +132,7 @@ model Support {
 }
 
 model Reward {
-  id           String   @id @default(uuid())
+  id String @id @default(uuid())
 
   rewardName   String
   rewardPoints Int
@@ -141,9 +141,9 @@ model Reward {
   earningRule  String
   reward       String
 
-  userId       String
-  businessId   String
-  branchId     String
+  userId     String
+  businessId String
+  branchId   String
 
   user     User     @relation(fields: [userId], references: [id])
   business Business @relation(fields: [businessId], references: [id])
@@ -155,6 +155,8 @@ model Reward {
   @@index([businessId])
   @@index([branchId])
 }
+
+
 
 // Business Owner ends 
 
@@ -180,7 +182,7 @@ model Business {
 
   // Relations
   owner          User               @relation("BusinessOwner", fields: [ownerId], references: [id])
-  branches       Branch[]
+  branche        Branch[]
   staff          Staff[]
   loyaltyRule    LoyaltyRule?
   rewards        Reward[]
@@ -213,7 +215,8 @@ model Branch {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   supports  Support[]
-    rewards Reward[]
+  rewards   Reward[]
+  staff Staff[]
 }
 
 /**
@@ -226,12 +229,13 @@ model Staff {
   id         String    @id @default(uuid())
   userId     String    @unique
   businessId String
+  branchId String
   role       StaffRole
   isActive   Boolean   @default(true)
 
   user     User     @relation(fields: [userId], references: [id])
   business Business @relation(fields: [businessId], references: [id])
-
+branch Branch @relation(fields: [ branchId] , references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -254,9 +258,6 @@ model LoyaltyRule {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
-
-
 
 /**
  * =========================
