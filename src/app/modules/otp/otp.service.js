@@ -1,9 +1,10 @@
 import crypto from "crypto";
 import { sendEmail } from "../../utils/sendEmail.js";
 import { redisClient } from "../../config/redis.config.js";
-import DevBuildError from "../../lib/DevBuildError.js";
+
 import jwt from "jsonwebtoken";
 import { envVars } from "../../config/env.js";
+import { AppError } from "../../errorHelper/appError.js";
 
 const OTP_EXPIRATION = 2 * 60; // 2 minutes
 
@@ -26,11 +27,11 @@ export const OtpService = {
     });
 
     if (!user) {
-      throw new DevBuildError("User not found", 404);
+      throw new AppError(404, "User not found");
     }
 
     if (user.isVerified) {
-      throw new DevBuildError("You are already verified", 401);
+      throw new AppError(401, "You are already verified");
     }
 
     const otp = generateOtp();
@@ -62,22 +63,22 @@ export const OtpService = {
     });
 
     if (!user) {
-      throw new DevBuildError("User not found", 404);
+      throw new AppError(404, "User not found");
     }
 
     if (user.isVerified) {
-      throw new DevBuildError("You are already verified", 401);
+      throw new AppError(401, "You are already verified");
     }
 
     const redisKey = `otp:${email}`;
     const savedOtp = await redisClient.get(redisKey);
 
     if (!savedOtp) {
-      throw new DevBuildError("Invalid or expired OTP", 401);
+      throw new AppError(401, "Invalid or expired OTP");
     }
 
     if (savedOtp !== otp) {
-      throw new DevBuildError("Invalid OTP", 401);
+      throw new AppError(401, "Invalid OTP");
     }
 
     await prisma.user.update({
@@ -94,11 +95,11 @@ export const OtpService = {
     });
 
     if (!user) {
-      throw new DevBuildError("User not found", 404);
+      throw new AppError(404, "User not found");
     }
 
     if (!user.isVerified) {
-      throw new DevBuildError("User is not verified", 401);
+      throw new AppError(401, "User is not verified");
     }
 
     const otp = generateOtp();
@@ -125,7 +126,7 @@ export const OtpService = {
     const savedOtp = await redisClient.get(redisKey);
 
     if (!savedOtp || savedOtp !== otp) {
-      throw new DevBuildError("Invalid or expired OTP", 401);
+      throw new AppError(401, "Invalid or expired OTP");
     }
 
     // OTP is valid, generate a short-lived reset token
@@ -135,7 +136,7 @@ export const OtpService = {
     });
 
     if (!user) {
-      throw new DevBuildError("User not found", 404);
+      throw new AppError(404, "User not found");
     }
 
     const resetToken = jwt.sign(
