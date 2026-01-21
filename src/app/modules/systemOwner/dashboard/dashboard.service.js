@@ -1,4 +1,4 @@
-import prisma from "../../prisma/client.js";
+import prisma from "../../../prisma/client.js";
 
 export const getSystemOwnerDashboardOverviewService = async () => {
   // SAFE DEFAULT RESPONSE (never breaks UI)
