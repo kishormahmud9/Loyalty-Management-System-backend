@@ -3,15 +3,16 @@ import express from "express";
 import RewardController from "./reward.controller.js";
 import { checkAuthMiddleware } from "../../../middleware/checkAuthMiddleware.js";
 import { Role } from "../../../utils/role.js";
+import { upload } from "../../../utils/fileUpload.js";
 
 const router = express.Router();
 
 router.post(
   "/create",
-  checkAuthMiddleware(Role.BUSINESS_OWNER),
-  RewardController.create
+  checkAuthMiddleware(Role.BUSINESS_OWNER), // 1️⃣ auth FIRST
+  upload.single("rewardImage"),                   // 2️⃣ multer
+  RewardController.create                  // 3️⃣ controller
 );
-
 router.get(
   "/all",
   checkAuthMiddleware(Role.BUSINESS_OWNER),
@@ -39,6 +40,7 @@ router.get(
 router.patch(
   "/:id",
   checkAuthMiddleware(Role.BUSINESS_OWNER),
+  upload.single("rewardImage"),
   RewardController.update
 );
 
