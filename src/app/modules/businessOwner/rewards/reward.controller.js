@@ -1,10 +1,27 @@
+// reward.controller.js
 import RewardService from "./reward.service.js";
 import { sendResponse } from "../../../utils/sendResponse.js";
 
 class RewardController {
   static async create(req, res) {
     try {
-      const reward = await RewardService.createReward(req.body);
+      // ✅ userId MUST come from auth
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return sendResponse(res, {
+          statusCode: 401,
+          success: false,
+          message: "Unauthorized",
+          data: null,
+        });
+      }
+
+      const reward = await RewardService.createReward({
+        ...req.body,
+        userId, // 🔥 inject userId safely
+      });
+
       sendResponse(res, {
         statusCode: 201,
         success: true,
@@ -43,6 +60,7 @@ class RewardController {
   static async getOne(req, res) {
     try {
       const reward = await RewardService.getRewardById(req.params.id);
+
       if (!reward) {
         return sendResponse(res, {
           statusCode: 404,
@@ -51,6 +69,7 @@ class RewardController {
           data: null,
         });
       }
+
       sendResponse(res, {
         statusCode: 200,
         success: true,
@@ -72,6 +91,7 @@ class RewardController {
       const rewards = await RewardService.getRewardsByBusiness(
         req.params.businessId
       );
+
       sendResponse(res, {
         statusCode: 200,
         success: true,
@@ -93,6 +113,7 @@ class RewardController {
       const rewards = await RewardService.getRewardsByBranch(
         req.params.branchId
       );
+
       sendResponse(res, {
         statusCode: 200,
         success: true,
@@ -109,9 +130,35 @@ class RewardController {
     }
   }
 
+  static async update(req, res) {
+  try {
+    const rewardId = req.params.id;
+
+    const updatedReward = await RewardService.updateReward(
+      rewardId,
+      req.body
+    );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Reward updated successfully",
+      data: updatedReward,
+    });
+  } catch (error) {
+    sendResponse(res, {
+      statusCode: 400,
+      success: false,
+      message: error.message,
+      data: null,
+    });
+  }
+}
+
   static async remove(req, res) {
     try {
       await RewardService.deleteReward(req.params.id);
+
       sendResponse(res, {
         statusCode: 200,
         success: true,
