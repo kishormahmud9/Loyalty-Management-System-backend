@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSystemOwnerDashboardOverview } from "./dashboard.controller.js";
+import { getSystemOwnerDashboardOverview } from "../../systemOwner/dashboard/dashboard.controller.js";
 
 const router = Router();
 

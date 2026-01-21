@@ -1,5 +1,5 @@
-import { getSystemOwnerDashboardOverviewService } from "./dashboard.service.js";
-import { sendResponse } from "../../utils/sendResponse.js";
+import { getSystemOwnerDashboardOverviewService } from "../../systemOwner/dashboard/dashboard.service.js";
+import { sendResponse } from "../../../utils/sendResponse.js";
 
 export const getSystemOwnerDashboardOverview = async (req, res) => {
   try {

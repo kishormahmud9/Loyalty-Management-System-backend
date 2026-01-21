@@ -110,41 +110,40 @@ model User {
  */
 
 model Customer {
-  id           String  @id @default(uuid())
-  name         String
-  email        String  @unique
-  passwordHash String?
-  avatarUrl    String?
-  isVerified   Boolean @default(false)
-  role         UserRole @default(CUSTOMER)
-  forgotPasswordStatus Boolean @default(false)
+  id                   String   @id @default(uuid())
+  name                 String
+  email                String   @unique
+  passwordHash         String?
+  avatarUrl            String?
+  isVerified           Boolean  @default(false)
+  role                 UserRole @default(CUSTOMER)
+  forgotPasswordStatus Boolean  @default(false)
 
-  qrCode       String  @unique // The 6 digit code
-  qrScanner    String? // Additional field requested
+  qrCode    String  @unique // The 6 digit code
+  qrScanner String? // Additional field requested
 
   // Relations
-  branchData   CustomerBranchData[]
+  branchData CustomerBranchData[]
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model CustomerBranchData {
-  id         String   @id @default(uuid())
+  id         String @id @default(uuid())
   customerId String
   businessId String
   branchId   String
 
-  customer   Customer @relation(fields: [customerId], references: [id])
-  business   Business @relation(fields: [businessId], references: [id])
-  branch     Branch   @relation(fields: [branchId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+  branch   Branch   @relation(fields: [branchId], references: [id])
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([customerId, branchId])
 }
-
 
 // Business Owner Starts 
 
@@ -233,22 +232,24 @@ model Business {
 
   qrCode      String    @unique
   isActive    Boolean   @default(true)
-  trialEndsAt DateTime? // ✅ ADD THIS
+  trialEndsAt DateTime?
 
   // Relations
-  owner          User               @relation("BusinessOwner", fields: [ownerId], references: [id])
-  branche        Branch[]
-  staff          Staff[]
-  loyaltyRule    LoyaltyRule?
-  rewards        Reward[]
-  transactions   PointTransaction[]
-  supportTickets SupportTicket[]
-  supports       Support[]
-  billings       Billing[]
+  owner              User                 @relation("BusinessOwner", fields: [ownerId], references: [id])
+  branche            Branch[]
+  staff              Staff[]
+  loyaltyRule        LoyaltyRule?
+  rewards            Reward[]
+  transactions       PointTransaction[]
+  supportTickets     SupportTicket[]
+  supports           Support[]
+  billings           Billing[]
   customerBranchData CustomerBranchData[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  activityLogs         ActivityLog[]
+  businessSubscription BusinessSubscription?
 }
 
 /**
@@ -268,11 +269,11 @@ model Branch {
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  supports   Support[]
-  rewards    Reward[]
-  staff      Staff[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  supports           Support[]
+  rewards            Reward[]
+  staff              Staff[]
   customerBranchData CustomerBranchData[]
 }
 
@@ -342,13 +343,19 @@ model PointTransaction {
  */
 
 model SupportTicket {
-  id          String         @id @default(uuid())
-  businessId  String?
-  createdBy   String
+  id       String @id @default(uuid())
+  ticketNo String @unique
+
+  businessId String?
+  createdBy  String
+
   subject     String
   description String
   priority    TicketPriority
   status      TicketStatus   @default(OPEN)
+
+  resolvedAt DateTime?
+  closedAt   DateTime?
 
   business Business? @relation(fields: [businessId], references: [id])
   creator  User      @relation("TicketCreator", fields: [createdBy], references: [id])
@@ -357,6 +364,7 @@ model SupportTicket {
   updatedAt DateTime @updatedAt
 
   @@index([priority])
+  @@index([status])
 }
 
 /**
@@ -380,19 +388,91 @@ model Billing {
   @@index([issue])
 }
 
+// ACTIVITY LOG
+
+enum ActivityActionType {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  OTHER
+}
+
+model ActivityLog {
+  id String @id @default(uuid())
+
+  userId     String
+  businessId String?
+
+  action     String
+  actionType ActivityActionType @default(OTHER)
+
+  metadata Json?
+
+  user     User      @relation(fields: [userId], references: [id])
+  business Business? @relation(fields: [businessId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([businessId])
+  @@index([actionType])
+  @@index([createdAt])
+}
+
 /**
  * =========================
- * ACTIVITY LOG
+ * PLAN (SYSTEM OWNER)
  * =========================
  */
 
-model ActivityLog {
-  id       String @id @default(uuid())
-  userId   String
-  action   String
-  metadata Json?
+model Plan {
+  id    String @id @default(uuid())
+  name  String @unique // Starter, Grow, Business
+  price Int // 25, 45, 60
 
-  user User @relation(fields: [userId], references: [id])
+  maxBranches Int
+  maxStaff    Int
+  maxCards    Int
+
+  isActive Boolean @default(true)
+
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  businessSubscriptions BusinessSubscription[]
+}
+
+/**
+ * =========================
+ * BUSINESS SUBSCRIPTION
+ * =========================
+ */
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+model BusinessSubscription {
+  id         String @id @default(uuid())
+  businessId String @unique
+  planId     String
+
+  // 🔐 snapshot fields (TEMPORARILY OPTIONAL)
+  planName    String?
+  price       Float?
+  maxBranches Int?
+  maxStaff    Int?
+  maxCards    Int?
+
+  status    SubscriptionStatus @default(ACTIVE)
+  startDate DateTime           @default(now())
+  endDate   DateTime?
+
+  business Business @relation(fields: [businessId], references: [id])
+  plan     Plan     @relation(fields: [planId], references: [id])
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
