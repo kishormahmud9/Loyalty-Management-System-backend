@@ -29,6 +29,9 @@ app.use((req, res, next) => {
 // Routes
 app.use("/api", router);
 
+// Upload 
+app.use("/uploads", express.static("uploads"));
+
 // Health check
 app.get("/", (req, res) => {
   res.send("Hello, World!");

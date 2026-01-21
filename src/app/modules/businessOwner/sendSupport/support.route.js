@@ -11,7 +11,7 @@ router.post(
     checkAuthMiddleware(Role.BUSINESS_OWNER),
     SupportController.create
 );
-router.get("/", SupportController.getAll);
+router.get("/all", SupportController.getAll);
 router.get("/:id", SupportController.getOne);
 
 export const BusinessOwnerSupport = router;

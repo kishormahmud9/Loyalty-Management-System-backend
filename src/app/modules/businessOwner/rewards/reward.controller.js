@@ -2,11 +2,14 @@
 import RewardService from "./reward.service.js";
 import { sendResponse } from "../../../utils/sendResponse.js";
 
+
+
+
 class RewardController {
   static async create(req, res) {
     try {
-      // ✅ userId MUST come from auth
       const userId = req.user?.id;
+      const { businessId, branchId } = req.body;
 
       if (!userId) {
         return sendResponse(res, {
@@ -17,26 +20,57 @@ class RewardController {
         });
       }
 
+      if (!businessId || !branchId) {
+        return sendResponse(res, {
+          statusCode: 400,
+          success: false,
+          message: "businessId and branchId are required",
+          data: null,
+        });
+      }
+
+      // 🖼️ IMAGE HANDLING
+      let rewardImageFilePath = null;
+      let rewardImage = null;
+
+      if (req.file) {
+        rewardImageFilePath = req.file.path.replace(/\\/g, "/");
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        rewardImage = `${baseUrl}/${rewardImageFilePath}`;
+      }
+
       const reward = await RewardService.createReward({
-        ...req.body,
-        userId, // 🔥 inject userId safely
+        rewardName: req.body.rewardName,
+        rewardPoints: req.body.rewardPoints,
+        rewardType: req.body.rewardType,   // FREE_ITEM / Free Item / etc
+        earningRule: req.body.earningRule, // PURCHASE / PER_PURCHASE
+        expiryDays: req.body.expiryDays,
+        reward: req.body.reward,
+
+        userId,
+        businessId,
+        branchId,
+
+        rewardImageFilePath,
+        rewardImage,
       });
 
-      sendResponse(res, {
+      return sendResponse(res, {
         statusCode: 201,
         success: true,
         message: "Reward created successfully",
         data: reward,
       });
     } catch (error) {
-      sendResponse(res, {
-        statusCode: 400,
+      return sendResponse(res, {
+        statusCode: error.statusCode || 400,
         success: false,
         message: error.message,
         data: null,
       });
     }
   }
+
 
   static async getAll(req, res) {
     try {
@@ -131,29 +165,43 @@ class RewardController {
   }
 
   static async update(req, res) {
-  try {
-    const rewardId = req.params.id;
+    try {
+      const rewardId = req.params.id;
 
-    const updatedReward = await RewardService.updateReward(
-      rewardId,
-      req.body
-    );
+      // 🖼️ IMAGE HANDLING
+      let rewardImageFilePath = undefined;
+      let rewardImage = undefined;
 
-    sendResponse(res, {
-      statusCode: 200,
-      success: true,
-      message: "Reward updated successfully",
-      data: updatedReward,
-    });
-  } catch (error) {
-    sendResponse(res, {
-      statusCode: 400,
-      success: false,
-      message: error.message,
-      data: null,
-    });
+      if (req.file) {
+        rewardImageFilePath = req.file.path.replace(/\\/g, "/");
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        rewardImage = `${baseUrl}/${rewardImageFilePath}`;
+      }
+
+      const updatedReward = await RewardService.updateReward(
+        rewardId,
+        {
+          ...req.body,
+          rewardImageFilePath,
+          rewardImage,
+        }
+      );
+
+      sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Reward updated successfully",
+        data: updatedReward,
+      });
+    } catch (error) {
+      sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
   }
-}
 
   static async remove(req, res) {
     try {

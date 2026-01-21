@@ -112,7 +112,7 @@ enum Priority {
 }
 
 model Support {
-  id       Int    @id @default(autoincrement())
+  id       String @id @default(uuid())
   ticketId String @unique
 
   userId     String
@@ -131,15 +131,29 @@ model Support {
   updatedAt DateTime @updatedAt
 }
 
+enum RewardStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum RewardType {
+  FREE_ITEM
+  EARN
+  REDEEM
+}
+
 model Reward {
   id String @id @default(uuid())
 
-  rewardName   String
-  rewardPoints Int
-  rewardType   String
-  expiryDays   Int
-  earningRule  String
-  reward       String
+  rewardName          String
+  rewardPoints        Int
+  rewardType          RewardType
+  rewardImageFilePath String? // 🔐 internal use
+  rewardImage         String? // 🌍 frontend use
+  expiryDays          Int
+  earningRule         String
+  reward              String
+  rewardStatus        RewardStatus @default(ACTIVE)
 
   userId     String
   businessId String

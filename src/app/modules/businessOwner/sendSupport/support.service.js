@@ -40,7 +40,7 @@ class SupportService {
 
   static async getSupportById(id) {
     return prisma.support.findUnique({
-      where: { id: Number(id) },
+      where: { id: id },
     });
   }
 }
