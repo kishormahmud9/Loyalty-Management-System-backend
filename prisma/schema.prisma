@@ -103,6 +103,49 @@ model User {
   @@index([role])
 }
 
+/**
+ * =========================
+ * CUSTOMER
+ * =========================
+ */
+
+model Customer {
+  id           String  @id @default(uuid())
+  name         String
+  email        String  @unique
+  passwordHash String?
+  avatarUrl    String?
+  isVerified   Boolean @default(false)
+  role         UserRole @default(CUSTOMER)
+  forgotPasswordStatus Boolean @default(false)
+
+  qrCode       String  @unique // The 6 digit code
+  qrScanner    String? // Additional field requested
+
+  // Relations
+  branchData   CustomerBranchData[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CustomerBranchData {
+  id         String   @id @default(uuid())
+  customerId String
+  businessId String
+  branchId   String
+
+  customer   Customer @relation(fields: [customerId], references: [id])
+  business   Business @relation(fields: [businessId], references: [id])
+  branch     Branch   @relation(fields: [branchId], references: [id])
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([customerId, branchId])
+}
+
+
 // Business Owner Starts 
 
 enum Priority {
@@ -112,7 +155,7 @@ enum Priority {
 }
 
 model Support {
-  id       Int    @id @default(autoincrement())
+  id       String @id @default(uuid())
   ticketId String @unique
 
   userId     String
@@ -131,15 +174,29 @@ model Support {
   updatedAt DateTime @updatedAt
 }
 
+enum RewardStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum RewardType {
+  FREE_ITEM
+  EARN
+  REDEEM
+}
+
 model Reward {
   id String @id @default(uuid())
 
-  rewardName   String
-  rewardPoints Int
-  rewardType   String
-  expiryDays   Int
-  earningRule  String
-  reward       String
+  rewardName          String
+  rewardPoints        Int
+  rewardType          RewardType
+  rewardImageFilePath String? // 🔐 internal use
+  rewardImage         String? // 🌍 frontend use
+  expiryDays          Int
+  earningRule         String
+  reward              String
+  rewardStatus        RewardStatus @default(ACTIVE)
 
   userId     String
   businessId String
@@ -155,8 +212,6 @@ model Reward {
   @@index([businessId])
   @@index([branchId])
 }
-
-
 
 // Business Owner ends 
 
@@ -188,8 +243,9 @@ model Business {
   rewards        Reward[]
   transactions   PointTransaction[]
   supportTickets SupportTicket[]
-  billings       Billing[]
   supports       Support[]
+  billings       Billing[]
+  customerBranchData CustomerBranchData[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -213,10 +269,11 @@ model Branch {
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  supports  Support[]
-  rewards   Reward[]
-  staff Staff[]
+  updatedAt  DateTime  @updatedAt
+  supports   Support[]
+  rewards    Reward[]
+  staff      Staff[]
+  customerBranchData CustomerBranchData[]
 }
 
 /**
@@ -229,13 +286,13 @@ model Staff {
   id         String    @id @default(uuid())
   userId     String    @unique
   businessId String
-  branchId String
+  branchId   String
   role       StaffRole
   isActive   Boolean   @default(true)
 
-  user     User     @relation(fields: [userId], references: [id])
-  business Business @relation(fields: [businessId], references: [id])
-branch Branch @relation(fields: [ branchId] , references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  business  Business @relation(fields: [businessId], references: [id])
+  branch    Branch   @relation(fields: [branchId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

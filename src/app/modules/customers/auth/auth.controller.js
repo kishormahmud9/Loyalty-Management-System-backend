@@ -1,73 +1,70 @@
 
 import { AuthService, forgotPasswordService } from "./auth.service.js";
-import { OtpService } from "../otp/otp.service.js";
 import jwt from "jsonwebtoken";
-import { envVars } from "../../config/env.js";
-import { createUserTokens } from "../../utils/userTokenGenerator.js";
-import { sendResponse } from "../../utils/sendResponse.js";
-import { setAuthCookie } from "../../utils/setCookie.js";
+import bcrypt from "bcrypt";
+
+
 import { StatusCodes } from "http-status-codes";
-import passport from "passport";
-import prisma from "../../prisma/client.js";
-import { AppError } from "../../errorHelper/appError.js";
+import prisma from "../../../prisma/client.js";
+import { AppError } from "../../../errorHelper/appError.js";
+import { OtpService } from "../otp/otp.service.js";
+
+import { envVars } from "../../../config/env.js";
+import { createUserTokens } from "../../../utils/userTokenGenerator.js";
+import { sendResponse } from "../../../utils/sendResponse.js";
 
 const credentialLogin = async (req, res, next) => {
   try {
-    passport.authenticate("local", async (err, user, info) => {
-      try {
-        if (err) {
-          return next(new AppError(StatusCodes.UNAUTHORIZED, err));
-        }
+    const { email, password } = req.body;
 
-        if (!user) {
-          return next(
-            new AppError(
-              StatusCodes.FORBIDDEN,
-              info?.message || "Authentication failed"
-            )
-          );
-        }
+    if (!email || !password) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Email and password are required");
+    }
 
-        // Generate access & refresh tokens
-        const userToken = await createUserTokens(user);
+    const customer = await AuthService.findByEmail(prisma, email);
 
-        // Remove sensitive fields before sending user
-        const { passwordHash, ...saveUser } = user;
+    if (!customer) {
+      throw new AppError(StatusCodes.FORBIDDEN, "Authentication failed");
+    }
 
-        // Set cookies
-        setAuthCookie(res, userToken);
+    const isPasswordMatch = await bcrypt.compare(password, customer.passwordHash);
 
-        // Send response
-        sendResponse(res, {
-          success: true,
-          message: "User logged in successfully",
-          statusCode: StatusCodes.OK,
-          data: {
-            accessToken: userToken.accessToken,
-            refreshToken: userToken.refreshToken,
-            user: saveUser,
-          },
-        });
-      } catch (innerError) {
-        next(innerError);
-      }
-    })(req, res, next);
+    if (!isPasswordMatch) {
+      throw new AppError(StatusCodes.FORBIDDEN, "Authentication failed");
+    }
+
+    // Generate access & refresh tokens
+    // Add role CUSTOMER for JWT payload compatibility
+    const tokens = await createUserTokens({ ...customer, role: "CUSTOMER" });
+
+    // Remove sensitive fields
+    const { passwordHash, ...saveCustomer } = customer;
+
+    // Send response - Tokens in body only
+    sendResponse(res, {
+      success: true,
+      message: "Customer logged in successfully",
+      statusCode: StatusCodes.OK,
+      data: {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        user: saveCustomer,
+      },
+    });
   } catch (error) {
     next(error);
   }
 };
 
 // ✅ Refresh Token
-
 const getNewAccessToken = async (req, res, next) => {
   try {
-    // const prisma = req.app.get("prisma"); // REMOVED
-    const refreshToken = req.cookies?.refreshToken;
+    const { refreshToken } = req.body;
 
     if (!refreshToken) {
       throw new AppError(
         StatusCodes.BAD_REQUEST,
-        "No refresh token received from cookies"
+        "Refresh token is required in the request body"
       );
     }
 
@@ -78,29 +75,24 @@ const getNewAccessToken = async (req, res, next) => {
       throw new AppError(StatusCodes.FORBIDDEN, "Invalid refresh token");
     }
 
-    const user = await AuthService.findById(prisma, decoded.id);
+    const customer = await AuthService.findById(prisma, decoded.id);
 
-    if (!user) {
-      throw new AppError(StatusCodes.NOT_FOUND, "User not found");
+    if (!customer) {
+      throw new AppError(StatusCodes.NOT_FOUND, "Customer not found");
     }
 
-    if (!user.isVerified) {
+    if (!customer.isVerified) {
       throw new AppError(
         StatusCodes.FORBIDDEN,
-        "User is not verified. Please verify your email."
+        "Customer is not verified. Please verify your email."
       );
     }
 
     const newAccessToken = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: customer.id, email: customer.email, role: "CUSTOMER" },
       envVars.JWT_SECRET_TOKEN,
       { expiresIn: envVars.JWT_EXPIRES_IN }
     );
-
-    setAuthCookie(res, {
-      accessToken: newAccessToken,
-      refreshToken,
-    });
 
     sendResponse(res, {
       success: true,
@@ -117,18 +109,7 @@ const getNewAccessToken = async (req, res, next) => {
 
 const logout = async (req, res, next) => {
   try {
-    res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-
+    // For customers, logout is handled by the frontend deleting the token
     sendResponse(res, {
       success: true,
       message: "User logged out successfully",
@@ -142,7 +123,6 @@ const logout = async (req, res, next) => {
 
 const forgotPassword = async (req, res, next) => {
   try {
-    // const prisma = req.app.get("prisma"); // REMOVED
     const { email } = req.body;
 
     if (!email) {
@@ -169,7 +149,6 @@ const forgotPassword = async (req, res, next) => {
 
 const verifyForgotPasswordOtp = async (req, res, next) => {
   try {
-    // const prisma = req.app.get("prisma"); // REMOVED
     const { email, otp } = req.body;
 
     if (!email || !otp) {
@@ -181,6 +160,9 @@ const verifyForgotPasswordOtp = async (req, res, next) => {
       });
     }
 
+    // Note: OtpService.verifyForgotPasswordOtp currently uses prisma.user 
+    // We might need a separate OtpService method for customers if strictly isolated.
+    // However, the user didn't mention OTP table being different.
     const resetToken = await OtpService.verifyForgotPasswordOtp(prisma, email, otp);
 
     sendResponse(res, {
@@ -223,40 +205,12 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
-const googleCallback = async (req, res, next) => {
-  try {
-    let redirectTo = req.query.state ? String(req.query.state) : "";
-
-    // Prevent open redirect issues
-    if (redirectTo.startsWith("/")) {
-      redirectTo = redirectTo.slice(1);
-    }
-
-    const user = req.user; // comes from Passport Google Strategy
-
-    if (!user) {
-      throw new AppError(StatusCodes.NOT_FOUND, "User not found");
-    }
-
-    // Generate tokens
-    const tokenInfo = await createUserTokens(user);
-
-    // Set auth cookies
-    setAuthCookie(res, tokenInfo);
-
-    // Redirect to frontend
-    res.redirect(`${envVars.FRONT_END_URL}/${redirectTo}`);
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const AuthController = {
   credentialLogin,
   getNewAccessToken,
   logout,
   forgotPassword,
   verifyForgotPasswordOtp,
-  resetPassword,
-  googleCallback,
+  resetPassword
 };
+

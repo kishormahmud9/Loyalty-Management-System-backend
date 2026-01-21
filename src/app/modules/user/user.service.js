@@ -1,7 +1,8 @@
 import { envVars } from "../../config/env.js";
-import DevBuildError from "../../lib/DevBuildError.js";
+
 import bcrypt from "bcrypt";
 import { Role } from "../../utils/role.js";
+import { AppError } from "../../errorHelper/appError.js";
 
 export const UserService = {
 
@@ -65,7 +66,7 @@ export const createUserService = async (payload) => {
   const { prisma, email, password, picture, role, ...rest } = payload;
 
   if (!email || !password) {
-    throw new DevBuildError("Email and password are required", 400);
+    throw new AppError(400, "Email and password are required");
   }
 
   // Check if user already exists
@@ -74,7 +75,7 @@ export const createUserService = async (payload) => {
   });
 
   if (existingUser) {
-    throw new DevBuildError("User already exists", 400);
+    throw new AppError(400, "User already exists");
   }
 
   // Hash password

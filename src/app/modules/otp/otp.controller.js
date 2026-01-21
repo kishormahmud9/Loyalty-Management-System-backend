@@ -1,6 +1,7 @@
 import { OtpService } from "./otp.service.js";
-import DevBuildError from "../../lib/DevBuildError.js";
+
 import { sendResponse } from "../../utils/sendResponse.js";
+import { AppError } from "../../errorHelper/appError.js";
 
 //        SEND OTP   
 
@@ -29,7 +30,7 @@ const sendOtp = async (req, res) => {
   } catch (error) {
     console.error("sendOtp error:", error);
 
-    if (error instanceof DevBuildError) {
+    if (error instanceof AppError) {
       return sendResponse(res, {
         statusCode: error.statusCode,
         success: false,
@@ -76,7 +77,7 @@ const verifyOtp = async (req, res) => {
   } catch (error) {
     console.error("verifyOtp error:", error);
 
-    if (error instanceof DevBuildError) {
+    if (error instanceof AppError) {
       return sendResponse(res, {
         statusCode: error.statusCode,
         success: false,

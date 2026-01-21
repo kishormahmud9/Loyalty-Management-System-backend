@@ -2,7 +2,8 @@ import { StatusCodes } from "http-status-codes";
 import { envVars } from "../config/env.js";
 
 import { generateToken, verifyToken } from "./jwt.js";
-import DevBuildError from "../lib/DevBuildError.js";
+import { AppError } from "../errorHelper/appError.js";
+
 
 //  CREATE USER TOKENS
 
@@ -43,9 +44,9 @@ export const createNewAccessTokenUsingRefreshToken = async (
   });
 
   if (!isUser) {
-    throw new DevBuildError(
-      "User does not exist",
-      StatusCodes.BAD_REQUEST
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      "User does not exist"
     );
   }
 

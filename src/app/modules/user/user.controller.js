@@ -3,8 +3,9 @@ import { createUserService, UserService } from "./user.service.js";
 
 import { StatusCodes } from "http-status-codes";
 import { sendResponse } from "../../utils/sendResponse.js";
-import DevBuildError from "../../lib/DevBuildError.js";
+
 import prisma from "../../prisma/client.js";
+import { AppError } from "../../errorHelper/appError.js";
 
 
 const registerUser = async (req, res, next) => {
@@ -36,7 +37,7 @@ const getUserInfo = async (req, res, next) => {
     const user = await UserService.findUserInfoById(prisma, userId);
 
     if (!user) {
-      throw new DevBuildError("User not found", 404);
+      throw new AppError(404, "User not found");
     }
 
     sendResponse(res, {

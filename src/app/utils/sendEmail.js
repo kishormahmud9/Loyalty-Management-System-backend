@@ -3,7 +3,8 @@ import nodemailer from "nodemailer";
 import path from "path";
 import { fileURLToPath } from "url";
 import { envVars } from "../config/env.js";
-import DevBuildError from "../lib/DevBuildError.js";
+import { AppError } from "../errorHelper/appError.js";
+
 
 
 // Needed because __dirname is not available in ES modules
@@ -55,6 +56,6 @@ export const sendEmail = async ({
     console.log(`📧 Email sent to ${to} | ID: ${info.messageId}`);
   } catch (error) {
     console.error("❌ Email sending failed:", error?.message || error);
-    throw new DevBuildError("Failed to send email", 500);
+    throw new AppError(500, "Failed to send email");
   }
 };
