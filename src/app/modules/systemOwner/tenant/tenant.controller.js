@@ -5,8 +5,8 @@ import {
   getTenantDetailsService,
   getTenantListService,
   updateTenantService,
-} from "./tenant.service.js";
-import { sendResponse } from "../../utils/sendResponse.js";
+} from "../../systemOwner/tenant/tenant.service.js";
+import { sendResponse } from "../../../utils/sendResponse.js";
 
 export const getTenantList = async (req, res) => {
   try {
