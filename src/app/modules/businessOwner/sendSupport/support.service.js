@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import crypto from "crypto";
+import { auditLog } from "../../../utils/auditLogger.js";
 
 const prisma = new PrismaClient();
 
@@ -8,6 +9,9 @@ class SupportService {
     return "TCK-" + crypto.randomBytes(4).toString("hex").toUpperCase();
   }
 
+  /* =========================
+     CREATE SUPPORT TICKET
+  ========================= */
   static async createSupport(data) {
     const allowedPriority = ["NORMAL", "HIGH", "MEDIUM"];
 
@@ -19,7 +23,7 @@ class SupportService {
       throw new Error("UserId, BusinessId and BranchId are required");
     }
 
-    return prisma.support.create({
+    const createdSupport = await prisma.support.create({
       data: {
         ticketId: this.generateSupportId(),
         userId: data.userId,
@@ -30,17 +34,39 @@ class SupportService {
         priority: data.priority,
       },
     });
+
+    /* 🔐 AUTO AUDIT LOG (NON-BLOCKING) */
+    auditLog({
+      userId: data.userId,
+      businessId: data.businessId,
+      action: "Created support ticket",
+      actionType: "CREATE",
+      metadata: {
+        supportId: createdSupport.id,
+        ticketId: createdSupport.ticketId,
+        priority: createdSupport.priority,
+        issue: createdSupport.issue,
+      },
+    });
+
+    return createdSupport;
   }
 
+  /* =========================
+     GET ALL SUPPORT
+  ========================= */
   static async getAllSupport() {
     return prisma.support.findMany({
       orderBy: { createdAt: "desc" },
     });
   }
 
+  /* =========================
+     GET SUPPORT BY ID
+  ========================= */
   static async getSupportById(id) {
     return prisma.support.findUnique({
-      where: { id: id },
+      where: { id },
     });
   }
 }

@@ -6,7 +6,7 @@ import {
   getTenantDetails,
   getTenantList,
   updateTenant,
-} from "./tenant.controller.js";
+} from "../../systemOwner/tenant/tenant.controller.js";
 
 const router = Router();
 
