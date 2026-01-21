@@ -10,6 +10,11 @@ import { RewardRoutes } from "../modules/businessOwner/rewards/reward.route.js";
 import { BranchRoute } from "../modules/businessOwner/branchs/branchs.route.js";
 import { ManageStaffRoute } from "../modules/businessOwner/manageStaff/manageStaff.route.js";
 
+import { CustomerRoutes } from "../modules/customers/customer/customer.route.js";
+import { CustomerAuthRouter } from "../modules/customers/auth/auth.route.js";
+import { CustomerOtpRouter } from "../modules/customers/otp/otp.route.js";
+
+
 export const router = Router();
 
 const moduleRoutes = [
@@ -24,9 +29,26 @@ const moduleRoutes = [
   },
 
   {
+    path: "/customer",
+    route: CustomerRoutes,
+  },
+
+  {
+    path: "/customer/auth",
+    route: CustomerAuthRouter,
+  },
+
+  {
+    path: "/customer/otp",
+    route: CustomerOtpRouter,
+  },
+
+
+  {
     path: "/otp",
     route: OtpRouter,
   },
+
 
   // business owner starts
   {
