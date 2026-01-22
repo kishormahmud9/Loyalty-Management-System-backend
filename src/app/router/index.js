@@ -18,6 +18,7 @@ import { ManageStaffRoute } from "../modules/businessOwner/manageStaff/manageSta
 import { CustomerRoutes } from "../modules/customers/customer/customer.route.js";
 import { CustomerAuthRouter } from "../modules/customers/auth/auth.route.js";
 import { CustomerOtpRouter } from "../modules/customers/otp/otp.route.js";
+import { CustomerRewardRoutes } from "../modules/customers/rewards/rewards.route.js";
 import { ActivePlanRoutes } from "../modules/systemOwner/plan/activePlan.route.js";
 
 export const router = Router();
@@ -46,6 +47,10 @@ const moduleRoutes = [
   {
     path: "/customer/otp",
     route: CustomerOtpRouter,
+  },
+  {
+    path: "/customer/rewards",
+    route: CustomerRewardRoutes,
   },
 
   {
