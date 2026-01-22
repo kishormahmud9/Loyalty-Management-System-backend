@@ -101,23 +101,15 @@ export const activatePlanForBusinessService = async ({
 
 export const createPlanService = async (data) => {
   try {
-    const {
-      name,
-      price,
-      maxBranches,
-      maxStaff,
-      maxCards,
-    } = data;
+    const { name, price, maxBranches, maxStaff, maxCards } = data;
 
     // 🔒 Validation (NO THROW)
     if (!name) return { error: "Plan name is required" };
     if (price == null || price < 0) return { error: "Invalid price" };
     if (maxBranches == null || maxBranches < 0)
       return { error: "Invalid maxBranches" };
-    if (maxStaff == null || maxStaff < 0)
-      return { error: "Invalid maxStaff" };
-    if (maxCards == null || maxCards < 0)
-      return { error: "Invalid maxCards" };
+    if (maxStaff == null || maxStaff < 0) return { error: "Invalid maxStaff" };
+    if (maxCards == null || maxCards < 0) return { error: "Invalid maxCards" };
 
     // 🔎 Check duplicate plan name
     const existing = await prisma.plan.findUnique({
@@ -144,5 +136,138 @@ export const createPlanService = async (data) => {
   } catch (error) {
     console.error("Create Plan Service Error:", error.message);
     return { error: "Failed to create plan" };
+  }
+};
+
+export const updatePlanService = async (planId, data) => {
+  try {
+    if (!planId) {
+      return { error: "Plan ID is required" };
+    }
+
+    const { name, price, maxBranches, maxStaff, maxCards, isActive } = data;
+
+    // 🔎 Check plan exists
+    const existingPlan = await prisma.plan.findUnique({
+      where: { id: planId },
+    });
+
+    if (!existingPlan) {
+      return { error: "Plan not found" };
+    }
+
+    // 🔒 Validate fields (only if provided)
+    if (price !== undefined && price < 0) {
+      return { error: "Invalid price" };
+    }
+
+    if (maxBranches !== undefined && maxBranches < 0) {
+      return { error: "Invalid maxBranches" };
+    }
+
+    if (maxStaff !== undefined && maxStaff < 0) {
+      return { error: "Invalid maxStaff" };
+    }
+
+    if (maxCards !== undefined && maxCards < 0) {
+      return { error: "Invalid maxCards" };
+    }
+
+    // 🔎 Prevent duplicate plan name
+    if (name && name !== existingPlan.name) {
+      const duplicate = await prisma.plan.findUnique({
+        where: { name },
+      });
+
+      if (duplicate) {
+        return { error: "Plan name already exists" };
+      }
+    }
+
+    // ✅ Update plan
+    const updatedPlan = await prisma.plan.update({
+      where: { id: planId },
+      data: {
+        name,
+        price,
+        maxBranches,
+        maxStaff,
+        maxCards,
+        isActive,
+      },
+    });
+
+    return { plan: updatedPlan };
+  } catch (error) {
+    console.error("Update Plan Service Error:", error.message);
+    return { error: "Failed to update plan" };
+  }
+};
+
+export const deletePlanService = async (planId) => {
+  try {
+    if (!planId) {
+      return { error: "Plan ID is required" };
+    }
+
+    // 🔎 Check plan exists
+    const plan = await prisma.plan.findUnique({
+      where: { id: planId },
+    });
+
+    if (!plan) {
+      return { error: "Plan not found" };
+    }
+
+    // ❌ Already inactive
+    if (!plan.isActive) {
+      return { error: "Plan is already inactive" };
+    }
+
+    // ✅ Soft delete
+    const updatedPlan = await prisma.plan.update({
+      where: { id: planId },
+      data: {
+        isActive: false,
+      },
+    });
+
+    return { plan: updatedPlan };
+  } catch (error) {
+    console.error("Delete Plan Service Error:", error.message);
+    return { error: "Failed to delete plan" };
+  }
+};
+
+export const reactivatePlanService = async (planId) => {
+  try {
+    if (!planId) {
+      return { error: "Plan ID is required" };
+    }
+
+    const plan = await prisma.plan.findUnique({
+      where: { id: planId },
+    });
+
+    if (!plan) {
+      return { error: "Plan not found" };
+    }
+
+    // Already active
+    if (plan.isActive) {
+      return { error: "Plan is already active" };
+    }
+
+    const updatedPlan = await prisma.plan.update({
+      where: { id: planId },
+      data: {
+        isActive: true,
+      },
+    });
+
+    return { plan: updatedPlan };
+  } catch (error) {
+    console.error("Reactivate Plan Service Error:", error.message);
+    return { error: "Failed to activate plan" };
   }
 };
