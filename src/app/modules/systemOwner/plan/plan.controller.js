@@ -1,7 +1,10 @@
 import {
   activatePlanForBusinessService,
   createPlanService,
+  deletePlanService,
   getAllPlansService,
+  reactivatePlanService,
+  updatePlanService,
 } from "./plan.service.js";
 import { sendResponse } from "../../../utils/sendResponse.js";
 
@@ -78,6 +81,72 @@ export const createPlan = async (req, res) => {
     statusCode: 201,
     success: true,
     message: "Plan created successfully",
+    data: result.plan,
+  });
+};
+
+export const updatePlan = async (req, res) => {
+  const { planId } = req.params;
+
+  const result = await updatePlanService(planId, req.body);
+
+  if (result.error) {
+    return sendResponse(res, {
+      statusCode: 400,
+      success: false,
+      message: result.error,
+      data: null,
+    });
+  }
+
+  return sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Plan updated successfully",
+    data: result.plan,
+  });
+};
+
+export const deletePlan = async (req, res) => {
+  const { planId } = req.params;
+
+  const result = await deletePlanService(planId);
+
+  if (result.error) {
+    return sendResponse(res, {
+      statusCode: 400,
+      success: false,
+      message: result.error,
+      data: null,
+    });
+  }
+
+  return sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Plan deleted successfully",
+    data: result.plan,
+  });
+};
+
+export const reactivatePlan = async (req, res) => {
+  const { planId } = req.params;
+
+  const result = await reactivatePlanService(planId);
+
+  if (result.error) {
+    return sendResponse(res, {
+      statusCode: 400,
+      success: false,
+      message: result.error,
+      data: null,
+    });
+  }
+
+  return sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Plan activated successfully",
     data: result.plan,
   });
 };
