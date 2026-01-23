@@ -14,6 +14,7 @@ import { SubscriptionRoutes } from "../modules/businessOwner/buySubscription/sub
 import { RewardRoutes } from "../modules/businessOwner/rewards/reward.route.js";
 import { BranchRoute } from "../modules/businessOwner/branchs/branchs.route.js";
 import { ManageStaffRoute } from "../modules/businessOwner/manageStaff/manageStaff.route.js";
+import { AllCustomersRoutes } from "../modules/businessOwner/all-customers/all-customers.route.js";
 
 import { CustomerRoutes } from "../modules/customers/customer/customer.route.js";
 import { CustomerAuthRouter } from "../modules/customers/auth/auth.route.js";
@@ -78,6 +79,10 @@ const moduleRoutes = [
   {
     path: "/business-owner/manage-staff",
     route: ManageStaffRoute,
+  },
+  {
+    path: "/business-owner/all-customers",
+    route: AllCustomersRoutes,
   },
   // business owner ends
 
