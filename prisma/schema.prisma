@@ -277,6 +277,7 @@ model Business {
   billings           Billing[]
   customerBranchData CustomerBranchData[]
   rewardHistory      RewardHistory[]
+  undoRequests TransactionUndoRequest[]
 
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
@@ -301,14 +302,19 @@ model Branch {
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
   supports           Support[]
   redeemRewards      RedeemReward[]
   earnRewards        EarnReward[]
   staff              Staff[]
   customerBranchData CustomerBranchData[]
   rewardHistory      RewardHistory[]
+
+  
+  pointTransactions  PointTransaction[]
+  undoRequests      TransactionUndoRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model RewardHistory {
@@ -355,8 +361,13 @@ model Staff {
   user      User     @relation(fields: [userId], references: [id])
   business  Business @relation(fields: [businessId], references: [id])
   branch    Branch   @relation(fields: [branchId], references: [id])
+  
+  undoRequests TransactionUndoRequest[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+
 }
 
 /**
@@ -387,14 +398,21 @@ model LoyaltyRule {
 model PointTransaction {
   id          String          @id @default(uuid())
   businessId  String
+  branchId    String          
   staffId     String?
-  customerRef String
+  customerId  String?
   points      Int
   type        TransactionType
 
   business Business @relation(fields: [businessId], references: [id])
+  branch   Branch   @relation(fields: [branchId], references: [id])
+
+  undoRequests TransactionUndoRequest[]
 
   createdAt DateTime @default(now())
+
+  @@index([branchId])
+  @@index([businessId])
 }
 
 /**
@@ -537,3 +555,38 @@ model BusinessSubscription {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+enum UndoRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+
+model TransactionUndoRequest {
+  id String @id @default(uuid())
+
+  transactionId String
+  businessId    String
+  branchId      String
+  staffId       String
+  reason        String
+
+  status UndoRequestStatus @default(PENDING)
+
+  reviewedBy String?   // business owner userId
+  reviewedAt DateTime?
+
+  transaction PointTransaction @relation(fields: [transactionId], references: [id])
+  business    Business         @relation(fields: [businessId], references: [id])
+  branch      Branch           @relation(fields: [branchId], references: [id])
+  staff       Staff            @relation(fields: [staffId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([businessId])
+  @@index([branchId])
+  @@index([status])
+}
+

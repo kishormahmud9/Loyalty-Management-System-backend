@@ -25,6 +25,9 @@ import { CustomerRewardRoutes } from "../modules/customers/rewards/rewards.route
 import { CustomerRewardHistoryRoutes } from "../modules/customers/rewardHistory/rewardHistory.route.js";
 import { ActivePlanRoutes } from "../modules/systemOwner/plan/activePlan.route.js";
 
+import staffRoutes from "../modules/staff/customer/customer.route.js";
+import staffTransactionRoutes from "../modules/staff//transaction/transaction.route.js";
+
 export const router = Router();
 
 const moduleRoutes = [
@@ -132,6 +135,17 @@ const moduleRoutes = [
     route: ActivePlanRoutes,
   },
   // system owner ends
+
+  // staff routes
+  {
+    path: "/staff/customers",
+    route: staffRoutes,
+  },
+
+  {
+    path: "/staff/transactions",
+    route: staffTransactionRoutes,
+  },
 ];
 
 moduleRoutes.forEach((route) => {
