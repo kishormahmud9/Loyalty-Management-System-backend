@@ -11,14 +11,18 @@ import { PlanRoutes } from "../modules/systemOwner/plan/plan.route.js";
 
 import { BusinessOwnerSupport } from "../modules/businessOwner/sendSupport/support.route.js";
 import { SubscriptionRoutes } from "../modules/businessOwner/buySubscription/subscription.route.js";
-import { RewardRoutes } from "../modules/businessOwner/rewards/reward.route.js";
+import { RedeemRewardRoutes } from "../modules/businessOwner/redeemReward/redeemReward.route.js";
+import { EarnRewardRoutes } from "../modules/businessOwner/earnReward/earnReward.route.js";
 import { BranchRoute } from "../modules/businessOwner/branchs/branchs.route.js";
 import { ManageStaffRoute } from "../modules/businessOwner/manageStaff/manageStaff.route.js";
+import { AllCustomersRoutes } from "../modules/businessOwner/all-customers/all-customers.route.js";
+import { BusinessRewardHistoryRoutes } from "../modules/businessOwner/rewardHistory/rewardHistory.route.js";
 
 import { CustomerRoutes } from "../modules/customers/customer/customer.route.js";
 import { CustomerAuthRouter } from "../modules/customers/auth/auth.route.js";
 import { CustomerOtpRouter } from "../modules/customers/otp/otp.route.js";
 import { CustomerRewardRoutes } from "../modules/customers/rewards/rewards.route.js";
+import { CustomerRewardHistoryRoutes } from "../modules/customers/rewardHistory/rewardHistory.route.js";
 import { ActivePlanRoutes } from "../modules/systemOwner/plan/activePlan.route.js";
 
 export const router = Router();
@@ -52,6 +56,10 @@ const moduleRoutes = [
     path: "/customer/rewards",
     route: CustomerRewardRoutes,
   },
+  {
+    path: "/customer/reward-history",
+    route: CustomerRewardHistoryRoutes,
+  },
 
   {
     path: "/otp",
@@ -68,8 +76,12 @@ const moduleRoutes = [
     route: SubscriptionRoutes,
   },
   {
-    path: "/business-owner/reward",
-    route: RewardRoutes,
+    path: "/business-owner/redeem-reward",
+    route: RedeemRewardRoutes,
+  },
+  {
+    path: "/business-owner/earn-reward",
+    route: EarnRewardRoutes,
   },
   {
     path: "/business-owner/branchs",
@@ -78,6 +90,14 @@ const moduleRoutes = [
   {
     path: "/business-owner/manage-staff",
     route: ManageStaffRoute,
+  },
+  {
+    path: "/business-owner/all-customers",
+    route: AllCustomersRoutes,
+  },
+  {
+    path: "/business-owner/add-redeem",
+    route: BusinessRewardHistoryRoutes,
   },
   // business owner ends
 

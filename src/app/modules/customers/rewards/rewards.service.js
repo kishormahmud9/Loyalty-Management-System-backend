@@ -17,7 +17,7 @@ const getRewardsByBranch = async (prisma, customerId, branchId) => {
     }
 
     // Get active rewards for the branch
-    const rewards = await prisma.reward.findMany({
+    const rewards = await prisma.redeemReward.findMany({
         where: {
             branchId,
             rewardStatus: "ACTIVE"

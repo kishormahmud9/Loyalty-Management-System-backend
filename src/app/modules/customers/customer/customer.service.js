@@ -65,26 +65,70 @@ export const CustomerService = {
 
   // Register Customer to a Branch
   registerToBranch: async (prisma, customerId, businessId, branchId) => {
-    return prisma.customerBranchData.upsert({
+    // 1. Check if business exists
+    const business = await prisma.business.findUnique({
+      where: { id: businessId }
+    });
+    if (!business) {
+      throw new AppError(404, "Business not found");
+    }
+
+    // 2. Check if branch exists
+    const branch = await prisma.branch.findUnique({
+      where: { id: branchId }
+    });
+    if (!branch) {
+      throw new AppError(404, "Branch not found");
+    }
+
+    // 3. Check if branch belongs to the business
+    if (branch.businessId !== businessId) {
+      throw new AppError(400, "Branch does not belong to the specified business");
+    }
+
+    // 4. Check if already registered
+    const existingRegistration = await prisma.customerBranchData.findUnique({
       where: {
         customerId_branchId: {
           customerId,
           branchId
         }
-      },
-      update: {}, // No updates needed if already exists
-      create: {
-        customerId,
-        businessId,
-        branchId
       }
+    });
+
+    if (existingRegistration) {
+      throw new AppError(400, "Customer is already registered at this branch");
+    }
+
+    // 5. Create registration and initial reward history in a transaction
+    return prisma.$transaction(async (tx) => {
+      const registration = await tx.customerBranchData.create({
+        data: {
+          customerId,
+          businessId,
+          branchId
+        }
+      });
+
+      await tx.rewardHistory.create({
+        data: {
+          customerId,
+          businessId,
+          branchId,
+          rewardPoints: 0,
+          activeRewards: 0,
+          availableRewards: 0
+        }
+      });
+
+      return registration;
     });
   }
 };
 
 
 export const createCustomerService = async (payload) => {
-  const { prisma, email, password, picture, businessId, branchId, ...rest } = payload;
+  const { prisma, email, password, picture, ...rest } = payload;
 
   if (!email || !password) {
     throw new AppError(400, "Email and password are required");
@@ -120,11 +164,6 @@ export const createCustomerService = async (payload) => {
       ...rest,
     },
   });
-
-  // If business and branch provided, register them
-  if (businessId && branchId) {
-    await CustomerService.registerToBranch(prisma, customer.id, businessId, branchId);
-  }
 
   return customer;
 };

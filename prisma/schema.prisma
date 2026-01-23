@@ -96,7 +96,8 @@ model User {
   ticketsCreated  SupportTicket[] @relation("TicketCreator")
   activityLogs    ActivityLog[]
   support         Support[]
-  rewards         Reward[]
+  redeemRewards   RedeemReward[]
+  earnRewards     EarnReward[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -123,7 +124,8 @@ model Customer {
   qrScanner String? // Additional field requested
 
   // Relations
-  branchData CustomerBranchData[]
+  branchData    CustomerBranchData[]
+  rewardHistory RewardHistory[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -184,11 +186,39 @@ enum RewardType {
   REDEEM
 }
 
-model Reward {
+model RedeemReward {
   id String @id @default(uuid())
 
   rewardName          String
   rewardPoints        Int
+  rewardType          RewardType
+  rewardImageFilePath String? // 🔐 internal use
+  rewardImage         String? // 🌍 frontend use
+  expiryDays          Int
+  earningRule         String
+  reward              String
+  rewardStatus        RewardStatus @default(ACTIVE)
+
+  userId     String
+  businessId String
+  branchId   String
+
+  user     User     @relation(fields: [userId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+  branch   Branch   @relation(fields: [branchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([businessId])
+  @@index([branchId])
+}
+
+model EarnReward {
+  id String @id @default(uuid())
+
+  rewardName          String
+  earnPoint           Int
   rewardType          RewardType
   rewardImageFilePath String? // 🔐 internal use
   rewardImage         String? // 🌍 frontend use
@@ -239,12 +269,14 @@ model Business {
   branche            Branch[]
   staff              Staff[]
   loyaltyRule        LoyaltyRule?
-  rewards            Reward[]
+  redeemRewards      RedeemReward[]
+  earnRewards        EarnReward[]
   transactions       PointTransaction[]
   supportTickets     SupportTicket[]
   supports           Support[]
   billings           Billing[]
   customerBranchData CustomerBranchData[]
+  rewardHistory      RewardHistory[]
 
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
@@ -272,9 +304,38 @@ model Branch {
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
   supports           Support[]
-  rewards            Reward[]
+  redeemRewards      RedeemReward[]
+  earnRewards        EarnReward[]
   staff              Staff[]
   customerBranchData CustomerBranchData[]
+  rewardHistory      RewardHistory[]
+}
+
+model RewardHistory {
+  id String @id @default(uuid())
+
+  rewardPoints       Int       @default(0)
+  activeRewards     Int       @default(0)
+  availableRewards  Int       @default(0)
+  lastRewardReceived DateTime?
+  cardExpireDate    DateTime?
+  earningRule       String?
+  walletApp         String? // Google Wallet or Apple Wallet
+
+  customerId String
+  businessId String
+  branchId   String
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+  branch   Branch   @relation(fields: [branchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([customerId, branchId])
+  @@index([businessId])
+  @@index([branchId])
 }
 
 /**

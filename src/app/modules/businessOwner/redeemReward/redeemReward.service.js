@@ -1,9 +1,6 @@
-// reward.service.js
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../../prisma/client.js";
 import { AppError } from "../../../errorHelper/appError.js";
 import { auditLog } from "../../../utils/auditLogger.js";
-
-const prisma = new PrismaClient();
 
 const rewardTypeMap = {
   "Free Item": "FREE_ITEM",
@@ -14,11 +11,11 @@ const rewardTypeMap = {
   REDEEM: "REDEEM",
 };
 
-class RewardService {
+class RedeemRewardService {
   /* =========================
-     CREATE REWARD
+     CREATE REDEEM REWARD
   ========================= */
-  static async createReward(data) {
+  static async createRedeemReward(data) {
     let {
       rewardName,
       rewardPoints,
@@ -60,8 +57,8 @@ class RewardService {
       throw new AppError(400, "expiryDays must be a positive number");
     }
 
-    // ✅ CREATE REWARD
-    const createdReward = await prisma.reward.create({
+    // ✅ CREATE REDEEM REWARD
+    const createdRedeemReward = await prisma.redeemReward.create({
       data: {
         rewardName,
         rewardPoints: points,
@@ -82,7 +79,7 @@ class RewardService {
     auditLog({
       userId,
       businessId,
-      action: "Created new reward",
+      action: "Created new redeem reward",
       actionType: "CREATE",
       metadata: {
         rewardName,
@@ -91,43 +88,43 @@ class RewardService {
       },
     });
 
-    return createdReward;
+    return createdRedeemReward;
   }
 
   /* =========================
-     GET ALL REWARDS
+     GET ALL REDEEM REWARDS
   ========================= */
-  static async getAllRewards() {
-    return prisma.reward.findMany({
+  static async getAllRedeemRewards() {
+    return prisma.redeemReward.findMany({
       orderBy: { createdAt: "desc" },
     });
   }
 
-  static async getRewardById(id) {
-    return prisma.reward.findUnique({
+  static async getRedeemRewardById(id) {
+    return prisma.redeemReward.findUnique({
       where: { id },
     });
   }
 
-  static async getRewardsByBusiness(businessId) {
-    return prisma.reward.findMany({
+  static async getRedeemRewardsByBusiness(businessId) {
+    return prisma.redeemReward.findMany({
       where: { businessId },
       orderBy: { createdAt: "desc" },
     });
   }
 
-  static async getRewardsByBranch(branchId) {
-    return prisma.reward.findMany({
+  static async getRedeemRewardsByBranch(branchId) {
+    return prisma.redeemReward.findMany({
       where: { branchId },
       orderBy: { createdAt: "desc" },
     });
   }
 
   /* =========================
-     UPDATE REWARD
+     UPDATE REDEEM REWARD
   ========================= */
-  static async updateReward(id, data) {
-    if (!id) throw new Error("Reward ID is required");
+  static async updateRedeemReward(id, data) {
+    if (!id) throw new AppError(400, "Redeem Reward ID is required");
 
     const {
       rewardName,
@@ -143,13 +140,22 @@ class RewardService {
       rewardImage,
     } = data;
 
-    const updatedReward = await prisma.reward.update({
+    // 🔁 MAP ENUM if provided
+    let mappedRewardType = undefined;
+    if (rewardType) {
+      mappedRewardType = rewardTypeMap[rewardType];
+      if (!mappedRewardType) {
+        throw new AppError(400, "Invalid rewardType");
+      }
+    }
+
+    const updatedRedeemReward = await prisma.redeemReward.update({
       where: { id },
       data: {
         rewardName,
         rewardPoints:
           rewardPoints !== undefined ? Number(rewardPoints) : undefined,
-        rewardType,
+        rewardType: mappedRewardType,
         rewardStatus,
         expiryDays: expiryDays !== undefined ? Number(expiryDays) : undefined,
         earningRule,
@@ -163,42 +169,42 @@ class RewardService {
 
     // 🔐 AUTO AUDIT LOG
     auditLog({
-      userId: updatedReward.userId,
-      businessId: updatedReward.businessId,
-      action: "Updated reward",
+      userId: updatedRedeemReward.userId,
+      businessId: updatedRedeemReward.businessId,
+      action: "Updated redeem reward",
       actionType: "UPDATE",
       metadata: {
-        rewardId: updatedReward.id,
-        rewardName: updatedReward.rewardName,
-        rewardStatus: updatedReward.rewardStatus,
+        rewardId: updatedRedeemReward.id,
+        rewardName: updatedRedeemReward.rewardName,
+        rewardStatus: updatedRedeemReward.rewardStatus,
       },
     });
 
-    return updatedReward;
+    return updatedRedeemReward;
   }
 
   /* =========================
-     DELETE REWARD
+     DELETE REDEEM REWARD
   ========================= */
-  static async deleteReward(id) {
-    const deletedReward = await prisma.reward.delete({
+  static async deleteRedeemReward(id) {
+    const deletedRedeemReward = await prisma.redeemReward.delete({
       where: { id },
     });
 
     // 🔐 AUTO AUDIT LOG
     auditLog({
-      userId: deletedReward.userId,
-      businessId: deletedReward.businessId,
-      action: "Deleted reward",
+      userId: deletedRedeemReward.userId,
+      businessId: deletedRedeemReward.businessId,
+      action: "Deleted redeem reward",
       actionType: "DELETE",
       metadata: {
-        rewardId: deletedReward.id,
-        rewardName: deletedReward.rewardName,
+        rewardId: deletedRedeemReward.id,
+        rewardName: deletedRedeemReward.rewardName,
       },
     });
 
-    return deletedReward;
+    return deletedRedeemReward;
   }
 }
 
-export default RewardService;
+export default RedeemRewardService;

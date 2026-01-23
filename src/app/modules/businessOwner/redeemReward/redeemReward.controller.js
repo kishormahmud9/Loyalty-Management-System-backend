@@ -1,11 +1,8 @@
-// reward.controller.js
-import RewardService from "./reward.service.js";
+// redeemReward.controller.js
+import RedeemRewardService from "./redeemReward.service.js";
 import { sendResponse } from "../../../utils/sendResponse.js";
 
-
-
-
-class RewardController {
+class RedeemRewardController {
   static async create(req, res) {
     try {
       const userId = req.user?.id;
@@ -39,7 +36,7 @@ class RewardController {
         rewardImage = `${baseUrl}/${rewardImageFilePath}`;
       }
 
-      const reward = await RewardService.createReward({
+      const redeemReward = await RedeemRewardService.createRedeemReward({
         rewardName: req.body.rewardName,
         rewardPoints: req.body.rewardPoints,
         rewardType: req.body.rewardType,   // FREE_ITEM / Free Item / etc
@@ -58,8 +55,8 @@ class RewardController {
       return sendResponse(res, {
         statusCode: 201,
         success: true,
-        message: "Reward created successfully",
-        data: reward,
+        message: "Redeem Reward created successfully",
+        data: redeemReward,
       });
     } catch (error) {
       return sendResponse(res, {
@@ -74,12 +71,12 @@ class RewardController {
 
   static async getAll(req, res) {
     try {
-      const rewards = await RewardService.getAllRewards();
+      const redeemRewards = await RedeemRewardService.getAllRedeemRewards();
       sendResponse(res, {
         statusCode: 200,
         success: true,
-        message: "Rewards retrieved successfully",
-        data: rewards,
+        message: "Redeem Rewards retrieved successfully",
+        data: redeemRewards,
       });
     } catch (error) {
       sendResponse(res, {
@@ -93,13 +90,13 @@ class RewardController {
 
   static async getOne(req, res) {
     try {
-      const reward = await RewardService.getRewardById(req.params.id);
+      const redeemReward = await RedeemRewardService.getRedeemRewardById(req.params.id);
 
-      if (!reward) {
+      if (!redeemReward) {
         return sendResponse(res, {
           statusCode: 404,
           success: false,
-          message: "Reward not found",
+          message: "Redeem Reward not found",
           data: null,
         });
       }
@@ -107,8 +104,8 @@ class RewardController {
       sendResponse(res, {
         statusCode: 200,
         success: true,
-        message: "Reward retrieved successfully",
-        data: reward,
+        message: "Redeem Reward retrieved successfully",
+        data: redeemReward,
       });
     } catch (error) {
       sendResponse(res, {
@@ -122,15 +119,15 @@ class RewardController {
 
   static async getByBusiness(req, res) {
     try {
-      const rewards = await RewardService.getRewardsByBusiness(
+      const redeemRewards = await RedeemRewardService.getRedeemRewardsByBusiness(
         req.params.businessId
       );
 
       sendResponse(res, {
         statusCode: 200,
         success: true,
-        message: "Business rewards retrieved successfully",
-        data: rewards,
+        message: "Business redeem rewards retrieved successfully",
+        data: redeemRewards,
       });
     } catch (error) {
       sendResponse(res, {
@@ -144,15 +141,15 @@ class RewardController {
 
   static async getByBranch(req, res) {
     try {
-      const rewards = await RewardService.getRewardsByBranch(
+      const redeemRewards = await RedeemRewardService.getRedeemRewardsByBranch(
         req.params.branchId
       );
 
       sendResponse(res, {
         statusCode: 200,
         success: true,
-        message: "Branch rewards retrieved successfully",
-        data: rewards,
+        message: "Branch redeem rewards retrieved successfully",
+        data: redeemRewards,
       });
     } catch (error) {
       sendResponse(res, {
@@ -166,7 +163,7 @@ class RewardController {
 
   static async update(req, res) {
     try {
-      const rewardId = req.params.id;
+      const redeemRewardId = req.params.id;
 
       // 🖼️ IMAGE HANDLING
       let rewardImageFilePath = undefined;
@@ -178,8 +175,8 @@ class RewardController {
         rewardImage = `${baseUrl}/${rewardImageFilePath}`;
       }
 
-      const updatedReward = await RewardService.updateReward(
-        rewardId,
+      const updatedRedeemReward = await RedeemRewardService.updateRedeemReward(
+        redeemRewardId,
         {
           ...req.body,
           rewardImageFilePath,
@@ -190,8 +187,8 @@ class RewardController {
       sendResponse(res, {
         statusCode: 200,
         success: true,
-        message: "Reward updated successfully",
-        data: updatedReward,
+        message: "Redeem Reward updated successfully",
+        data: updatedRedeemReward,
       });
     } catch (error) {
       sendResponse(res, {
@@ -205,12 +202,12 @@ class RewardController {
 
   static async remove(req, res) {
     try {
-      await RewardService.deleteReward(req.params.id);
+      await RedeemRewardService.deleteRedeemReward(req.params.id);
 
       sendResponse(res, {
         statusCode: 200,
         success: true,
-        message: "Reward deleted successfully",
+        message: "Redeem Reward deleted successfully",
         data: null,
       });
     } catch (error) {
@@ -224,4 +221,4 @@ class RewardController {
   }
 }
 
-export default RewardController;
+export default RedeemRewardController;

@@ -1,6 +1,6 @@
-// reward.routes.js
+// redeemReward.routes.js
 import express from "express";
-import RewardController from "./reward.controller.js";
+import RedeemRewardController from "./redeemReward.controller.js";
 import { checkAuthMiddleware } from "../../../middleware/checkAuthMiddleware.js";
 import { Role } from "../../../utils/role.js";
 import { upload } from "../../../utils/fileUpload.js";
@@ -11,43 +11,43 @@ router.post(
   "/create",
   checkAuthMiddleware(Role.BUSINESS_OWNER), // 1️⃣ auth FIRST
   upload.single("rewardImage"),                   // 2️⃣ multer
-  RewardController.create                  // 3️⃣ controller
+  RedeemRewardController.create                  // 3️⃣ controller
 );
 router.get(
   "/all",
   checkAuthMiddleware(Role.BUSINESS_OWNER),
-  RewardController.getAll
+  RedeemRewardController.getAll
 );
 
 router.get(
   "/:id",
   checkAuthMiddleware(Role.BUSINESS_OWNER),
-  RewardController.getOne
+  RedeemRewardController.getOne
 );
 
 router.get(
   "/business/:businessId",
   checkAuthMiddleware(Role.BUSINESS_OWNER),
-  RewardController.getByBusiness
+  RedeemRewardController.getByBusiness
 );
 
 router.get(
   "/branch/:branchId",
   checkAuthMiddleware(Role.BUSINESS_OWNER),
-  RewardController.getByBranch
+  RedeemRewardController.getByBranch
 );
 
 router.patch(
   "/:id",
   checkAuthMiddleware(Role.BUSINESS_OWNER),
   upload.single("rewardImage"),
-  RewardController.update
+  RedeemRewardController.update
 );
 
 router.delete(
   "/:id",
   checkAuthMiddleware(Role.BUSINESS_OWNER),
-  RewardController.remove
+  RedeemRewardController.remove
 );
 
-export const RewardRoutes = router;
+export const RedeemRewardRoutes = router;

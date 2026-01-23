@@ -4,6 +4,7 @@ import { StatusCodes } from "http-status-codes";
 
 import { sendResponse } from "../../../utils/sendResponse.js";
 import prisma from "../../../prisma/client.js";
+import { AppError } from "../../../errorHelper/appError.js";
 
 
 const registerCustomer = async (req, res, next) => {
@@ -134,10 +135,11 @@ const updateCustomer = async (req, res) => {
 
 const registerToNewBranch = async (req, res, next) => {
   try {
-    const { customerId, businessId, branchId } = req.body;
+    const customerId = req.user.id;
+    const { businessId, branchId } = req.body;
 
-    if (!customerId || !businessId || !branchId) {
-      throw new AppError(400, "customerId, businessId and branchId are required");
+    if (!businessId || !branchId) {
+      throw new AppError(400, "businessId and branchId are required");
     }
 
     const result = await CustomerService.registerToBranch(prisma, customerId, businessId, branchId);
