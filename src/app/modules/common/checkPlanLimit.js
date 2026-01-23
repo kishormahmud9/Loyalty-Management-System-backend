@@ -32,7 +32,7 @@ export const checkPlanLimit = async ({ businessId, type }) => {
     }
 
     case "CARD": {
-      const count = await prisma.reward.count({ where: { businessId } });
+      const count = await prisma.redeemReward.count({ where: { businessId } });
       if (count >= subscription.maxCards) {
         return { error: "Card limit reached for your plan" };
       }
