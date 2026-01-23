@@ -100,12 +100,28 @@ export const CustomerService = {
       throw new AppError(400, "Customer is already registered at this branch");
     }
 
-    return prisma.customerBranchData.create({
-      data: {
-        customerId,
-        businessId,
-        branchId
-      }
+    // 5. Create registration and initial reward history in a transaction
+    return prisma.$transaction(async (tx) => {
+      const registration = await tx.customerBranchData.create({
+        data: {
+          customerId,
+          businessId,
+          branchId
+        }
+      });
+
+      await tx.rewardHistory.create({
+        data: {
+          customerId,
+          businessId,
+          branchId,
+          rewardPoints: 0,
+          activeRewards: 0,
+          availableRewards: 0
+        }
+      });
+
+      return registration;
     });
   }
 };
