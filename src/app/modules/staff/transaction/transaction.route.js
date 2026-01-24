@@ -4,14 +4,10 @@ import { resolveStaff } from "../../../middleware/staff.middleware.js";
 
 const router = express.Router();
 
-router.get(
-  "/",
-  resolveStaff,
-  transactionController.getBranchTransactions,
-);
+router.get("/", resolveStaff, transactionController.getStaffTransactions);
 
 router.post(
-  "/:transactionId/undo",
+  "/:adjustmentRequestId/undo",
   resolveStaff,
   transactionController.requestUndo,
 );

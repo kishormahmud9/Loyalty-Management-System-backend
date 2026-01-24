@@ -1,115 +1,141 @@
 import prisma from "../../../prisma/client.js";
 
-export const getBranchTransactions = async ({ staff, query }) => {
-  const page = parseInt(query.page) || 1;
-  const limit = parseInt(query.limit) || 10;
+export const getStaffTransactions = async ({ staff, query }) => {
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const branchId = staff.branchId;
-
-  /**
-   * Total transactions (branch-wide)
-   */
-  const total = await prisma.pointTransaction.count({
-    where: { branchId },
-  });
-
-  /**
-   * Fetch transactions
-   */
-  const transactions = await prisma.pointTransaction.findMany({
-    where: { branchId },
-    skip,
-    take: limit,
+  /* ===============================
+     COMPLETED (from PointTransaction)
+  =============================== */
+  const completedTransactions = await prisma.pointTransaction.findMany({
+    where: { branchId: staff.branchId },
     orderBy: { createdAt: "desc" },
-    include: {
-      undoRequests: {
-        where: { status: "APPROVED" },
-        select: { id: true },
-      },
-    },
   });
 
-  /**
-   * Fetch customer names
-   */
-  const customerIds = transactions.map((t) => t.customerId).filter(Boolean);
+  const customerIds = completedTransactions
+    .map((t) => t.customerId)
+    .filter(Boolean);
 
   const customers = await prisma.customer.findMany({
     where: { id: { in: customerIds } },
-    select: {
-      id: true,
-      name: true,
-    },
+    select: { id: true, name: true },
   });
 
-  const customerMap = {};
-  customers.forEach((c) => {
-    customerMap[c.id] = c.name;
-  });
+  const customerMap = Object.fromEntries(customers.map((c) => [c.id, c.name]));
 
-  /**
-   * Shape response
-   */
-  const formatted = transactions.map((tx) => ({
+  const completed = completedTransactions.map((tx) => ({
     id: tx.id,
     date: tx.createdAt,
     type: tx.type,
-    customerName: tx.customerId
-      ? customerMap[tx.customerId] || "Unknown"
-      : "Unknown",
+    customerName: customerMap[tx.customerId] || "Unknown",
     points: tx.points,
-    status: tx.undoRequests.length > 0 ? "Voided" : "Completed",
+    status: "COMPLETED",
+    canUndo: false,
   }));
 
+  /* ===============================
+     PENDING / REJECTED (Adjustments)
+  =============================== */
+  const usedAdjustmentIds = completedTransactions
+    .map((t) => t.adjustmentRequestId)
+    .filter(Boolean);
+
+  const adjustments = await prisma.pointAdjustmentRequest.findMany({
+    where: {
+      branchId: staff.branchId,
+      status: { in: ["PENDING", "REJECTED"] },
+      NOT: { id: { in: usedAdjustmentIds } },
+    },
+    include: {
+      customer: { select: { name: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const pendingAndRejected = adjustments.map((req) => ({
+    id: req.id,
+    date: req.createdAt,
+    type: req.type,
+    customerName: req.customer.name,
+    points: req.points,
+    status: req.status,
+    canUndo: req.status === "PENDING",
+  }));
+
+  /* ===============================
+     MERGE + PAGINATION
+  =============================== */
+  const all = [...pendingAndRejected, ...completed]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(skip, skip + limit);
+
   return {
-    transactions: formatted,
+    transactions: all,
     pagination: {
       page,
       limit,
-      total,
-      totalPages: Math.ceil(total / limit),
+      total: pendingAndRejected.length + completed.length,
+      totalPages: Math.ceil(
+        (pendingAndRejected.length + completed.length) / limit,
+      ),
     },
   };
 };
 
 export const requestUndo = async ({ staff, params, body }) => {
-  const { transactionId } = params;
+  const { adjustmentRequestId } = params;
   const { reason } = body;
 
-  if (!reason || !reason.trim()) {
-    throw new Error("Reason is required");
+  if (!reason?.trim()) {
+    throw new Error("Undo reason is required");
   }
 
-  // 1) Transaction must exist & belong to same branch
-  const transaction = await prisma.pointTransaction.findUnique({
-    where: { id: transactionId },
+  /* 1️⃣ Adjustment must exist */
+  const adjustment = await prisma.pointAdjustmentRequest.findUnique({
+    where: { id: adjustmentRequestId },
   });
 
-  if (!transaction) {
-    throw new Error("Transaction not found");
+  if (!adjustment) {
+    throw new Error("Request not found");
   }
 
-  if (transaction.branchId !== staff.branchId) {
-    throw new Error("You cannot undo transactions from another branch");
+  /* 2️⃣ Branch safety */
+  if (adjustment.branchId !== staff.branchId) {
+    throw new Error("Unauthorized request");
   }
 
-  // 2) Prevent duplicate undo requests (PENDING or APPROVED)
-  const existing = await prisma.transactionUndoRequest.findFirst({
+  /* 3️⃣ Only PENDING allowed */
+  if (adjustment.status !== "PENDING") {
+    throw new Error("Only pending requests can be undone");
+  }
+
+  /* 4️⃣ Only one undo per adjustment */
+  const existingUndo = await prisma.transactionUndoRequest.findFirst({
+    where: { adjustmentRequestId },
+  });
+
+  if (existingUndo) {
+    throw new Error("Undo already requested");
+  }
+
+  /* 5️⃣ Only one undo per customer per staff */
+  const staffCustomerUndo = await prisma.transactionUndoRequest.findFirst({
     where: {
-      transactionId,
-      status: { in: ["PENDING", "APPROVED"] },
+      staffId: staff.id,
+      customerId: adjustment.customerId,
     },
   });
 
-  if (existing) {
-    throw new Error("An undo request already exists for this transaction");
+  if (staffCustomerUndo) {
+    throw new Error("You already used undo for this customer");
   }
 
-  // 3) Create undo request (PENDING)
-  const undoRequest = await prisma.transactionUndoRequest.create({
+  /* 6️⃣ Create undo request */
+  return prisma.transactionUndoRequest.create({
     data: {
-      transactionId,
+      adjustmentRequestId,
+      customerId: adjustment.customerId,
       businessId: staff.businessId,
       branchId: staff.branchId,
       staffId: staff.id,
@@ -117,6 +143,4 @@ export const requestUndo = async ({ staff, params, body }) => {
       status: "PENDING",
     },
   });
-
-  return undoRequest;
 };

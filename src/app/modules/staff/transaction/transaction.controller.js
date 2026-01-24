@@ -1,17 +1,22 @@
 import * as transactionService from "./transaction.service.js";
 
-export const getBranchTransactions = async (req, res) => {
+export const getStaffTransactions = async (req, res) => {
   try {
-    const data = await transactionService.getBranchTransactions(req);
+    const data = await transactionService.getStaffTransactions(req);
 
     return res.status(200).json({
       success: true,
       data,
     });
   } catch (error) {
-    return res.status(400).json({
+    // ⚠️ Server NEVER goes down
+    return res.status(200).json({
       success: false,
-      message: error.message || "Failed to fetch transactions",
+      message: error.message || "Failed to load transactions",
+      data: {
+        transactions: [],
+        pagination: {},
+      },
     });
   }
 };
@@ -19,15 +24,16 @@ export const getBranchTransactions = async (req, res) => {
 export const requestUndo = async (req, res) => {
   try {
     const data = await transactionService.requestUndo(req);
+
     return res.status(201).json({
       success: true,
       message: "Undo request submitted",
       data,
     });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(200).json({
       success: false,
-      message: error.message || "Failed to submit undo request",
+      message: error.message,
     });
   }
 };
