@@ -126,6 +126,7 @@ model Customer {
   // Relations
   branchData    CustomerBranchData[]
   rewardHistory RewardHistory[]
+  reviews       Review[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -284,6 +285,7 @@ model Business {
   activityLogs         ActivityLog[]
   businessSubscription BusinessSubscription?
   staffPermission      StaffPermission?
+  reviews              Review[]
 }
 
 /**
@@ -313,6 +315,7 @@ model Branch {
   
   pointTransactions  PointTransaction[]
   undoRequests      TransactionUndoRequest[]
+  reviews           Review[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -604,5 +607,27 @@ model TransactionUndoRequest {
   @@index([businessId])
   @@index([branchId])
   @@index([status])
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  customerId  String
+  businessId  String
+  branchId    String
+  
+  reviewText  String
+  branchName  String
+  star        Int
+  hideStatus  Boolean  @default(false)
+
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  branch      Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([businessId])
+  @@index([branchId])
 }
 
