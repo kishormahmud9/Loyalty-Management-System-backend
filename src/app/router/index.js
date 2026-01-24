@@ -17,12 +17,15 @@ import { BranchRoute } from "../modules/businessOwner/branchs/branchs.route.js";
 import { ManageStaffRoute } from "../modules/businessOwner/manageStaff/manageStaff.route.js";
 import { AllCustomersRoutes } from "../modules/businessOwner/all-customers/all-customers.route.js";
 import { BusinessRewardHistoryRoutes } from "../modules/businessOwner/rewardHistory/rewardHistory.route.js";
+import { StaffPermissionRoutes } from "../modules/businessOwner/staffPermission/staffPermission.route.js";
+import { BusinessReviewRoutes } from "../modules/businessOwner/review/review.route.js";
 
 import { CustomerRoutes } from "../modules/customers/customer/customer.route.js";
 import { CustomerAuthRouter } from "../modules/customers/auth/auth.route.js";
 import { CustomerOtpRouter } from "../modules/customers/otp/otp.route.js";
 import { CustomerRewardRoutes } from "../modules/customers/rewards/rewards.route.js";
 import { CustomerRewardHistoryRoutes } from "../modules/customers/rewardHistory/rewardHistory.route.js";
+import { CustomerReviewRoutes } from "../modules/customers/review/review.route.js";
 import { ActivePlanRoutes } from "../modules/systemOwner/plan/activePlan.route.js";
 
 import staffRoutes from "../modules/staff/customer/customer.route.js";
@@ -63,6 +66,10 @@ const moduleRoutes = [
     path: "/customer/reward-history",
     route: CustomerRewardHistoryRoutes,
   },
+  {
+    path: "/customer/reviews-creation",
+    route: CustomerReviewRoutes,
+  },
 
   {
     path: "/otp",
@@ -101,6 +108,14 @@ const moduleRoutes = [
   {
     path: "/business-owner/add-redeem",
     route: BusinessRewardHistoryRoutes,
+  },
+  {
+    path: "/business-owner/staff-permission",
+    route: StaffPermissionRoutes,
+  },
+  {
+    path: "/business-owner/reviews",
+    route: BusinessReviewRoutes,
   },
   // business owner ends
 
