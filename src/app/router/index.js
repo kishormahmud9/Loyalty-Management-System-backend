@@ -17,6 +17,7 @@ import { BranchRoute } from "../modules/businessOwner/branchs/branchs.route.js";
 import { ManageStaffRoute } from "../modules/businessOwner/manageStaff/manageStaff.route.js";
 import { AllCustomersRoutes } from "../modules/businessOwner/all-customers/all-customers.route.js";
 import { BusinessRewardHistoryRoutes } from "../modules/businessOwner/rewardHistory/rewardHistory.route.js";
+import { StaffPermissionRoutes } from "../modules/businessOwner/staffPermission/staffPermission.route.js";
 
 import { CustomerRoutes } from "../modules/customers/customer/customer.route.js";
 import { CustomerAuthRouter } from "../modules/customers/auth/auth.route.js";
@@ -101,6 +102,10 @@ const moduleRoutes = [
   {
     path: "/business-owner/add-redeem",
     route: BusinessRewardHistoryRoutes,
+  },
+  {
+    path: "/business-owner/staff-permission",
+    route: StaffPermissionRoutes,
   },
   // business owner ends
 
