@@ -126,6 +126,7 @@ model Customer {
   // Relations
   branchData    CustomerBranchData[]
   rewardHistory RewardHistory[]
+  sessions      CustomerSession[]
   reviews       Review[]
 
   createdAt DateTime @default(now())
@@ -146,6 +147,20 @@ model CustomerBranchData {
   updatedAt DateTime @updatedAt
 
   @@unique([customerId, branchId])
+}
+
+model CustomerSession {
+  id          String   @id @default(uuid())
+  customerId  String
+  refreshHash String
+  userAgent   String?
+  ipAddress   String?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
 }
 
 // Business Owner Starts 
@@ -284,8 +299,8 @@ model Business {
   updatedAt            DateTime              @updatedAt
   activityLogs         ActivityLog[]
   businessSubscription BusinessSubscription?
-  staffPermission      StaffPermission?
   reviews              Review[]
+  staffPermission      StaffPermission?
 }
 
 /**
@@ -370,23 +385,8 @@ model Staff {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
+  
 
-model StaffPermission {
-  id                        String  @id @default(uuid())
-  businessId                String  @unique
-  allowAddingPoints         Boolean @default(false)
-  allowRedeeming            Boolean @default(false)
-  allowVoids                Boolean @default(false)
-  viewCustomerList          Boolean @default(false)
-  allowViewingActiveOffers  Boolean @default(false)
-  editLoyaltyRulesOrOffers  Boolean @default(false)
-  addRemoveOtherStaff       Boolean @default(false)
-
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 /**
@@ -604,30 +604,43 @@ model TransactionUndoRequest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([businessId])
   @@index([branchId])
   @@index([status])
 }
 
 model Review {
-  id          String   @id @default(uuid())
-  customerId  String
-  businessId  String
-  branchId    String
-  
-  reviewText  String
-  branchName  String
-  star        Int
-  hideStatus  Boolean  @default(false)
+  id         String   @id @default(uuid())
+  customerId String
+  businessId String
+  branchId   String
+  reviewText String
+  branchName String
+  star       Int
+  hideStatus Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  branch      Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  branch   Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([branchId])
+}
+
+model StaffPermission {
+  id                       String   @id @default(uuid())
+  businessId               String   @unique
+  allowAddingPoints        Boolean  @default(false)
+  allowRedeeming           Boolean  @default(false)
+  allowVoids               Boolean  @default(false)
+  viewCustomerList         Boolean  @default(false)
+  allowViewingActiveOffers Boolean  @default(false)
+  editLoyaltyRulesOrOffers Boolean  @default(false)
+  addRemoveOtherStaff      Boolean  @default(false)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
 

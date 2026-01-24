@@ -6,7 +6,7 @@ export const customerAuthMiddleware = async (req, res, next) => {
     console.log("🔥 Customer Auth middleware hit:", req.originalUrl);
 
     try {
-        let token = req.headers.authorization;
+        let token = req.headers.authorization || req.cookies?.accessToken || req.headers.accesstoken;
 
         if (!token) {
             return res.status(401).json({

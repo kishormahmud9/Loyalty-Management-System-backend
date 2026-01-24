@@ -1,6 +1,5 @@
 import { OtpService } from "./otp.service.js";
 import { sendResponse } from "../../../utils/sendResponse.js";
-import { AppError } from "../../../errorHelper/appError.js";
 import prisma from "../../../prisma/client.js";
 
 const sendOtp = async (req, res, next) => {
