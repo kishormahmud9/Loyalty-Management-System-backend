@@ -128,6 +128,9 @@ model Customer {
   rewardHistory RewardHistory[]
   sessions      CustomerSession[]
   reviews       Review[]
+  undoRequests      TransactionUndoRequest[]
+  adjustmentRequests PointAdjustmentRequest[]
+
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -294,6 +297,8 @@ model Business {
   customerBranchData CustomerBranchData[]
   rewardHistory      RewardHistory[]
   undoRequests TransactionUndoRequest[]
+  adjustmentRequests PointAdjustmentRequest[]
+
 
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
@@ -330,6 +335,8 @@ model Branch {
   
   pointTransactions  PointTransaction[]
   undoRequests      TransactionUndoRequest[]
+  adjustmentRequests PointAdjustmentRequest[]
+
   reviews           Review[]
 
   createdAt DateTime @default(now())
@@ -382,6 +389,8 @@ model Staff {
   branch    Branch   @relation(fields: [branchId], references: [id])
   
   undoRequests TransactionUndoRequest[]
+  adjustmentRequests PointAdjustmentRequest[]
+
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -415,25 +424,29 @@ model LoyaltyRule {
  */
 
 model PointTransaction {
-  id          String          @id @default(uuid())
-  businessId  String
-  branchId    String          
-  staffId     String?
-  customerId  String?
-  points      Int
-  type        TransactionType
+  id                  String @id @default(uuid())
 
+  businessId           String
+  branchId             String
+  staffId              String?
+  customerId           String?
+
+  points               Int
+  type                 TransactionType
+
+  // 🔗 link to adjustment request (APPROVED only)
+  adjustmentRequestId  String? @unique
+  adjustmentRequest    PointAdjustmentRequest? @relation(fields: [adjustmentRequestId], references: [id])
+
+  // 🔁 REQUIRED opposite relations
   business Business @relation(fields: [businessId], references: [id])
   branch   Branch   @relation(fields: [branchId], references: [id])
 
-  undoRequests TransactionUndoRequest[]
-
   createdAt DateTime @default(now())
 
-  @@index([branchId])
   @@index([businessId])
+  @@index([branchId])
 }
-
 /**
  * =========================
  * SUPPORT TICKET
@@ -581,31 +594,32 @@ enum UndoRequestStatus {
   REJECTED
 }
 
-
 model TransactionUndoRequest {
   id String @id @default(uuid())
 
-  transactionId String
-  businessId    String
-  branchId      String
-  staffId       String
-  reason        String
+  adjustmentRequestId String   
+  customerId          String
+  businessId          String
+  branchId            String
+  staffId             String
+  reason              String
 
   status UndoRequestStatus @default(PENDING)
 
-  reviewedBy String?   // business owner userId
+  reviewedBy String?
   reviewedAt DateTime?
 
-  transaction PointTransaction @relation(fields: [transactionId], references: [id])
-  business    Business         @relation(fields: [businessId], references: [id])
-  branch      Branch           @relation(fields: [branchId], references: [id])
-  staff       Staff            @relation(fields: [staffId], references: [id])
+  // ❌ NO Prisma relation to PointAdjustmentRequest
+  customer Customer @relation(fields: [customerId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+  branch   Branch   @relation(fields: [branchId], references: [id])
+  staff    Staff    @relation(fields: [staffId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([branchId])
-  @@index([status])
+  @@index([staffId, customerId])
+  @@index([adjustmentRequestId])
 }
 
 model Review {
@@ -644,3 +658,41 @@ model StaffPermission {
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
 
+enum AdjustmentType {
+  ADD
+  REDEEM
+  UNDO
+}
+
+model PointAdjustmentRequest {
+  id           String @id @default(uuid())
+
+  type         AdjustmentType
+  points       Int
+
+  customerId   String
+  staffId      String
+  businessId   String
+  branchId     String
+
+  reason       String?
+  status       UndoRequestStatus @default(PENDING)
+
+  reviewedBy   String?
+  reviewedAt   DateTime?
+
+  // 🔁 reverse relation (THIS FIXES THE ERROR)
+  transaction  PointTransaction?
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  staff    Staff    @relation(fields: [staffId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+  branch   Branch   @relation(fields: [branchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([staffId, customerId])
+  @@index([branchId])
+  @@index([status])
+}

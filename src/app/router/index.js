@@ -29,7 +29,9 @@ import { CustomerReviewRoutes } from "../modules/customers/review/review.route.j
 import { ActivePlanRoutes } from "../modules/systemOwner/plan/activePlan.route.js";
 
 import staffRoutes from "../modules/staff/customer/customer.route.js";
-import staffTransactionRoutes from "../modules/staff//transaction/transaction.route.js";
+import transactionRoutes from "../modules/staff/transaction/transaction.route.js";
+import addRedeemRoutes from "../modules/staff/addRedeem/addRedeem.route.js";
+import staffRewardRoutes from "../modules/staff/reward/reward.route.js";
 
 export const router = Router();
 
@@ -159,7 +161,17 @@ const moduleRoutes = [
 
   {
     path: "/staff/transactions",
-    route: staffTransactionRoutes,
+    route: transactionRoutes,
+  },
+
+  {
+    path: "/staff/add-redeem",
+    route: addRedeemRoutes,
+  },
+
+  {
+    path: "/staff/rewards",
+    route: staffRewardRoutes,
   },
 ];
 
