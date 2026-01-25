@@ -3,15 +3,19 @@ import { envVars } from "../config/env.js";
 
 import { generateToken, verifyToken } from "./jwt.js";
 import { AppError } from "../errorHelper/appError.js";
+import { AuthService } from "../modules/auth/auth.service.js";
 
 
 //  CREATE USER TOKENS
 
-export const createUserTokens = (user) => {
+export const createUserTokens = (user, context = {}) => {
   const jwtPayload = {
     id: user.id, // Standardized to 'id'
     email: user.email,
     role: user.role,
+    businessId: context.businessId || null,
+    branchId: context.branchId || null,
+    staffId: context.staffId || null,
   };
 
   const accessToken = generateToken(
@@ -50,10 +54,14 @@ export const createNewAccessTokenUsingRefreshToken = async (
     );
   }
 
+  const context = await AuthService.getUserContext(prisma, isUser.id, isUser.role);
+
   const jwtPayload = {
     id: isUser.id,
     email: isUser.email,
     role: isUser.role,
+    businessId: context.businessId || null,
+    branchId: context.branchId || null,
   };
 
   const accessToken = generateToken(

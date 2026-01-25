@@ -1,52 +1,66 @@
 // redeemReward.routes.js
 import express from "express";
 import RedeemRewardController from "./redeemReward.controller.js";
-import { checkAuthMiddleware } from "../../../middleware/checkAuthMiddleware.js";
-import { Role } from "../../../utils/role.js";
+import { authenticate, authorize, businessScope } from "../../../middleware/auth.middleware.js";
+import { PERMISSIONS } from "../../../config/permissions.js";
 import { upload } from "../../../utils/fileUpload.js";
 
 const router = express.Router();
 
 router.post(
   "/create",
-  checkAuthMiddleware(Role.BUSINESS_OWNER), // 1️⃣ auth FIRST
+  authenticate,
+  authorize(PERMISSIONS.BUSINESS.UPDATE),
+  businessScope,
   upload.single("rewardImage"),                   // 2️⃣ multer
   RedeemRewardController.create                  // 3️⃣ controller
 );
 router.get(
   "/all",
-  checkAuthMiddleware(Role.BUSINESS_OWNER),
+  authenticate,
+  authorize(PERMISSIONS.BUSINESS.READ),
+  businessScope,
   RedeemRewardController.getAll
 );
 
 router.get(
   "/:id",
-  checkAuthMiddleware(Role.BUSINESS_OWNER),
+  authenticate,
+  authorize(PERMISSIONS.BUSINESS.READ),
+  businessScope,
   RedeemRewardController.getOne
 );
 
 router.get(
   "/business/:businessId",
-  checkAuthMiddleware(Role.BUSINESS_OWNER),
+  authenticate,
+  authorize(PERMISSIONS.BUSINESS.READ),
+  businessScope,
   RedeemRewardController.getByBusiness
 );
 
 router.get(
   "/branch/:branchId",
-  checkAuthMiddleware(Role.BUSINESS_OWNER),
+  authenticate,
+  authorize(PERMISSIONS.BUSINESS.READ),
+  businessScope,
   RedeemRewardController.getByBranch
 );
 
 router.patch(
   "/:id",
-  checkAuthMiddleware(Role.BUSINESS_OWNER),
+  authenticate,
+  authorize(PERMISSIONS.BUSINESS.UPDATE),
+  businessScope,
   upload.single("rewardImage"),
   RedeemRewardController.update
 );
 
 router.delete(
   "/:id",
-  checkAuthMiddleware(Role.BUSINESS_OWNER),
+  authenticate,
+  authorize(PERMISSIONS.BUSINESS.UPDATE),
+  businessScope,
   RedeemRewardController.remove
 );
 

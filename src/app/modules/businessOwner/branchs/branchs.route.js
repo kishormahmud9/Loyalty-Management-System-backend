@@ -2,16 +2,16 @@
 
 import { Router } from 'express'
 import { BranchController } from './branchs.controller.js'
-import { checkAuthMiddleware } from '../../../middleware/checkAuthMiddleware.js'
-import { Role } from '../../../utils/role.js'
+import { authenticate, authorize, businessScope } from "../../../middleware/auth.middleware.js";
+import { PERMISSIONS } from "../../../config/permissions.js";
 
 
 const router = Router()
 
-router.post('/create', checkAuthMiddleware(Role.BUSINESS_OWNER), BranchController.create)
-router.get('/', checkAuthMiddleware(Role.BUSINESS_OWNER), BranchController.findAll)
-router.get('/:id', checkAuthMiddleware(Role.BUSINESS_OWNER), BranchController.findOne)
-router.put('/:id', checkAuthMiddleware(Role.BUSINESS_OWNER), BranchController.update)
-router.delete('/:id', checkAuthMiddleware(Role.BUSINESS_OWNER), BranchController.delete)
+router.post('/create', authenticate, authorize(PERMISSIONS.BRANCH.CREATE), businessScope, BranchController.create)
+router.get('/', authenticate, authorize(PERMISSIONS.BRANCH.READ), businessScope, BranchController.findAll)
+router.get('/:id', authenticate, authorize(PERMISSIONS.BRANCH.READ), businessScope, BranchController.findOne)
+router.put('/:id', authenticate, authorize(PERMISSIONS.BRANCH.UPDATE), businessScope, BranchController.update)
+router.delete('/:id', authenticate, authorize(PERMISSIONS.BRANCH.DELETE), businessScope, BranchController.delete)
 
 export const BranchRoute = router
