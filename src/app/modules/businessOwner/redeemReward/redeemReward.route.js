@@ -39,6 +39,7 @@ router.get(
   RedeemRewardController.getByBusiness
 );
 
+
 router.get(
   "/branch/:branchId",
   authenticate,
