@@ -24,7 +24,8 @@ export const getTenantListService = async (prisma, query) => {
         },
         _count: {
           select: {
-            branche: {
+            branches: {
+              // ✅ FIXED
               where: { isActive: true },
             },
           },
@@ -50,7 +51,7 @@ export const getTenantListService = async (prisma, query) => {
         email: b.owner.email,
         createdOn: b.createdAt,
         subscription,
-        location: `${b._count.branche} Location`,
+        location: `${b._count.branches} Location`, // ✅ FIXED
         status: b.isActive ? "Active" : "Inactive",
       };
     }),
@@ -132,7 +133,9 @@ export const createTenantService = async (prisma, payload) => {
 ========================= */
 export const getTenantDetailsService = async (prisma, tenantId) => {
   if (!tenantId) {
-    throw new Error("Tenant ID is required");
+    const error = new Error("Tenant ID is required");
+    error.statusCode = 400;
+    throw error;
   }
 
   const business = await prisma.business.findUnique({
@@ -146,7 +149,8 @@ export const getTenantDetailsService = async (prisma, tenantId) => {
           address: true,
         },
       },
-      branche: {
+      branches: {
+        // ✅ FIXED
         orderBy: { createdAt: "asc" },
         select: {
           id: true,
@@ -191,9 +195,9 @@ export const getTenantDetailsService = async (prisma, tenantId) => {
       isActive: business.isActive,
       trialEndsAt: business.trialEndsAt,
     },
-    branches: business.branche,
+    branches: business.branches, // ✅ FIXED
     stats: {
-      totalBranches: business.branche.length,
+      totalBranches: business.branches.length, // ✅ FIXED
       planType,
       billingStatus,
     },

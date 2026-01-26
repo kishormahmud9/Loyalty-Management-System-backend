@@ -11,14 +11,14 @@ import { sendResponse } from "../../../utils/sendResponse.js";
 export const getTenantList = async (req, res) => {
   try {
     // 🔐 SYSTEM OWNER ONLY
-    // if (req.user.role !== "SYSTEM_OWNER") {
-    //   return sendResponse(res, {
-    //     statusCode: 403,
-    //     success: false,
-    //     message: "Access denied",
-    //     data: null,
-    //   });
-    // }
+    if (req.user.role !== "SYSTEM_OWNER") {
+      return sendResponse(res, {
+        statusCode: 403,
+        success: false,
+        message: "Access denied",
+        data: null,
+      });
+    }
 
     const result = await getTenantListService(req.prisma, req.query);
 
