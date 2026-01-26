@@ -172,36 +172,70 @@ const getHistoryByQrCode = async (data) => {
         throw new AppError(400, "qrCode is required");
     }
 
-    // 1. Resolve and Verify businessId and branchId (same logic as increaseRewardPoints)
+    // 1. Resolve and Verify businessId and branchId
     const staffProfile = await prisma.staff.findUnique({
         where: { userId: loggedInUserId }
     });
 
     if (staffProfile) {
+        // Staff member: use their fixed business and branch
+        if (businessId && businessId !== staffProfile.businessId) {
+            throw new AppError(403, "You do not have access to this business");
+        }
+        if (branchId && branchId !== staffProfile.branchId) {
+            throw new AppError(403, "You do not have access to this branch");
+        }
         businessId = staffProfile.businessId;
         branchId = staffProfile.branchId;
     } else {
-        if (!businessId) {
+        // Business Owner: Verify or Infer
+        if (businessId) {
+            const business = await prisma.business.findFirst({
+                where: { id: businessId, ownerId: loggedInUserId }
+            });
+            if (!business) {
+                throw new AppError(403, "You do not own this business");
+            }
+        } else {
+            // Try to infer business
             const ownerBusinesses = await prisma.business.findMany({
                 where: { ownerId: loggedInUserId }
             });
-            if (ownerBusinesses.length === 1) businessId = ownerBusinesses[0].id;
-            else if (ownerBusinesses.length > 1) {
+            if (ownerBusinesses.length === 1) {
+                businessId = ownerBusinesses[0].id;
+            } else if (ownerBusinesses.length === 0) {
+                throw new AppError(403, "You do not own any business");
+            } else {
                 // If branchId is provided, we can find businessId from it
                 if (branchId) {
                     const branch = await prisma.branch.findUnique({ where: { id: branchId } });
                     if (branch) businessId = branch.businessId;
                 }
+                if (!businessId) {
+                    throw new AppError(400, "businessId is required (multiple businesses found)");
+                }
             }
         }
-        if (!branchId && businessId) {
-            const branches = await prisma.branch.findMany({ where: { businessId } });
-            if (branches.length === 1) branchId = branches[0].id;
-        }
-    }
 
-    if (!businessId || !branchId) {
-        throw new AppError(400, "Could not determine business or branch context. Please provide IDs.");
+        if (!branchId) {
+            // Try to infer branch
+            const branches = await prisma.branch.findMany({
+                where: { businessId }
+            });
+            if (branches.length === 1) {
+                branchId = branches[0].id;
+            } else {
+                throw new AppError(400, "branchId is required (multiple branches found)");
+            }
+        } else {
+            // Verify branch belongs to the business
+            const branch = await prisma.branch.findFirst({
+                where: { id: branchId, businessId }
+            });
+            if (!branch) {
+                throw new AppError(400, "Branch does not belong to chosen business or does not exist");
+            }
+        }
     }
 
     // 2. Find customer

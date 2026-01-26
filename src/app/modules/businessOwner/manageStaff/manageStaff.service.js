@@ -118,9 +118,30 @@ export const StaffService = {
     });
   },
 
-  remove(prisma, id, businessId) {
-    return prisma.staff.deleteMany({
-      where: { id, businessId },
+  async remove(prisma, id, businessId) {
+    return await prisma.$transaction(async (tx) => {
+      // 1. Find staff to get userId and check ownership
+      const staff = await tx.staff.findFirst({
+        where: { id, businessId },
+      });
+
+      if (!staff) {
+        const error = new Error("Staff not found or access denied");
+        error.statusCode = 404;
+        throw error;
+      }
+
+      // 2. Delete Staff record first (due to foreign key)
+      await tx.staff.delete({
+        where: { id },
+      });
+
+      // 3. Delete associated User record
+      await tx.user.delete({
+        where: { id: staff.userId },
+      });
+
+      return { success: true };
     });
   },
 }
