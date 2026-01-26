@@ -54,7 +54,19 @@ const claimReward = async (prisma, customerId, redeemRewardId) => {
             throw new AppError(404, "Redeem Reward not found");
         }
 
-        // 2. Check if customer has enough points in this branch
+        // 2. Check if already claimed
+        const existingClaim = await tx.claimReward.findFirst({
+            where: {
+                customerId,
+                redeemRewardId
+            }
+        });
+
+        if (existingClaim) {
+            throw new AppError(400, "You have already claimed this reward");
+        }
+
+        // 3. Check if customer has enough points in this branch
         const history = await tx.rewardHistory.findUnique({
             where: {
                 customerId_branchId: {
