@@ -64,6 +64,11 @@ enum BillingStatus {
   FAILED
 }
 
+enum ClaimStatus {
+  CLAIM
+  CLAIMED
+}
+
 /**
  * =========================
  * USER
@@ -128,8 +133,9 @@ model Customer {
   rewardHistory RewardHistory[]
   sessions      CustomerSession[]
   reviews       Review[]
-  undoRequests      TransactionUndoRequest[]
+  undoRequests       TransactionUndoRequest[]
   adjustmentRequests PointAdjustmentRequest[]
+  claims             ClaimReward[]
 
 
   createdAt DateTime @default(now())
@@ -226,10 +232,30 @@ model RedeemReward {
   business Business @relation(fields: [businessId], references: [id])
   branch   Branch   @relation(fields: [branchId], references: [id])
 
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  claims    ClaimReward[]
+
+  @@index([businessId])
+  @@index([branchId])
+}
+
+model ClaimReward {
+  id String @id @default(uuid())
+
+  redeemRewardId String
+  branchId       String
+  customerId     String
+  claimStatus    ClaimStatus @default(CLAIM)
+
+  redeemReward RedeemReward @relation(fields: [redeemRewardId], references: [id])
+  branch       Branch       @relation(fields: [branchId], references: [id])
+  customer     Customer     @relation(fields: [customerId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([businessId])
+  @@index([customerId])
   @@index([branchId])
 }
 
@@ -337,6 +363,7 @@ model Branch {
   adjustmentRequests PointAdjustmentRequest[]
 
   reviews           Review[]
+  claims            ClaimReward[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

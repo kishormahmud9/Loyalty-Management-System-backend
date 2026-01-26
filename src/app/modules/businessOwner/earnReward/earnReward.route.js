@@ -39,12 +39,12 @@ router.get(
     businessScope,
     EarnRewardController.getByBusiness
 );
-
+// this is for customer only,,, no auth middleware
 router.get(
-    "/branch/:branchId",
-    authenticate,
-    authorize(PERMISSIONS.BUSINESS.READ),
-    businessScope,
+    "/all/:branchId",
+    // authenticate,
+    // authorize(PERMISSIONS.BUSINESS.READ),
+    // businessScope,
     EarnRewardController.getByBranch
 );
 
