@@ -9,7 +9,7 @@ import { PERMISSIONS } from "../../../config/permissions.js";
 const router = Router()
 
 router.post('/create', authenticate, authorize(PERMISSIONS.STAFF.CREATE), businessScope, StaffController.create)
-router.get('/', authenticate, authorize(PERMISSIONS.STAFF.READ), businessScope, StaffController.findAll)
+router.get('/all/:branchId', authenticate, authorize(PERMISSIONS.STAFF.READ), businessScope, StaffController.findAll)
 router.get('/:id', authenticate, authorize(PERMISSIONS.STAFF.READ), businessScope, StaffController.findOne)
 router.put('/:id', authenticate, authorize(PERMISSIONS.STAFF.UPDATE), businessScope, StaffController.update)
 
