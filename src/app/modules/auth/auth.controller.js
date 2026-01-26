@@ -29,7 +29,8 @@ const credentialLogin = async (req, res, next) => {
         }
 
         // Generate access & refresh tokens
-        const userToken = await createUserTokens(user);
+        const context = await AuthService.getUserContext(prisma, user.id, user.role);
+        const userToken = await createUserTokens(user, context);
 
         // Remove sensitive fields before sending user
         const { passwordHash, ...saveUser } = user;
@@ -91,8 +92,17 @@ const getNewAccessToken = async (req, res, next) => {
       );
     }
 
+    const context = await AuthService.getUserContext(prisma, user.id, user.role);
+
     const newAccessToken = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        businessId: context.businessId || null,
+        branchId: context.branchId || null,
+        staffId: context.staffId || null
+      },
       envVars.JWT_SECRET_TOKEN,
       { expiresIn: envVars.JWT_EXPIRES_IN }
     );
@@ -239,7 +249,8 @@ const googleCallback = async (req, res, next) => {
     }
 
     // Generate tokens
-    const tokenInfo = await createUserTokens(user);
+    const context = await AuthService.getUserContext(prisma, user.id, user.role);
+    const tokenInfo = await createUserTokens(user, context);
 
     // Set auth cookies
     setAuthCookie(res, tokenInfo);

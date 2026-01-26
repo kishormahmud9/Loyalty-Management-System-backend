@@ -1,6 +1,7 @@
 import { envVars } from "../../config/env.js";
 import { sendEmail } from "../../utils/sendEmail.js";
 import jwt from "jsonwebtoken";
+import { Role } from "../../utils/role.js";
 
 import { StatusCodes } from "http-status-codes";
 import bcrypt from "bcrypt";
@@ -52,6 +53,32 @@ export const AuthService = {
     });
 
     return true;
+  },
+
+  getUserContext: async (prisma, userId, role) => {
+    let context = { businessId: null, branchId: null };
+
+    if (role === Role.BUSINESS_OWNER) {
+      const business = await prisma.business.findFirst({
+        where: { ownerId: userId },
+        select: { id: true },
+      });
+      if (business) {
+        context.businessId = business.id;
+      }
+    } else if (role === Role.STAFF) {
+      const staff = await prisma.staff.findUnique({
+        where: { userId: userId },
+        select: { id: true, businessId: true, branchId: true },
+      });
+      if (staff) {
+        context.staffId = staff.id;
+        context.businessId = staff.businessId;
+        context.branchId = staff.branchId;
+      }
+    }
+
+    return context;
   },
 };
 
