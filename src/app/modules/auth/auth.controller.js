@@ -1,4 +1,3 @@
-
 import { AuthService, forgotPasswordService } from "./auth.service.js";
 import { OtpService } from "../otp/otp.service.js";
 import jwt from "jsonwebtoken";
@@ -23,13 +22,17 @@ const credentialLogin = async (req, res, next) => {
           return next(
             new AppError(
               StatusCodes.FORBIDDEN,
-              info?.message || "Authentication failed"
-            )
+              info?.message || "Authentication failed",
+            ),
           );
         }
 
         // Generate access & refresh tokens
-        const context = await AuthService.getUserContext(prisma, user.id, user.role);
+        const context = await AuthService.getUserContext(
+          prisma,
+          user.id,
+          user.role,
+        );
         const userToken = await createUserTokens(user, context);
 
         // Remove sensitive fields before sending user
@@ -68,7 +71,7 @@ const getNewAccessToken = async (req, res, next) => {
     if (!refreshToken) {
       throw new AppError(
         StatusCodes.BAD_REQUEST,
-        "No refresh token received from cookies"
+        "No refresh token received from cookies",
       );
     }
 
@@ -88,11 +91,15 @@ const getNewAccessToken = async (req, res, next) => {
     if (!user.isVerified) {
       throw new AppError(
         StatusCodes.FORBIDDEN,
-        "User is not verified. Please verify your email."
+        "User is not verified. Please verify your email.",
       );
     }
 
-    const context = await AuthService.getUserContext(prisma, user.id, user.role);
+    const context = await AuthService.getUserContext(
+      prisma,
+      user.id,
+      user.role,
+    );
 
     const newAccessToken = jwt.sign(
       {
@@ -101,10 +108,10 @@ const getNewAccessToken = async (req, res, next) => {
         role: user.role,
         businessId: context.businessId || null,
         branchId: context.branchId || null,
-        staffId: context.staffId || null
+        staffId: context.staffId || null,
       },
       envVars.JWT_SECRET_TOKEN,
-      { expiresIn: envVars.JWT_EXPIRES_IN }
+      { expiresIn: envVars.JWT_EXPIRES_IN },
     );
 
     setAuthCookie(res, {
@@ -191,7 +198,11 @@ const verifyForgotPasswordOtp = async (req, res, next) => {
       });
     }
 
-    const resetToken = await OtpService.verifyForgotPasswordOtp(prisma, email, otp);
+    const resetToken = await OtpService.verifyForgotPasswordOtp(
+      prisma,
+      email,
+      otp,
+    );
 
     sendResponse(res, {
       success: true,
@@ -249,7 +260,11 @@ const googleCallback = async (req, res, next) => {
     }
 
     // Generate tokens
-    const context = await AuthService.getUserContext(prisma, user.id, user.role);
+    const context = await AuthService.getUserContext(
+      prisma,
+      user.id,
+      user.role,
+    );
     const tokenInfo = await createUserTokens(user, context);
 
     // Set auth cookies
