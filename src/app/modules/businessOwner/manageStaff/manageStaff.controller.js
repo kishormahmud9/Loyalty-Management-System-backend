@@ -8,86 +8,118 @@ import { StaffService } from "./manageStaff.service.js"
 export const StaffController = {
   create: async (req, res, next) => {
     try {
-      const staff = await StaffService.create(
-        req.prisma,
-        req.body
-      )
+      const { name, email, password, branchId } = req.body;
+      const { businessId } = req.user;
 
-      res.status(201).json(staff)
+      const staff = await StaffService.create(req.prisma, {
+        name,
+        email,
+        password,
+        branchId,
+        businessId,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "Staff created successfully",
+        data: staff,
+      });
     } catch (err) {
-      next(err)
+      next(err);
     }
   },
 
   findAll: async (req, res, next) => {
     try {
-      const { businessId, branchId, isActive } = req.query
+      const { branchId } = req.params;
+      const { isActive } = req.query;
+      const { businessId } = req.user;
 
-      const staffs = await StaffService.findAll(
-        req.prisma,
-        {
-          businessId,
-          branchId,
-          isActive: isActive ? isActive === 'true' : undefined,
-        }
-      )
+      const staffs = await StaffService.findAll(req.prisma, {
+        businessId,
+        branchId,
+        isActive: isActive ? isActive === "true" : undefined,
+      });
 
-      res.json(staffs)
+      res.json({
+        success: true,
+        message: "Staff retrieved successfully",
+        data: staffs,
+      });
     } catch (err) {
-      next(err)
+      next(err);
     }
   },
 
   findOne: async (req, res, next) => {
     try {
+      const { businessId } = req.user;
       const staff = await StaffService.findById(
         req.prisma,
-        req.params.id
-      )
+        req.params.id,
+        businessId
+      );
 
-      res.json(staff)
+      res.json({
+        success: true,
+        message: "Staff details retrieved",
+        data: staff,
+      });
     } catch (err) {
-      next(err)
+      next(err);
     }
   },
 
   update: async (req, res, next) => {
     try {
+      const { businessId } = req.user;
       const staff = await StaffService.update(
         req.prisma,
         req.params.id,
+        businessId,
         req.body
-      )
+      );
 
-      res.json(staff)
+      res.json({
+        success: true,
+        message: "Staff updated successfully",
+        data: staff,
+      });
     } catch (err) {
-      next(err)
+      next(err);
     }
   },
 
   deactivate: async (req, res, next) => {
     try {
+      const { businessId } = req.user;
       const staff = await StaffService.deactivate(
         req.prisma,
-        req.params.id
-      )
+        req.params.id,
+        businessId
+      );
 
-      res.json(staff)
+      res.json({
+        success: true,
+        message: "Staff deactivated successfully",
+        data: staff,
+      });
     } catch (err) {
-      next(err)
+      next(err);
     }
   },
 
   delete: async (req, res, next) => {
     try {
-      await StaffService.remove(
-        req.prisma,
-        req.params.id
-      )
+      const { businessId } = req.user;
+      await StaffService.remove(req.prisma, req.params.id, businessId);
 
-      res.status(204).send()
+      res.status(200).json({
+        success: true,
+        message: "Staff deleted successfully",
+      });
     } catch (err) {
-      next(err)
+      next(err);
     }
   },
 }
