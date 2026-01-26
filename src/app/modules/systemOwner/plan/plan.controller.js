@@ -1,8 +1,9 @@
 import {
   activatePlanForBusinessService,
   createPlanService,
-  deletePlanService,
+  deactivePlanService,
   getAllPlansService,
+  hardDeletePlanService,
   reactivatePlanService,
   updatePlanService,
 } from "./plan.service.js";
@@ -107,10 +108,10 @@ export const updatePlan = async (req, res) => {
   });
 };
 
-export const deletePlan = async (req, res) => {
+export const deactivePlan = async (req, res) => {
   const { planId } = req.params;
 
-  const result = await deletePlanService(planId);
+  const result = await deactivePlanService(planId);
 
   if (result.error) {
     return sendResponse(res, {
@@ -148,5 +149,27 @@ export const reactivatePlan = async (req, res) => {
     success: true,
     message: "Plan activated successfully",
     data: result.plan,
+  });
+};
+
+export const hardDeletePlan = async (req, res) => {
+  const { planId } = req.params;
+
+  const result = await hardDeletePlanService(planId);
+
+  if (result.error) {
+    return sendResponse(res, {
+      statusCode: 400,
+      success: false,
+      message: result.error,
+      data: null,
+    });
+  }
+
+  return sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Plan permanently deleted",
+    data: null,
   });
 };

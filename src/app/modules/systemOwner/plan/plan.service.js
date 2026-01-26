@@ -204,7 +204,7 @@ export const updatePlanService = async (planId, data) => {
   }
 };
 
-export const deletePlanService = async (planId) => {
+export const deactivePlanService = async (planId) => {
   try {
     if (!planId) {
       return { error: "Plan ID is required" };
@@ -269,5 +269,44 @@ export const reactivatePlanService = async (planId) => {
   } catch (error) {
     console.error("Reactivate Plan Service Error:", error.message);
     return { error: "Failed to activate plan" };
+  }
+};
+
+export const hardDeletePlanService = async (planId) => {
+  try {
+    if (!planId) {
+      return { error: "Plan ID is required" };
+    }
+
+    // 🔎 Check plan exists
+    const plan = await prisma.plan.findUnique({
+      where: { id: planId },
+      include: {
+        businessSubscriptions: {
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!plan) {
+      return { error: "Plan not found" };
+    }
+
+    // 🚫 Prevent deleting used plans
+    if (plan.businessSubscriptions.length > 0) {
+      return {
+        error: "Plan is already assigned to businesses and cannot be deleted",
+      };
+    }
+
+    // 🗑️ HARD DELETE
+    await prisma.plan.delete({
+      where: { id: planId },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Hard Delete Plan Error:", error.message);
+    return { error: "Failed to delete plan" };
   }
 };

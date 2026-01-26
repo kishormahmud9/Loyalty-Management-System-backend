@@ -285,7 +285,7 @@ model Business {
 
   // Relations
   owner              User                 @relation("BusinessOwner", fields: [ownerId], references: [id])
-  branche            Branch[]
+  branches           Branch[]              
   staff              Staff[]
   loyaltyRule        LoyaltyRule?
   redeemRewards      RedeemReward[]
@@ -296,9 +296,8 @@ model Business {
   billings           Billing[]
   customerBranchData CustomerBranchData[]
   rewardHistory      RewardHistory[]
-  undoRequests TransactionUndoRequest[]
+  undoRequests       TransactionUndoRequest[]
   adjustmentRequests PointAdjustmentRequest[]
-
 
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
