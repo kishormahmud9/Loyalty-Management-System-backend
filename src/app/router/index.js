@@ -23,7 +23,7 @@ import { BusinessReviewRoutes } from "../modules/businessOwner/review/review.rou
 import { CustomerRoutes } from "../modules/customers/customer/customer.route.js";
 import { CustomerAuthRouter } from "../modules/customers/auth/auth.route.js";
 import { CustomerOtpRouter } from "../modules/customers/otp/otp.route.js";
-import { CustomerRewardRoutes } from "../modules/customers/rewards/rewards.route.js";
+import { ClaimRewardCustomer } from "../modules/customers/claimReward/rewards.route.js";
 import { CustomerRewardHistoryRoutes } from "../modules/customers/rewardHistory/rewardHistory.route.js";
 import { CustomerReviewRoutes } from "../modules/customers/review/review.route.js";
 import { ActivePlanRoutes } from "../modules/systemOwner/plan/activePlan.route.js";
@@ -61,8 +61,8 @@ const moduleRoutes = [
     route: CustomerOtpRouter,
   },
   {
-    path: "/customer/rewards",
-    route: CustomerRewardRoutes,
+    path: "/customer/claim-reward",
+    route: ClaimRewardCustomer,
   },
   {
     path: "/customer/reward-history",
