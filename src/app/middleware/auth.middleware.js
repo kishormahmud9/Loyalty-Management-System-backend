@@ -85,6 +85,11 @@ export const businessScope = (req, res, next) => {
         return res.status(403).json({ success: false, message: "Access denied: Business mismatch in body" });
     }
 
+    // 🔒 Security Fix: Check query parameters as well
+    if (req.query.businessId && req.query.businessId !== businessId) {
+        return res.status(403).json({ success: false, message: "Access denied: Business mismatch in query parameters" });
+    }
+
     next();
 };
 
@@ -125,9 +130,9 @@ export const resolveStaffFromToken = (req, res, next) => {
     // If Business Owner tries to add points, we mock staff context using their ID
     if (req.user.role === Role.BUSINESS_OWNER) {
         req.staff = {
-            id: req.user.id, // Use Owner User ID as proxy
+            id: null, // No specific staff record for owner
             businessId: req.user.businessId,
-            branchId: "OWNER_GLOBAL", // Owner has no branch
+            branchId: null, // Owner acts globally across branches
             isActive: true
         };
         return next();

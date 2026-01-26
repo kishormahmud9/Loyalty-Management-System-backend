@@ -8,7 +8,7 @@ export const BranchController = {
     try {
       // Map field names from request to match Branch model schema
       const branchData = {
-        businessId: req.body.businessId,
+        businessId: req.user.businessId, // 🔒 Force businessId from authenticated user
         name: req.body.branchName, // Map branchName -> name
         address: req.body.branchLocation, // Map branchLocation -> address
         city: req.body.city,
@@ -30,7 +30,7 @@ export const BranchController = {
 
   findAll: async (req, res, next) => {
     try {
-      const { businessId } = req.query;
+      const { businessId } = req.params; // 📍 Extract from params as requested
 
       const branches = await BranchService.findAll(req.prisma, businessId);
       sendResponse(res, {
