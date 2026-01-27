@@ -1,10 +1,11 @@
 import express from "express";
-import { PERMISSIONS } from "../../../config/permissions.js";
-import { authenticate, authorize, branchScope, businessScope, resolveStaffFromToken } from "../../../middleware/auth.middleware.js";
-import * as addRedeemController from "./addRedeem.controller.js";
+import { checkStaffAuth } from "../../../middleware/staff.middleware.js";
+import { searchCustomer, addPointsInstant } from "./addRedeem.controller.js";
 
 const router = express.Router();
 
-router.post("/add", authenticate, authorize(PERMISSIONS.REWARD.EARN.CREATE), businessScope, branchScope, resolveStaffFromToken, addRedeemController.addPoints);
+router.post("/search", checkStaffAuth, searchCustomer);
+
+router.post("/add-point", checkStaffAuth, addPointsInstant);
 
 export default router;
