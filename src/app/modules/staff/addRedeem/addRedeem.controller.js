@@ -1,18 +1,34 @@
-import * as addRedeemService from "./addRedeem.service.js";
+import * as redeemService from "./addRedeem.service.js";
 
-export const addPoints = async (req, res) => {
+export const searchCustomer = async (req, res) => {
   try {
-    const data = await addRedeemService.addPoints(req);
+    const data = await redeemService.searchCustomerService(req);
 
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
-      message: "Add points request submitted for approval",
       data,
     });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(200).json({
       success: false,
-      message: error.message || "Failed to submit add points request",
+      message: error.message || "Failed to search customer",
+    });
+  }
+};
+
+export const addPointsInstant = async (req, res) => {
+  try {
+    const data = await redeemService.addPointsInstantService(req);
+
+    return res.status(200).json({
+      success: true,
+      message: "Points added successfully",
+      data,
+    });
+  } catch (error) {
+    return res.status(200).json({
+      success: false,
+      message: error.message || "Failed to add points",
     });
   }
 };

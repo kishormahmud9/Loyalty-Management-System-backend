@@ -87,6 +87,9 @@ model User {
 
   isVerified Boolean @default(false)
 
+  pinHash  String?              // hashed 6-digit PIN
+  isPinSet Boolean @default(false)
+
   oauthProvider   OAuthProvider @default(email)
   oauthProviderId String?
 
