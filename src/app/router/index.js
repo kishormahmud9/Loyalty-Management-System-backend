@@ -19,6 +19,8 @@ import { AllCustomersRoutes } from "../modules/businessOwner/all-customers/all-c
 import { BusinessRewardHistoryRoutes } from "../modules/businessOwner/rewardHistory/rewardHistory.route.js";
 import { StaffPermissionRoutes } from "../modules/businessOwner/staffPermission/staffPermission.route.js";
 import { BusinessReviewRoutes } from "../modules/businessOwner/review/review.route.js";
+import { CardRoutes } from "../modules/businessOwner/cards/cards.route.js";
+import { CustomerCardRoutes } from "../modules/customers/cardsCustomer/cardsCustomer.route.js";
 
 import { CustomerRoutes } from "../modules/customers/customer/customer.route.js";
 import { CustomerAuthRouter } from "../modules/customers/auth/auth.route.js";
@@ -119,6 +121,14 @@ const moduleRoutes = [
   {
     path: "/business-owner/reviews",
     route: BusinessReviewRoutes,
+  },
+  {
+    path: "/business-owner/cards",
+    route: CardRoutes,
+  },
+  {
+    path: "/customers/cards",
+    route: CustomerCardRoutes,
   },
   // business owner ends
 
