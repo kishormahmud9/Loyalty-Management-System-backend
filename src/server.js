@@ -1,7 +1,9 @@
+import http from "http";
 import app from "./app.js";
 import { envVars } from "./app/config/env.js";
 import { connectRedis } from "./app/config/redis.config.js";
 import prisma from "./app/prisma/client.js";
+import { initSocket } from "./app/socket.js";
 
 let server;
 
@@ -11,12 +13,19 @@ const startServer = async () => {
   try {
     console.log(`Environment: ${envVars.NODE_ENV}`);
 
-    // Connect Redis
+    // 1️⃣ Connect Redis
     await connectRedis();
     console.log("Redis Connected Successfully 🚚✅");
 
-    // Start server
-    server = app.listen(PORT, () => {
+    // 2️⃣ Create HTTP server
+    server = http.createServer(app);
+
+    // 3️⃣ Initialize Socket.io
+    initSocket(server);
+    console.log("Socket.io initialized 🔌✅");
+
+    // 4️⃣ Start server
+    server.listen(PORT, () => {
       console.log(`Server running on port 🛺✅ ${PORT}`);
     });
   } catch (error) {
@@ -27,71 +36,3 @@ const startServer = async () => {
 
 // Start server
 startServer();
-
-/**
- * 🔴 Unhandled Promise Rejection
- */
-process.on("unhandledRejection", async (err) => {
-  console.error(
-    "Unhandled Rejection Detected... server shutting down...",
-    err
-  );
-
-  if (server) {
-    server.close(async () => {
-      await prisma.$disconnect();
-      process.exit(1);
-    });
-  } else {
-    await prisma.$disconnect();
-    process.exit(1);
-  }
-});
-
-/**
- * 🔴 Uncaught Exception
- */
-process.on("uncaughtException", async (err) => {
-  console.error(
-    "Uncaught Exception Detected... server shutting down...",
-    err
-  );
-
-  if (server) {
-    server.close(async () => {
-      await prisma.$disconnect();
-      process.exit(1);
-    });
-  } else {
-    await prisma.$disconnect();
-    process.exit(1);
-  }
-});
-
-/**
- * 🟡 SIGTERM (Docker / Kubernetes)
- */
-process.on("SIGTERM", async () => {
-  console.log("SIGTERM signal received... shutting down gracefully");
-
-  if (server) {
-    server.close(async () => {
-      await prisma.$disconnect();
-      process.exit(0);
-    });
-  }
-});
-
-/**
- * 🟡 SIGINT (Ctrl + C)
- */
-process.on("SIGINT", async () => {
-  console.log("SIGINT signal received... shutting down gracefully");
-
-  if (server) {
-    server.close(async () => {
-      await prisma.$disconnect();
-      process.exit(0);
-    });
-  }
-});
