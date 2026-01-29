@@ -25,15 +25,16 @@ export const requestUndo = async (req, res) => {
   try {
     const data = await transactionService.requestUndo(req);
 
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
-      message: "Undo request submitted",
+      message: "Undo request submitted successfully",
       data,
     });
   } catch (error) {
+    // ⚠️ Server NEVER goes down
     return res.status(200).json({
       success: false,
-      message: error.message,
+      message: error.message || "Failed to submit undo request",
     });
   }
 };

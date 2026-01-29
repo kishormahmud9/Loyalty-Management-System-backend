@@ -6,141 +6,157 @@ export const getStaffTransactions = async ({ staff, query }) => {
   const skip = (page - 1) * limit;
 
   /* ===============================
-     COMPLETED (from PointTransaction)
+     FETCH TRANSACTIONS
   =============================== */
-  const completedTransactions = await prisma.pointTransaction.findMany({
-    where: { branchId: staff.branchId },
-    orderBy: { createdAt: "desc" },
-  });
+  const [transactions, total] = await Promise.all([
+    prisma.pointTransaction.findMany({
+      where: {
+        businessId: staff.businessId,
+        branchId: staff.branchId,
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.pointTransaction.count({
+      where: {
+        businessId: staff.businessId,
+        branchId: staff.branchId,
+      },
+    }),
+  ]);
 
-  const customerIds = completedTransactions
-    .map((t) => t.customerId)
-    .filter(Boolean);
+  if (!transactions.length) {
+    return {
+      transactions: [],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
 
-  const customers = await prisma.customer.findMany({
-    where: { id: { in: customerIds } },
-    select: { id: true, name: true },
-  });
+  /* ===============================
+     LOAD RELATED DATA
+  =============================== */
+  const customerIds = transactions.map((t) => t.customerId).filter(Boolean);
+
+  const transactionIds = transactions.map((t) => t.id);
+
+  const [customers, undoRequests] = await Promise.all([
+    prisma.customer.findMany({
+      where: { id: { in: customerIds } },
+      select: { id: true, name: true },
+    }),
+    prisma.transactionUndoRequest.findMany({
+      where: {
+        adjustmentRequestId: { in: transactionIds },
+      },
+      select: {
+        adjustmentRequestId: true,
+        status: true,
+      },
+    }),
+  ]);
 
   const customerMap = Object.fromEntries(customers.map((c) => [c.id, c.name]));
 
-  const completed = completedTransactions.map((tx) => ({
-    id: tx.id,
-    date: tx.createdAt,
-    type: tx.type,
-    customerName: customerMap[tx.customerId] || "Unknown",
-    points: tx.points,
-    status: "COMPLETED",
-    canUndo: false,
-  }));
+  const undoMap = Object.fromEntries(
+    undoRequests.map((u) => [u.adjustmentRequestId, u.status]),
+  );
 
   /* ===============================
-     PENDING / REJECTED (Adjustments)
+     FORMAT RESPONSE
   =============================== */
-  const usedAdjustmentIds = completedTransactions
-    .map((t) => t.adjustmentRequestId)
-    .filter(Boolean);
+  const formatted = transactions.map((tx) => {
+    const undoStatus = undoMap[tx.id];
 
-  const adjustments = await prisma.pointAdjustmentRequest.findMany({
-    where: {
-      branchId: staff.branchId,
-      status: { in: ["PENDING", "REJECTED"] },
-      NOT: { id: { in: usedAdjustmentIds } },
-    },
-    include: {
-      customer: { select: { name: true } },
-    },
-    orderBy: { createdAt: "desc" },
+    return {
+      id: tx.id,
+      date: tx.createdAt,
+      type: tx.type,
+      customerName: customerMap[tx.customerId] || "Unknown",
+      points: tx.points,
+      status: undoStatus === "PENDING" ? "PENDING" : "COMPLETED",
+      canUndo: !undoStatus, // no undo request exists
+    };
   });
 
-  const pendingAndRejected = adjustments.map((req) => ({
-    id: req.id,
-    date: req.createdAt,
-    type: req.type,
-    customerName: req.customer.name,
-    points: req.points,
-    status: req.status,
-    canUndo: req.status === "PENDING",
-  }));
-
-  /* ===============================
-     MERGE + PAGINATION
-  =============================== */
-  const all = [...pendingAndRejected, ...completed]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(skip, skip + limit);
-
   return {
-    transactions: all,
+    transactions: formatted,
     pagination: {
       page,
       limit,
-      total: pendingAndRejected.length + completed.length,
-      totalPages: Math.ceil(
-        (pendingAndRejected.length + completed.length) / limit,
-      ),
+      total,
+      totalPages: Math.ceil(total / limit),
     },
   };
 };
 
-export const requestUndo = async ({ staff, params, body }) => {
-  const { adjustmentRequestId } = params;
-  const { reason } = body;
+export const requestUndo = async ({ staff, body }) => {
+  const { transactionId, reason } = body;
 
-  if (!reason?.trim()) {
+  /* ===============================
+     VALIDATION
+  =============================== */
+  if (!transactionId) {
+    throw new Error("Transaction ID is required");
+  }
+
+  if (!reason || reason.trim().length < 5) {
     throw new Error("Undo reason is required");
   }
 
-  /* 1️⃣ Adjustment must exist */
-  const adjustment = await prisma.pointAdjustmentRequest.findUnique({
-    where: { id: adjustmentRequestId },
+  /* ===============================
+     FETCH TRANSACTION
+  =============================== */
+  const transaction = await prisma.pointTransaction.findUnique({
+    where: { id: transactionId },
   });
 
-  if (!adjustment) {
-    throw new Error("Request not found");
+  if (!transaction) {
+    throw new Error("Transaction not found");
   }
 
-  /* 2️⃣ Branch safety */
-  if (adjustment.branchId !== staff.branchId) {
-    throw new Error("Unauthorized request");
+  /* ===============================
+     AUTHORIZATION
+  =============================== */
+  if (transaction.branchId !== staff.branchId) {
+    throw new Error("You are not allowed to undo this transaction");
   }
 
-  /* 3️⃣ Only PENDING allowed */
-  if (adjustment.status !== "PENDING") {
-    throw new Error("Only pending requests can be undone");
-  }
-
-  /* 4️⃣ Only one undo per adjustment */
+  /* ===============================
+     CHECK EXISTING UNDO
+  =============================== */
   const existingUndo = await prisma.transactionUndoRequest.findFirst({
-    where: { adjustmentRequestId },
+    where: {
+      adjustmentRequestId: transaction.id,
+    },
   });
 
   if (existingUndo) {
-    throw new Error("Undo already requested");
+    throw new Error("Undo already requested for this transaction");
   }
 
-  /* 5️⃣ Only one undo per customer per staff */
-  const staffCustomerUndo = await prisma.transactionUndoRequest.findFirst({
-    where: {
-      staffId: staff.id,
-      customerId: adjustment.customerId,
-    },
-  });
-
-  if (staffCustomerUndo) {
-    throw new Error("You already used undo for this customer");
-  }
-
-  /* 6️⃣ Create undo request */
-  return prisma.transactionUndoRequest.create({
+  /* ===============================
+     CREATE UNDO REQUEST
+  =============================== */
+  await prisma.transactionUndoRequest.create({
     data: {
-      adjustmentRequestId,
-      customerId: adjustment.customerId,
+      adjustmentRequestId: transaction.id, // link to transaction
+      reason,
+      customerId: transaction.customerId,
       businessId: staff.businessId,
       branchId: staff.branchId,
       staffId: staff.id,
-      reason: reason.trim(),
       status: "PENDING",
     },
   });
+
+  return {
+    transactionId: transaction.id,
+    status: "PENDING",
+  };
 };
