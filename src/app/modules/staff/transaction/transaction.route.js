@@ -6,10 +6,6 @@ const router = express.Router();
 
 router.get("/", checkStaffAuth, transactionController.getStaffTransactions);
 
-router.post(
-  "/:adjustmentRequestId/undo",
-  checkStaffAuth,
-  transactionController.requestUndo,
-);
+router.post("/undo", checkStaffAuth, transactionController.requestUndo);
 
 export default router;
