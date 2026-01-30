@@ -141,7 +141,21 @@ model Customer {
   undoRequests       TransactionUndoRequest[]
   adjustmentRequests PointAdjustmentRequest[]
   claims             ClaimReward[]
+  notifications      CustomerNotification?
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CustomerNotification {
+  id               String   @id @default(uuid())
+  customerId       String   @unique
+  smsUpdates       Boolean  @default(false)
+  allowLocation    Boolean  @default(false)
+  pushNotification Boolean  @default(false)
+  birthdayRewards  Boolean  @default(false)
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -28,6 +28,7 @@ import { CustomerOtpRouter } from "../modules/customers/otp/otp.route.js";
 import { ClaimRewardCustomer } from "../modules/customers/claimReward/rewards.route.js";
 import { CustomerRewardHistoryRoutes } from "../modules/customers/rewardHistory/rewardHistory.route.js";
 import { CustomerReviewRoutes } from "../modules/customers/review/review.route.js";
+import { CustomerNotificationRoutes } from "../modules/customers/customerNotification/customerNotification.route.js";
 import { ActivePlanRoutes } from "../modules/systemOwner/plan/activePlan.route.js";
 
 import staffRoutes from "../modules/staff/customer/customer.route.js";
@@ -74,6 +75,10 @@ const moduleRoutes = [
   {
     path: "/customer/reviews-creation",
     route: CustomerReviewRoutes,
+  },
+  {
+    path: "/customer/notification-settings",
+    route: CustomerNotificationRoutes,
   },
 
   {
