@@ -36,6 +36,8 @@ import transactionRoutes from "../modules/staff/transaction/transaction.route.js
 import addRedeemRoutes from "../modules/staff/addRedeem/addRedeem.route.js";
 import staffRewardRoutes from "../modules/staff/reward/reward.route.js";
 import staffAuthRoutes from "../modules/staff/auth/staff.auth.routes.js";
+import staffNotificationRoutes from "../modules/staff/notification/notification.routes.js";
+import staffSettingsRoutes from "../modules/staff/settings/settings.route.js";
 
 export const router = Router();
 
@@ -193,6 +195,16 @@ const moduleRoutes = [
   {
     path: "/staff/auth",
     route: staffAuthRoutes,
+  },
+
+  {
+    path: "/staff/notifications",
+    route: staffNotificationRoutes,
+  },
+
+  {
+    path: "/staff/settings",
+    route: staffSettingsRoutes,
   },
 ];
 
