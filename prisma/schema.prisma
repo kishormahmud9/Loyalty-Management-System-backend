@@ -87,7 +87,7 @@ model User {
 
   isVerified Boolean @default(false)
 
-  pinHash  String?              // hashed 6-digit PIN
+  pinHash  String? // hashed 6-digit PIN
   isPinSet Boolean @default(false)
 
   oauthProvider   OAuthProvider @default(email)
@@ -134,10 +134,10 @@ model Customer {
   qrCodeUrl  String?
 
   // Relations
-  branchData    CustomerBranchData[]
-  rewardHistory RewardHistory[]
-  sessions      CustomerSession[]
-  reviews       Review[]
+  branchData         CustomerBranchData[]
+  rewardHistory      RewardHistory[]
+  sessions           CustomerSession[]
+  reviews            Review[]
   undoRequests       TransactionUndoRequest[]
   adjustmentRequests PointAdjustmentRequest[]
   claims             ClaimReward[]
@@ -156,6 +156,7 @@ model CustomerNotification {
   birthdayRewards  Boolean  @default(false)
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  notificationStates NotificationCustomerState[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -386,8 +387,8 @@ model Business {
   trialEndsAt DateTime?
 
   // Relations
-  owner              User                 @relation("BusinessOwner", fields: [ownerId], references: [id])
-  branches           Branch[]              
+  owner              User                     @relation("BusinessOwner", fields: [ownerId], references: [id])
+  branches           Branch[]
   staff              Staff[]
   loyaltyRule        LoyaltyRule?
   redeemRewards      RedeemReward[]
@@ -434,13 +435,12 @@ model Branch {
   customerBranchData CustomerBranchData[]
   rewardHistory      RewardHistory[]
 
-  
   pointTransactions  PointTransaction[]
-  undoRequests      TransactionUndoRequest[]
+  undoRequests       TransactionUndoRequest[]
   adjustmentRequests PointAdjustmentRequest[]
 
-  reviews           Review[]
-  claims            ClaimReward[]
+  reviews Review[]
+  claims  ClaimReward[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -450,12 +450,12 @@ model RewardHistory {
   id String @id @default(uuid())
 
   rewardPoints       Int       @default(0)
-  activeRewards     Int       @default(0)
-  availableRewards  Int       @default(0)
+  activeRewards      Int       @default(0)
+  availableRewards   Int       @default(0)
   lastRewardReceived DateTime?
-  cardExpireDate    DateTime?
-  earningRule       String?
-  walletApp         String? // Google Wallet or Apple Wallet
+  cardExpireDate     DateTime?
+  earningRule        String?
+  walletApp          String? // Google Wallet or Apple Wallet
 
   customerId String
   businessId String
@@ -487,13 +487,12 @@ model Staff {
   role       StaffRole
   isActive   Boolean   @default(true)
 
-  user      User     @relation(fields: [userId], references: [id])
-  business  Business @relation(fields: [businessId], references: [id])
-  branch    Branch   @relation(fields: [branchId], references: [id])
-  
-  undoRequests TransactionUndoRequest[]
-  adjustmentRequests PointAdjustmentRequest[]
+  user     User     @relation(fields: [userId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+  branch   Branch   @relation(fields: [branchId], references: [id])
 
+  undoRequests       TransactionUndoRequest[]
+  adjustmentRequests PointAdjustmentRequest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -525,19 +524,19 @@ model LoyaltyRule {
  */
 
 model PointTransaction {
-  id                  String @id @default(uuid())
+  id String @id @default(uuid())
 
-  businessId           String
-  branchId             String?
-  staffId              String?
-  customerId           String?
+  businessId String
+  branchId   String?
+  staffId    String?
+  customerId String?
 
-  points               Int
-  type                 TransactionType
+  points Int
+  type   TransactionType
 
   // link to adjustment request (APPROVED only)
-  adjustmentRequestId  String? @unique
-  adjustmentRequest    PointAdjustmentRequest? @relation(fields: [adjustmentRequestId], references: [id])
+  adjustmentRequestId String?                 @unique
+  adjustmentRequest   PointAdjustmentRequest? @relation(fields: [adjustmentRequestId], references: [id])
 
   // REQUIRED opposite relations
   business Business @relation(fields: [businessId], references: [id])
@@ -548,6 +547,7 @@ model PointTransaction {
   @@index([businessId])
   @@index([branchId])
 }
+
 /**
  * 
  * SUPPORT TICKET
@@ -698,7 +698,7 @@ enum UndoRequestStatus {
 model TransactionUndoRequest {
   id String @id @default(uuid())
 
-  adjustmentRequestId String   
+  adjustmentRequestId String
   customerId          String
   businessId          String
   branchId            String?
@@ -766,24 +766,24 @@ enum AdjustmentType {
 }
 
 model PointAdjustmentRequest {
-  id           String @id @default(uuid())
+  id String @id @default(uuid())
 
-  type         AdjustmentType
-  points       Int
+  type   AdjustmentType
+  points Int
 
-  customerId   String
-  staffId      String?
-  businessId   String
-  branchId     String?
+  customerId String
+  staffId    String?
+  businessId String
+  branchId   String?
 
-  reason       String?
-  status       UndoRequestStatus @default(PENDING)
+  reason String?
+  status UndoRequestStatus @default(PENDING)
 
-  reviewedBy   String?
-  reviewedAt   DateTime?
+  reviewedBy String?
+  reviewedAt DateTime?
 
   // reverse relation (THIS FIXES THE ERROR)
-  transaction  PointTransaction?
+  transaction PointTransaction?
 
   customer Customer @relation(fields: [customerId], references: [id])
   staff    Staff?   @relation(fields: [staffId], references: [id])
@@ -796,4 +796,38 @@ model PointAdjustmentRequest {
   @@index([staffId, customerId])
   @@index([branchId])
   @@index([status])
+}
+
+model Notification {
+  id          String  @id @default(uuid())
+  businessId  String
+  branchId    String?
+  message     String
+  sentByStaff String
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  customerStates NotificationCustomerState[]
+
+  @@index([businessId])
+  @@index([createdAt])
+}
+
+model NotificationCustomerState {
+  id             String @id @default(uuid())
+  notificationId String
+  customerId     String
+
+  isRead    Boolean @default(false)
+  isDeleted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  customer     Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, customerId])
+  @@index([customerId])
 }
