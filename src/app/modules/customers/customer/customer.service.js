@@ -1,6 +1,6 @@
 
 import bcrypt from "bcrypt";
-import { generateSixDigitCode } from "../../../utils/qrGenerator.js";
+import { generateSixDigitCode, generateAndSaveQRCode } from "../../../utils/qrGenerator.js";
 import { envVars } from "../../../config/env.js";
 import { AppError } from "../../../errorHelper/appError.js";
 
@@ -26,6 +26,8 @@ export const CustomerService = {
         name: true,
         avatarUrl: true,
         qrCode: true,
+        qrCodePath: true,
+        qrCodeUrl: true,
         qrScanner: true,
         role: true,
         isVerified: true,
@@ -152,6 +154,9 @@ export const createCustomerService = async (payload) => {
   // Generate 6-digit QR code
   const qrCode = generateSixDigitCode();
 
+  // Generate and save QR code image
+  const qrCodePath = await generateAndSaveQRCode(qrCode, `customer-${qrCode}-${Date.now()}`);
+
   // Create customer
   const customer = await prisma.customer.create({
     data: {
@@ -161,6 +166,8 @@ export const createCustomerService = async (payload) => {
       avatarUrl: picture,
       isVerified: false,
       qrCode,
+      qrCodePath,
+      qrCodeUrl: `${envVars.SERVER_URL}/${qrCodePath}`,
       ...rest,
     },
   });

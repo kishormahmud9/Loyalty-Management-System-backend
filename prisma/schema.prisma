@@ -130,6 +130,8 @@ model Customer {
 
   qrCode    String  @unique // The 6 digit code
   qrScanner String? // Additional field requested
+  qrCodePath String?
+  qrCodeUrl  String?
 
   // Relations
   branchData    CustomerBranchData[]
