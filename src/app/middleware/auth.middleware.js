@@ -75,18 +75,18 @@ export const businessScope = (req, res, next) => {
     // So if the controller uses `req.user.businessId` to filter data, we are good.
     // If the controller takes `req.params.businessId`, we should check it.
 
-    if (req.params.businessId && req.params.businessId !== businessId) {
+    if (req.params?.businessId && req.params.businessId !== businessId) {
         return res.status(403).json({ success: false, message: "Access denied: Business mismatch" });
     }
 
     // For body check? Usually we trust controller to use req.user.businessId
     // But we can enforce it if body has it.
-    if (req.body.businessId && req.body.businessId !== businessId) {
+    if (req.body?.businessId && req.body.businessId !== businessId) {
         return res.status(403).json({ success: false, message: "Access denied: Business mismatch in body" });
     }
 
     // 🔒 Security Fix: Check query parameters as well
-    if (req.query.businessId && req.query.businessId !== businessId) {
+    if (req.query?.businessId && req.query.businessId !== businessId) {
         return res.status(403).json({ success: false, message: "Access denied: Business mismatch in query parameters" });
     }
 

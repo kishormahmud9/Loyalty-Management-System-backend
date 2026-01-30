@@ -31,6 +31,12 @@ export const PERMISSIONS = {
             REQUEST: "reward.redeem.request",
         },
     },
+    CARD: {
+        CREATE: "card.create",
+        READ: "card.read",
+        UPDATE: "card.update",
+        DELETE: "card.delete",
+    },
 };
 
 export const ROLE_PERMISSIONS = {
@@ -39,6 +45,7 @@ export const ROLE_PERMISSIONS = {
         ...Object.values(PERMISSIONS.BUSINESS),
         ...Object.values(PERMISSIONS.BRANCH),
         ...Object.values(PERMISSIONS.STAFF),
+        ...Object.values(PERMISSIONS.CARD),
         ...Object.values(PERMISSIONS.REWARD.EARN),
         ...Object.values(PERMISSIONS.REDEEM || {}), // Safety, though specific values are below
         PERMISSIONS.REWARD.REDEEM.DIRECT,
@@ -48,11 +55,13 @@ export const ROLE_PERMISSIONS = {
         ...Object.values(PERMISSIONS.BUSINESS),
         ...Object.values(PERMISSIONS.BRANCH),
         ...Object.values(PERMISSIONS.STAFF),
+        ...Object.values(PERMISSIONS.CARD),
         PERMISSIONS.REWARD.EARN.CREATE,
         PERMISSIONS.REWARD.REDEEM.DIRECT,
     ],
     STAFF: [
         PERMISSIONS.STAFF.READ,
+        PERMISSIONS.CARD.READ,
         PERMISSIONS.REWARD.REDEEM.REQUEST,
     ],
 };

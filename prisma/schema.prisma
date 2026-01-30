@@ -8,9 +8,9 @@ datasource db {
 }
 
 /**
- * =========================
+ * 
  * ENUMS
- * =========================
+ * 
  */
 
 enum UserRole {
@@ -70,9 +70,9 @@ enum ClaimStatus {
 }
 
 /**
- * =========================
+ * 
  * USER
- * =========================
+ * 
  */
 
 model User {
@@ -113,9 +113,9 @@ model User {
 }
 
 /**
- * =========================
+ * 
  * CUSTOMER
- * =========================
+ * 
  */
 
 model Customer {
@@ -130,6 +130,8 @@ model Customer {
 
   qrCode    String  @unique // The 6 digit code
   qrScanner String? // Additional field requested
+  qrCodePath String?
+  qrCodeUrl  String?
 
   // Relations
   branchData         CustomerBranchData[]
@@ -139,7 +141,21 @@ model Customer {
   undoRequests       TransactionUndoRequest[]
   adjustmentRequests PointAdjustmentRequest[]
   claims             ClaimReward[]
+  notifications      CustomerNotification?
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CustomerNotification {
+  id               String   @id @default(uuid())
+  customerId       String   @unique
+  smsUpdates       Boolean  @default(false)
+  allowLocation    Boolean  @default(false)
+  pushNotification Boolean  @default(false)
+  birthdayRewards  Boolean  @default(false)
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   notificationStates NotificationCustomerState[]
 
   createdAt DateTime @default(now())
@@ -291,12 +307,69 @@ model EarnReward {
   @@index([branchId])
 }
 
+
+enum CardType {
+  stamp_card
+  reward_card
+}
+
+enum BarcodeType {
+  bar_code
+  qr_code
+}
+
+enum RewardProgram {
+  spend
+  visit
+}
+
+
+model Card {
+  id                     String           @id @default(uuid())
+  // Business
+  businessId              String
+  business                Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // Card identity
+  cardType                CardType @default(stamp_card)
+  cardDesc                String
+  companyName             String
+  // Reward logic
+  rewardProgram           RewardProgram @default(spend)
+  stampsCount          Int @default(0)
+  // Earning rule (CORE LOGIC)
+  earnRuleType            String?
+  earnValue               Int ?   // e.g. 500 dollars or 10 visits
+  earnUnit                Int ?   // e.g. 5 stamps or 1 stamp
+  // Barcode
+  barcodeType             BarcodeType @default(qr_code)
+
+  // UI / Branding
+  logo                    String?
+  logoFilePath            String?
+  cardBackground          String?
+  stampBackground         String?
+  stampBackgroundPath     String?
+  activeStamp             String?
+  inactiveStamp           String?
+  textColor               String ?
+
+  // Messaging
+  earnedRewardMessage     String ?
+
+  // Meta
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([businessId])
+}
+
+
 // Business Owner ends 
 
 /**
- * =========================
+ * 
  * BUSINESS (TENANT)
- * =========================
+ * 
  */
 
 model Business {
@@ -335,12 +408,13 @@ model Business {
   businessSubscription BusinessSubscription?
   reviews              Review[]
   staffPermission      StaffPermission?
+  cards                Card[]
 }
 
 /**
- * =========================
+ * 
  * BRANCH
- * =========================
+ * 
  */
 
 model Branch {
@@ -400,9 +474,9 @@ model RewardHistory {
 }
 
 /**
- * =========================
+ * 
  * STAFF
- * =========================
+ * 
  */
 
 model Staff {
@@ -425,9 +499,9 @@ model Staff {
 }
 
 /**
- * =========================
+ * 
  * LOYALTY RULE
- * =========================
+ * 
  */
 
 model LoyaltyRule {
@@ -444,9 +518,9 @@ model LoyaltyRule {
 }
 
 /**
- * =========================
+ * 
  * POINT TRANSACTION
- * =========================
+ * 
  */
 
 model PointTransaction {
@@ -475,9 +549,9 @@ model PointTransaction {
 }
 
 /**
- * =========================
+ * 
  * SUPPORT TICKET
- * =========================
+ * 
  */
 
 model SupportTicket {
@@ -506,9 +580,9 @@ model SupportTicket {
 }
 
 /**
- * =========================
+ * 
  * BILLING
- * =========================
+ * 
  */
 
 model Billing {
@@ -559,9 +633,9 @@ model ActivityLog {
 }
 
 /**
- * =========================
+ * 
  * PLAN (SYSTEM OWNER)
- * =========================
+ * 
  */
 
 model Plan {
@@ -581,9 +655,9 @@ model Plan {
 }
 
 /**
- * =========================
+ * 
  * BUSINESS SUBSCRIPTION
- * =========================
+ * 
  */
 
 enum SubscriptionStatus {
