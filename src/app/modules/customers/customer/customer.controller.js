@@ -32,7 +32,7 @@ const registerCustomer = async (req, res, next) => {
 
 const getCustomerInfo = async (req, res, next) => {
   try {
-    const customerId = req.params.id || req.user.id;
+    const customerId = req.user.id; // Strictly use logged-in user's ID
 
     const customer = await CustomerService.findCustomerInfoById(prisma, customerId);
 
@@ -53,8 +53,8 @@ const getCustomerInfo = async (req, res, next) => {
 
 const getCustomerWithBranches = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const customer = await CustomerService.findByIdWithBranches(prisma, id);
+    const customerId = req.user.id; // Strictly use logged-in user's ID
+    const customer = await CustomerService.findByIdWithBranches(prisma, customerId);
 
     if (!customer) {
       return sendResponse(res, {
@@ -102,18 +102,10 @@ const getMyBranches = async (req, res, next) => {
 };
 
 
-const updateCustomer = async (req, res) => {
+const updateCustomer = async (req, res, next) => {
   try {
-    const { customerId, ...data } = req.body;
-
-    if (!customerId) {
-      return sendResponse(res, {
-        statusCode: 400,
-        success: false,
-        message: "customerId required",
-        data: null,
-      });
-    }
+    const customerId = req.user.id; // Strictly use logged-in user's ID
+    const data = req.body;
 
     const updatedCustomer = await CustomerService.update(prisma, customerId, data);
 
@@ -124,13 +116,7 @@ const updateCustomer = async (req, res) => {
       data: updatedCustomer,
     });
   } catch (error) {
-    console.error("updateCustomer error:", error);
-    return sendResponse(res, {
-      statusCode: 500,
-      success: false,
-      message: "Failed to update customer",
-      data: null,
-    });
+    next(error);
   }
 };
 
@@ -189,6 +175,28 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
+const switchBranch = async (req, res, next) => {
+  try {
+    const customerId = req.user.id;
+    const { branchId } = req.body;
+
+    if (!branchId) {
+      throw new AppError(400, "branchId is required");
+    }
+
+    const result = await CustomerService.setActiveBranch(prisma, customerId, branchId);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Branch switched successfully",
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const CustomerController = {
   registerCustomer,
   getCustomerInfo,
@@ -196,6 +204,7 @@ export const CustomerController = {
   getMyBranches,
   updateCustomer,
   registerToNewBranch,
-  updateProfile
+  updateProfile,
+  switchBranch
 };
 
