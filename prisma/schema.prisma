@@ -140,6 +140,7 @@ model Customer {
   phone          String?
   address        String?
   avatarFilePath String?
+  activeBranchId String?
 
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
