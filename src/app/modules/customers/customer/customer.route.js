@@ -18,6 +18,7 @@ router.get("/details/:id", customerAuthMiddleware, CustomerController.getCustome
 router.post("/update", customerAuthMiddleware, CustomerController.updateCustomer);
 
 router.post("/register-branch", customerAuthMiddleware, CustomerController.registerToNewBranch);
+router.post("/switch-branch", customerAuthMiddleware, CustomerController.switchBranch);
 router.patch("/update-profile", customerAuthMiddleware, customerProfileUpload.single("avatar"), CustomerController.updateProfile);
 
 
