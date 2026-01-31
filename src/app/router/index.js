@@ -31,6 +31,8 @@ import { ClaimRewardCustomer } from "../modules/customers/claimReward/rewards.ro
 import { CustomerRewardHistoryRoutes } from "../modules/customers/rewardHistory/rewardHistory.route.js";
 import { CustomerReviewRoutes } from "../modules/customers/review/review.route.js";
 import { CustomerNotificationRoutes } from "../modules/customers/customerNotification/customerNotification.route.js";
+import { CustomerActivityHistoryRoutes } from "../modules/customers/activityHistoryCustomer/activityHistoryCustomer.route.js";
+import { EarnRewardCustomerRoutes } from "../modules/customers/earnRewardCustomer/earnRewardCustomer.route.js";
 import { ActivePlanRoutes } from "../modules/systemOwner/plan/activePlan.route.js";
 
 import staffRoutes from "../modules/staff/customer/customer.route.js";
@@ -85,6 +87,14 @@ const moduleRoutes = [
   {
     path: "/customer/notification-settings",
     route: CustomerNotificationRoutes,
+  },
+  {
+    path: "/customer/activity-history",
+    route: CustomerActivityHistoryRoutes,
+  },
+  {
+    path: "/customer/earn-reward",
+    route: EarnRewardCustomerRoutes,
   },
 
   {

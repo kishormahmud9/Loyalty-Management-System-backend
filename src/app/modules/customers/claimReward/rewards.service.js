@@ -2,6 +2,19 @@
 import { AppError } from "../../../errorHelper/appError.js";
 
 const getRewardsByBranch = async (prisma, customerId, branchId) => {
+    // 0. If branchId is not provided, use activeBranchId
+    if (!branchId) {
+        const customer = await prisma.customer.findUnique({
+            where: { id: customerId },
+            select: { activeBranchId: true }
+        });
+        branchId = customer?.activeBranchId;
+    }
+
+    if (!branchId) {
+        throw new AppError(400, "No branch selected and no active branch found.");
+    }
+
     // Check if customer is registered at this branch
     const registration = await prisma.customerBranchData.findUnique({
         where: {
@@ -106,6 +119,19 @@ const claimReward = async (prisma, customerId, redeemRewardId) => {
 };
 
 const getRewardsWithClaimStatus = async (prisma, customerId, branchId) => {
+    // 0. If branchId is not provided, use activeBranchId
+    if (!branchId) {
+        const customer = await prisma.customer.findUnique({
+            where: { id: customerId },
+            select: { activeBranchId: true }
+        });
+        branchId = customer?.activeBranchId;
+    }
+
+    if (!branchId) {
+        throw new AppError(400, "No branch selected and no active branch found.");
+    }
+
     // 1. Get all active rewards for the branch
     const allRewards = await prisma.redeemReward.findMany({
         where: {

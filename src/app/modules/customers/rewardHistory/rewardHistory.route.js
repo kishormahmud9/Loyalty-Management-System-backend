@@ -11,6 +11,12 @@ router.get(
 );
 
 router.get(
+    "/branch",
+    customerAuthMiddleware,
+    CustomerRewardHistoryController.getMyBranchHistory
+);
+
+router.get(
     "/branch/:branchId",
     customerAuthMiddleware,
     CustomerRewardHistoryController.getMyBranchHistory
