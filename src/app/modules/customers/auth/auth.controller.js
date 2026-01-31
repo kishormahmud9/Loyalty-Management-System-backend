@@ -34,6 +34,11 @@ const credentialLogin = async (req, res, next) => {
       throw new AppError(StatusCodes.FORBIDDEN, "Authentication failed");
     }
 
+    // Check if customer is verified
+    if (!customer.isVerified) {
+      throw new AppError(StatusCodes.FORBIDDEN, "verify your email frist");
+    }
+
     // Generate access & refresh tokens
     // Using specialized customer token generator
     const tokens = await createCustomerTokens(customer);
