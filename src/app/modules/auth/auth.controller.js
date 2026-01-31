@@ -244,6 +244,28 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
+const changePassword = async (req, res, next) => {
+  try {
+    const { id } = req.user;
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "oldPassword and newPassword are required");
+    }
+
+    await AuthService.changePassword(prisma, id, { oldPassword, newPassword });
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Password changed successfully",
+      data: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const googleCallback = async (req, res, next) => {
   try {
     let redirectTo = req.query.state ? String(req.query.state) : "";
@@ -284,5 +306,6 @@ export const AuthController = {
   forgotPassword,
   verifyForgotPasswordOtp,
   resetPassword,
+  changePassword,
   googleCallback,
 };
