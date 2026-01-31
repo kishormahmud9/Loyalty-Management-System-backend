@@ -10,6 +10,8 @@ import { AuditLogRoutes } from "../modules/systemOwner/auditLog/auditLog.route.j
 import { PlanRoutes } from "../modules/systemOwner/plan/plan.route.js";
 
 import { BusinessOwnerSupport } from "../modules/businessOwner/sendSupport/support.route.js";
+import OverviewRoutes from "../modules/businessOwner/overview/overview.route.js";
+import analyticsRoute from "../modules/businessOwner/analytics/analytics.route.js";
 import { SubscriptionRoutes } from "../modules/businessOwner/buySubscription/subscription.route.js";
 import { RedeemRewardRoutes } from "../modules/businessOwner/redeemReward/redeemReward.route.js";
 import { EarnRewardRoutes } from "../modules/businessOwner/earnReward/earnReward.route.js";
@@ -38,6 +40,8 @@ import staffRewardRoutes from "../modules/staff/reward/reward.route.js";
 import staffAuthRoutes from "../modules/staff/auth/staff.auth.routes.js";
 import staffNotificationRoutes from "../modules/staff/notification/notification.routes.js";
 import staffSettingsRoutes from "../modules/staff/settings/settings.route.js";
+
+import paymentRoutes from "../modules/payment/payment.route.js";
 
 export const router = Router();
 
@@ -89,6 +93,16 @@ const moduleRoutes = [
   },
 
   // business owner starts
+  {
+    path: "/business-owner/overview",
+    route: OverviewRoutes,
+  },
+
+  {
+    path: "/business-owner/analytics",
+    route: analyticsRoute,
+  },
+
   {
     path: "/business-owner/support",
     route: BusinessOwnerSupport,
@@ -205,6 +219,13 @@ const moduleRoutes = [
   {
     path: "/staff/settings",
     route: staffSettingsRoutes,
+  },
+
+  // payment routes
+
+  {
+    path: "/payments",
+    route: paymentRoutes,
   },
 ];
 

@@ -380,6 +380,9 @@ model Business {
   isActive    Boolean   @default(true)
   trialEndsAt DateTime?
 
+  //  Stripe (Business Owner pays)
+  stripeCustomerId String? @unique
+
   // Relations
   owner              User                     @relation("BusinessOwner", fields: [ownerId], references: [id])
   branches           Branch[]
@@ -626,6 +629,10 @@ model Plan {
   name  String @unique // Starter, Grow, Business
   price Int // 25, 45, 60
 
+  // Stripe prices
+  stripeMonthlyPriceId String?
+  stripeYearlyPriceId  String?
+
   maxBranches Int
   maxStaff    Int
   maxCards    Int
@@ -652,16 +659,21 @@ model BusinessSubscription {
   businessId String @unique
   planId     String
 
-  // snapshot fields (TEMPORARILY OPTIONAL)
-  planName    String?
-  price       Float?
-  maxBranches Int?
-  maxStaff    Int?
-  maxCards    Int?
+  //  Stripe
+  stripeSubscriptionId String? @unique
+  stripePriceId        String?
+  stripeStatus         String? // active | trialing | past_due | canceled
 
   status    SubscriptionStatus @default(ACTIVE)
   startDate DateTime           @default(now())
   endDate   DateTime?
+
+  // snapshot fields (TEMPORARILY OPTIONAL)
+  planName    String? 
+  price       Float?
+  maxBranches Int?
+  maxStaff    Int?
+  maxCards    Int?
 
   business Business @relation(fields: [businessId], references: [id])
   plan     Plan     @relation(fields: [planId], references: [id])
