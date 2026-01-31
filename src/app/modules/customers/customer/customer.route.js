@@ -3,6 +3,8 @@ import { CustomerController } from "./customer.controller.js";
 
 
 import { customerAuthMiddleware } from "../../../middleware/customerAuthMiddleware.js";
+import { customerProfileUpload } from "../../../config/customerProfileUpload.js";
+
 
 const router = express.Router();
 
@@ -16,7 +18,7 @@ router.get("/details/:id", customerAuthMiddleware, CustomerController.getCustome
 router.post("/update", customerAuthMiddleware, CustomerController.updateCustomer);
 
 router.post("/register-branch", customerAuthMiddleware, CustomerController.registerToNewBranch);
-router.post("/update-profile", customerAuthMiddleware, CustomerController.updateProfile);
+router.patch("/update-profile", customerAuthMiddleware, customerProfileUpload.single("avatar"), CustomerController.updateProfile);
 
 
 export const CustomerRoutes = router;
