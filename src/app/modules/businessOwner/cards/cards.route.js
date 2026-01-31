@@ -24,9 +24,9 @@ router.post(
 );
 
 router.get(
-    "/business/:businessId",
+    "/business",
     authenticate,
-    authorize(PERMISSIONS.CARD.READ),
+    authorize(PERMISSIONS.BUSINESS.READ),
     businessScope,
     CardController.getByBusiness
 );

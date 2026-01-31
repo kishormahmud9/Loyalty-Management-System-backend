@@ -13,7 +13,7 @@ router.post(
 );
 
 router.get(
-    "/manage/:businessId",
+    "/manage",
     checkAuthMiddleware(Role.BUSINESS_OWNER),
     StaffPermissionController.handleGetPermission
 );

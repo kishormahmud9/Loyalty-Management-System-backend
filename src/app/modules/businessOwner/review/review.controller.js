@@ -5,29 +5,13 @@ import { ReviewService } from "../../customers/review/review.service.js";
 export const BusinessReviewController = {
     handleGetBusinessReviews: async (req, res, next) => {
         try {
-            const { businessId } = req.params;
-            const ownerId = req.user.id;
+            const { businessId } = req.user;
 
-            // Verify business ownership
-            const business = await req.prisma.business.findUnique({
-                where: { id: businessId },
-                select: { ownerId: true },
-            });
-
-            if (!business) {
+            if (!businessId) {
                 return sendResponse(res, {
-                    statusCode: 404,
+                    statusCode: 400,
                     success: false,
-                    message: "Business not found",
-                    data: null,
-                });
-            }
-
-            if (business.ownerId !== ownerId) {
-                return sendResponse(res, {
-                    statusCode: 403,
-                    success: false,
-                    message: "Forbidden: You do not own this business",
+                    message: "Business ID is missing from your profile",
                     data: null,
                 });
             }
