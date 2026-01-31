@@ -5,6 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import { sendResponse } from "../../../utils/sendResponse.js";
 import prisma from "../../../prisma/client.js";
 import { AppError } from "../../../errorHelper/appError.js";
+import { envVars } from "../../../config/env.js";
 
 
 const registerCustomer = async (req, res, next) => {
@@ -159,6 +160,12 @@ const updateProfile = async (req, res, next) => {
   try {
     const customerId = req.user.id;
     const data = req.body;
+
+    // Handle file upload
+    if (req.file) {
+      data.avatarFilePath = req.file.path;
+      data.avatarUrl = `${envVars.SERVER_URL}/${req.file.path.replace(/\\/g, "/")}`;
+    }
 
     // Remove fields that should not be updated via this route
     delete data.id;
