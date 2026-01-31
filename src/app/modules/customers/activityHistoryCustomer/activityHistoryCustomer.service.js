@@ -52,9 +52,10 @@ const getActivityHistory = async (customerId, branchId) => {
             id: t.id,
             type: "POINT_TRANSACTION",
             transactionType: t.type, // EARN, REDEEM
+            icon: t.type === "EARN" ? "plus" : "minus",
             activityName: t.type === "EARN"
-                ? `Earned ${t.points} points from ${t.branch?.name || "Unknown Branch"}`
-                : `Redeemed ${t.points} points at ${t.branch?.name || "Unknown Branch"}`,
+                ? `${t.points} ${t.points === 1 ? 'Point' : 'Points'} earned at ${t.branch?.name || "Unknown Branch"}`
+                : `${t.points} Points redeemed at ${t.branch?.name || "Unknown Branch"}`,
             points: t.points,
             branchName: t.branch?.name || "Unknown Branch",
             date: t.createdAt
@@ -62,7 +63,8 @@ const getActivityHistory = async (customerId, branchId) => {
         ...claims.map(c => ({
             id: c.id,
             type: "CLAIM_REWARD",
-            activityName: `Claimed reward: ${c.redeemReward?.rewardName || "Unknown Reward"} at ${c.branch?.name || "Unknown Branch"}`,
+            icon: "reward",
+            activityName: `Reward '${c.redeemReward?.rewardName || "Unknown Reward"}' redeemed`,
             rewardName: c.redeemReward?.rewardName || "Unknown Reward",
             branchName: c.branch?.name || "Unknown Branch",
             date: c.createdAt
