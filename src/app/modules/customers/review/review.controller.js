@@ -6,13 +6,49 @@ export const ReviewController = {
     handleCreateReview: async (req, res, next) => {
         try {
             const customerId = req.user.id;
-            const { reviewText, branchName, star, businessId, branchId } = req.body;
+            let { reviewText, branchName, star, businessId, branchId } = req.body;
 
-            if (!businessId || !branchId || !reviewText || star === undefined) {
+            // 0. Fallback to activeBranchId if branchId is missing
+            if (!branchId) {
+                const customer = await req.prisma.customer.findUnique({
+                    where: { id: customerId },
+                    select: { activeBranchId: true }
+                });
+                branchId = customer?.activeBranchId;
+            }
+
+            if (!branchId) {
                 return sendResponse(res, {
                     statusCode: 400,
                     success: false,
-                    message: "Missing required fields: businessId, branchId, reviewText, star",
+                    message: "No branch selected and no active branch found.",
+                    data: null,
+                });
+            }
+
+            // 1. Fetch branch/business details if businessId or branchName is missing
+            const branch = await req.prisma.branch.findUnique({
+                where: { id: branchId },
+                select: { businessId: true, name: true }
+            });
+
+            if (!branch) {
+                return sendResponse(res, {
+                    statusCode: 404,
+                    success: false,
+                    message: "Selected branch not found",
+                    data: null,
+                });
+            }
+
+            businessId = businessId || branch.businessId;
+            branchName = branchName || branch.name;
+
+            if (!reviewText || star === undefined) {
+                return sendResponse(res, {
+                    statusCode: 400,
+                    success: false,
+                    message: "Missing required fields: reviewText, star",
                     data: null,
                 });
             }
@@ -22,7 +58,7 @@ export const ReviewController = {
                 businessId,
                 branchId,
                 reviewText,
-                branchName: branchName || "", // Optional or fallback
+                branchName: branchName || "",
                 star: parseInt(star),
                 hideStatus: false,
             };
@@ -51,13 +87,22 @@ export const ReviewController = {
 
     handleGetBranchReviews: async (req, res, next) => {
         try {
-            const { branchId } = req.params;
+            let { branchId } = req.params;
+
+            // Optional: fallback if branchId is "active" or missing
+            if (!branchId || branchId === "active") {
+                const customer = await req.prisma.customer.findUnique({
+                    where: { id: req.user.id },
+                    select: { activeBranchId: true }
+                });
+                branchId = customer?.activeBranchId;
+            }
 
             if (!branchId) {
                 return sendResponse(res, {
                     statusCode: 400,
                     success: false,
-                    message: "branchId is required",
+                    message: "branchId is required or no active branch set",
                     data: null,
                 });
             }

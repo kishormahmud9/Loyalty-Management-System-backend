@@ -4,7 +4,33 @@ import { sendResponse } from "../../../utils/sendResponse.js";
 class CustomerCardController {
     static async getByBusiness(req, res) {
         try {
-            const { businessId } = req.params;
+            let { businessId } = req.params;
+
+            // Fallback to active branch's business if businessId is missing
+            if (!businessId || businessId === "active") {
+                const customer = await req.prisma.customer.findUnique({
+                    where: { id: req.user.id },
+                    select: { activeBranchId: true }
+                });
+
+                if (customer?.activeBranchId) {
+                    const branch = await req.prisma.branch.findUnique({
+                        where: { id: customer.activeBranchId },
+                        select: { businessId: true }
+                    });
+                    businessId = branch?.businessId;
+                }
+            }
+
+            if (!businessId) {
+                return sendResponse(res, {
+                    statusCode: 400,
+                    success: false,
+                    message: "businessId is required or no active branch set",
+                    data: null,
+                });
+            }
+
             const cards = await CustomerCardService.getCardsByBusiness(businessId);
 
             sendResponse(res, {
