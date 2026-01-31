@@ -13,6 +13,16 @@ export const BranchService = {
     })
   },
 
+  findMyBranchesMinimal(prisma, businessId) {
+    return prisma.branch.findMany({
+      where: { businessId },
+      select: {
+        id: true,
+        name: true,
+      },
+    })
+  },
+
   findById(prisma, id) {
     return prisma.branch.findUnique({
       where: { id },
