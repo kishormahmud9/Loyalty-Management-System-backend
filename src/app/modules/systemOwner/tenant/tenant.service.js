@@ -94,7 +94,7 @@ export const createTenantService = async (prisma, payload) => {
         isVerified: false,
       },
     });
-
+    
     // 3️⃣ Create Business (Tenant)
     const trialEndsAt = new Date();
     trialEndsAt.setDate(trialEndsAt.getDate() + 7);
