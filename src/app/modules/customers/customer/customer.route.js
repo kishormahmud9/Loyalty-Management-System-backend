@@ -16,6 +16,7 @@ router.get("/details/:id", customerAuthMiddleware, CustomerController.getCustome
 router.post("/update", customerAuthMiddleware, CustomerController.updateCustomer);
 
 router.post("/register-branch", customerAuthMiddleware, CustomerController.registerToNewBranch);
+router.post("/update-profile", customerAuthMiddleware, CustomerController.updateProfile);
 
 
 export const CustomerRoutes = router;

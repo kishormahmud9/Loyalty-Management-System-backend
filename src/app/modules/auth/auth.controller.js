@@ -50,6 +50,8 @@ const credentialLogin = async (req, res, next) => {
             accessToken: userToken.accessToken,
             refreshToken: userToken.refreshToken,
             user: saveUser,
+            businessId: context.businessId,
+            branchId: context.branchId,
           },
         });
       } catch (innerError) {
