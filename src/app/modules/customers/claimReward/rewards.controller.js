@@ -7,12 +7,8 @@ import { AppError } from "../../../errorHelper/appError.js";
 
 const getBranchRewards = async (req, res, next) => {
     try {
-        const { branchId } = req.body;
+        const { branchId } = req.query; // Changed from req.body to req.query
         const customerId = req.user.id;
-
-        if (!branchId) {
-            throw new AppError(StatusCodes.BAD_REQUEST, "branchId is required in request body");
-        }
 
         const result = await CustomerRewardService.getRewardsByBranch(
             prisma,
@@ -33,11 +29,19 @@ const getBranchRewards = async (req, res, next) => {
 
 const getRedeemRewardsByBranch = async (req, res, next) => {
     try {
-        const { branchId } = req.params;
+        let { branchId } = req.params;
         const customerId = req.user.id;
 
+        if (!branchId || branchId === "active") {
+            const customer = await prisma.customer.findUnique({
+                where: { id: customerId },
+                select: { activeBranchId: true }
+            });
+            branchId = customer?.activeBranchId;
+        }
+
         if (!branchId) {
-            throw new AppError(StatusCodes.BAD_REQUEST, "branchId is required in request params");
+            throw new AppError(StatusCodes.BAD_REQUEST, "branchId is required or no active branch found");
         }
 
         const result = await CustomerRewardService.getRedeemRewardsByBranch(
@@ -86,10 +90,6 @@ const getRewardsWithClaimStatus = async (req, res, next) => {
     try {
         const { branchId } = req.params;
         const customerId = req.user.id;
-
-        if (!branchId) {
-            throw new AppError(StatusCodes.BAD_REQUEST, "branchId is required in params");
-        }
 
         const result = await CustomerRewardService.getRewardsWithClaimStatus(
             prisma,

@@ -35,10 +35,38 @@ export const CustomerService = {
         phone: true,
         address: true,
         avatarFilePath: true,
+        activeBranchId: true,
         createdAt: true,
         updatedAt: true,
       },
     }),
+
+  // SET ACTIVE BRANCH
+  setActiveBranch: async (prisma, customerId, branchId) => {
+    // 1. Verify customer is registered at this branch
+    const registration = await prisma.customerBranchData.findUnique({
+      where: {
+        customerId_branchId: {
+          customerId,
+          branchId
+        }
+      }
+    });
+
+    if (!registration) {
+      throw new AppError(403, "You are not registered at this branch");
+    }
+
+    // 2. Update activeBranchId
+    return prisma.customer.update({
+      where: { id: customerId },
+      data: { activeBranchId: branchId },
+      select: {
+        id: true,
+        activeBranchId: true
+      }
+    });
+  },
 
 
   // UPDATE / DELETE

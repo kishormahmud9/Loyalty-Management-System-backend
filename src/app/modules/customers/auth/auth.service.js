@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import prisma from "../../../prisma/client.js";
 import { envVars } from "../../../config/env.js";
 import { OtpService } from "../otp/otp.service.js";
+import { AppError } from "../../../errorHelper/appError.js";
 
 
 export const AuthService = {
@@ -64,19 +65,27 @@ export const AuthService = {
       throw new AppError(StatusCodes.NOT_FOUND, "Customer not found");
     }
 
-    // 2. Verify old password
+    // 2. Verify if customer has a password (might be an OAuth user)
+    if (!customer.passwordHash) {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        "You registered via social login and don't have a password. Please use forgot password to set one."
+      );
+    }
+
+    // 3. Verify old password
     const isPasswordMatch = await bcrypt.compare(oldPassword, customer.passwordHash);
     if (!isPasswordMatch) {
       throw new AppError(StatusCodes.FORBIDDEN, "Old password does not match");
     }
 
-    // 3. Hash new password
+    // 4. Hash new password
     const hashedPassword = await bcrypt.hash(
       newPassword,
       Number(envVars.BCRYPT_SALT_ROUND || 10)
     );
 
-    // 4. Update password
+    // 5. Update password
     await prisma.customer.update({
       where: { id },
       data: {
