@@ -6,9 +6,19 @@ import { BranchService } from "./branchs.service.js";
 export const BranchController = {
   create: async (req, res, next) => {
     try {
+      const { businessId } = req.user;
+
+      // Fetch business name from Business table
+      const business = await req.prisma.business.findUnique({
+        where: { id: businessId },
+        select: { name: true },
+      });
+
       // Map field names from request to match Branch model schema
       const branchData = {
-        businessId: req.user.businessId, // 🔒 Force businessId from authenticated user
+        businessId: businessId, // 🔒 Force businessId from authenticated user
+        businessName: business?.name || null,
+        managerName: req.body.managerName || null,
         name: req.body.branchName, // Map branchName -> name
         address: req.body.branchLocation, // Map branchLocation -> address
         city: req.body.city,
