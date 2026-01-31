@@ -137,8 +137,8 @@ model Customer {
   claims             ClaimReward[]
   notifications      CustomerNotification?
 
-  phone   String?
-  address String?
+  phone          String?
+  address        String?
   avatarFilePath String?
 
   createdAt                  DateTime                    @default(now())
@@ -417,6 +417,9 @@ model Branch {
   city       String?
   country    String?
   isActive   Boolean @default(true)
+
+  businessName String?
+  managerName  String?
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
