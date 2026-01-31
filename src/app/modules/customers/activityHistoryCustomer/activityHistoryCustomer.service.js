@@ -1,4 +1,5 @@
 import prisma from "../../../prisma/client.js";
+import { AppError } from "../../../errorHelper/appError.js";
 
 const getActivityHistory = async (customerId, branchId) => {
     // 0. If branchId is not provided, try to get it from the customer's profile
@@ -8,6 +9,10 @@ const getActivityHistory = async (customerId, branchId) => {
             select: { activeBranchId: true }
         });
         branchId = customer?.activeBranchId;
+    }
+
+    if (!branchId) {
+        throw new AppError(400, "No branch selected and no active branch found.");
     }
 
     // 1. Get Point Transactions (Earn, Redeem Points)
@@ -86,32 +91,36 @@ const getActivityHistory = async (customerId, branchId) => {
             });
 
             const currentPoints = history.rewardPoints;
+            const claimableRewards = activeRewards.filter(r => currentPoints >= r.rewardPoints);
             const minReward = activeRewards.length > 0 ? activeRewards[0] : null;
 
             let statusMessage = "No rewards available at this branch yet.";
             let progressPercentage = 0;
-            let canClaim = false;
+            let canClaim = claimableRewards.length > 0;
             let pointsNeeded = 0;
 
             if (minReward) {
                 const threshold = minReward.rewardPoints;
                 progressPercentage = Math.min(Math.round((currentPoints / threshold) * 100), 100);
-                canClaim = currentPoints >= threshold;
-                pointsNeeded = canClaim ? 0 : threshold - currentPoints;
-                statusMessage = canClaim
-                    ? "you can claim reward"
-                    : `${pointsNeeded} more points needed to claim your next reward: ${minReward.rewardName}`;
+
+                if (canClaim) {
+                    statusMessage = "you can claim reward";
+                } else {
+                    pointsNeeded = threshold - currentPoints;
+                    statusMessage = `${pointsNeeded} point needed to claim next reward`;
+                }
             }
 
             summary = {
                 branchId,
                 branchName: history.branch?.name,
                 totalAvailablePoints: currentPoints,
+                claimableRewardsCount: claimableRewards.length,
                 progressPercentage,
                 canClaim,
                 pointsNeeded,
                 statusMessage,
-                nextReward: minReward ? {
+                nextReward: !canClaim && minReward ? {
                     name: minReward.rewardName,
                     cost: minReward.rewardPoints
                 } : null
