@@ -4,46 +4,51 @@ import { envVars } from "../config/env.js";
 
 export const checkAuthMiddleware =
   (...allowedRoles) =>
-  async (req, res, next) => {
-    console.log("🔥 Auth middleware hit:", req.originalUrl);
+    async (req, res, next) => {
+      console.log("🔥 Auth middleware hit:", req.originalUrl);
 
-    try {
-      let token = req.headers.authorization;
+      try {
+        let token = req.headers.authorization;
 
-      if (!token) {
+        if (!token) {
+          return res.status(401).json({
+            success: false,
+            message: "No token provided",
+          });
+        }
+
+        const jwtToken = token.replace(/^Bearer\s*/i, "");
+        const decoded = jwt.verify(jwtToken, envVars.JWT_SECRET_TOKEN);
+
+        const user = await prisma.user.findUnique({
+          where: { id: decoded.id },
+        });
+
+        if (!user) {
+          return res.status(401).json({
+            success: false,
+            message: "User not found",
+          });
+        }
+
+        if (allowedRoles.length && !allowedRoles.includes(user.role)) {
+          return res.status(403).json({
+            success: false,
+            message: "Forbidden",
+          });
+        }
+
+        req.user = {
+          ...user,
+          businessId: decoded.businessId,
+          branchId: decoded.branchId,
+          staffId: decoded.staffId,
+        };
+        next();
+      } catch (error) {
         return res.status(401).json({
           success: false,
-          message: "No token provided",
+          message: "Invalid or expired token",
         });
       }
-
-      const jwtToken = token.replace(/^Bearer\s*/i, "");
-      const decoded = jwt.verify(jwtToken, envVars.JWT_SECRET_TOKEN);
-
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.id },
-      });
-
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: "User not found",
-        });
-      }
-
-      if (allowedRoles.length && !allowedRoles.includes(user.role)) {
-        return res.status(403).json({
-          success: false,
-          message: "Forbidden",
-        });
-      }
-
-      req.user = user;
-      next();
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid or expired token",
-      });
-    }
-  };
+    };
