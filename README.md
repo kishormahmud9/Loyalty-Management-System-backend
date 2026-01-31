@@ -116,6 +116,7 @@ This document provides details about the available API routes, request payloads,
   "branchName": "Downtown Branch",
   "branchLocation": "456 Side St",
   "managerName": "Manager Name",
+  "staffCount": 5,
   "city": "New York",
   "country": "USA"
 }

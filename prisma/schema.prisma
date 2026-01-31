@@ -420,6 +420,7 @@ model Branch {
 
   businessName String?
   managerName  String?
+  staffCount   Int     @default(0)
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
