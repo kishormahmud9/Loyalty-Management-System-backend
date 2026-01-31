@@ -80,6 +80,41 @@ export const AuthService = {
 
     return context;
   },
+
+  changePassword: async (prisma, id, payload) => {
+    const { oldPassword, newPassword } = payload;
+
+    // 1. Find user
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new AppError(StatusCodes.NOT_FOUND, "User not found");
+    }
+
+    // 2. Verify old password
+    const isPasswordMatch = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!isPasswordMatch) {
+      throw new AppError(StatusCodes.FORBIDDEN, "Old password does not match");
+    }
+
+    // 3. Hash new password
+    const hashedPassword = await bcrypt.hash(
+      newPassword,
+      Number(envVars.BCRYPT_SALT_ROUND || 10)
+    );
+
+    // 4. Update password
+    await prisma.user.update({
+      where: { id },
+      data: {
+        passwordHash: hashedPassword,
+      },
+    });
+
+    return true;
+  },
 };
 
 export const forgotPasswordService = async (prisma, email) => {
