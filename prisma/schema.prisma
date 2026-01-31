@@ -137,6 +137,9 @@ model Customer {
   claims             ClaimReward[]
   notifications      CustomerNotification?
 
+  phone   String?
+  address String?
+
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
   notificationCustomerStates NotificationCustomerState[]
