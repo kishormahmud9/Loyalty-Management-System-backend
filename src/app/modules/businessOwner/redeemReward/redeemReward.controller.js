@@ -5,23 +5,15 @@ import { sendResponse } from "../../../utils/sendResponse.js";
 class RedeemRewardController {
   static async create(req, res) {
     try {
-      const userId = req.user?.id;
-      const { businessId, branchId } = req.body;
-
-      if (!userId) {
-        return sendResponse(res, {
-          statusCode: 401,
-          success: false,
-          message: "Unauthorized",
-          data: null,
-        });
-      }
+      const userId = req.user.id;
+      const { businessId } = req.user;
+      const { branchId } = req.body;
 
       if (!businessId || !branchId) {
         return sendResponse(res, {
           statusCode: 400,
           success: false,
-          message: "businessId and branchId are required",
+          message: "branchId is required",
           data: null,
         });
       }
@@ -71,7 +63,8 @@ class RedeemRewardController {
 
   static async getAll(req, res) {
     try {
-      const redeemRewards = await RedeemRewardService.getAllRedeemRewards();
+      const { businessId } = req.user;
+      const redeemRewards = await RedeemRewardService.getRedeemRewardsByBusiness(businessId);
       sendResponse(res, {
         statusCode: 200,
         success: true,
@@ -119,8 +112,9 @@ class RedeemRewardController {
 
   static async getByBusiness(req, res) {
     try {
+      const { businessId } = req.user;
       const redeemRewards = await RedeemRewardService.getRedeemRewardsByBusiness(
-        req.params.businessId
+        businessId
       );
 
       sendResponse(res, {
@@ -179,6 +173,7 @@ class RedeemRewardController {
         redeemRewardId,
         {
           ...req.body,
+          businessId: req.user.businessId,
           rewardImageFilePath,
           rewardImage,
         }

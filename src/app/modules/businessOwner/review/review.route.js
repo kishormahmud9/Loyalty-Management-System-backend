@@ -7,7 +7,7 @@ import { Role } from "../../../utils/role.js";
 const router = Router();
 
 router.get(
-    "/:businessId",
+    "/all",
     checkAuthMiddleware(Role.BUSINESS_OWNER),
     BusinessReviewController.handleGetBusinessReviews
 );

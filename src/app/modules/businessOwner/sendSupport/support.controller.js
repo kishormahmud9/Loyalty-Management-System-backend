@@ -4,9 +4,11 @@ import { sendResponse } from "../../../utils/sendResponse.js";
 class SupportController {
   static async create(req, res) {
     try {
+      const { businessId } = req.user;
       const support = await SupportService.createSupport({
         ...req.body,
         userId: req.user.id,
+        businessId,
       });
       sendResponse(res, {
         statusCode: 201,

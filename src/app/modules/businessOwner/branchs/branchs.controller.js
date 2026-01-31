@@ -40,13 +40,29 @@ export const BranchController = {
 
   findAll: async (req, res, next) => {
     try {
-      const { businessId } = req.params; // 📍 Extract from params as requested
+      const { businessId } = req.user;
 
       const branches = await BranchService.findAll(req.prisma, businessId);
       sendResponse(res, {
         statusCode: 200,
         success: true,
         message: "All branches retrieved successfully",
+        data: branches,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  getMyBranches: async (req, res, next) => {
+    try {
+      const { businessId } = req.user;
+
+      const branches = await BranchService.findMyBranchesMinimal(req.prisma, businessId);
+      sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Your branches retrieved successfully",
         data: branches,
       });
     } catch (err) {
