@@ -19,8 +19,8 @@ class SupportService {
       throw new Error("Invalid priority value");
     }
 
-    if (!data.userId || !data.businessId || !data.branchId) {
-      throw new Error("UserId, BusinessId and BranchId are required");
+    if (!data.userId || !data.businessId) {
+      throw new Error("UserId and BusinessId are required");
     }
 
     const createdSupport = await prisma.support.create({
@@ -28,7 +28,8 @@ class SupportService {
         ticketId: this.generateSupportId(),
         userId: data.userId,
         businessId: data.businessId,
-        branchId: data.branchId,
+        branchId: data.branchId || null,
+        branchName: data.branchName || null,
         date: new Date(data.date),
         issue: data.issue,
         priority: data.priority,
@@ -46,6 +47,7 @@ class SupportService {
         ticketId: createdSupport.ticketId,
         priority: createdSupport.priority,
         issue: createdSupport.issue,
+        branchName: createdSupport.branchName,
       },
     });
 
