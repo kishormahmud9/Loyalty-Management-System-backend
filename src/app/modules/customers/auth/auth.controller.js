@@ -6,13 +6,14 @@ import bcrypt from "bcrypt";
 
 import { StatusCodes } from "http-status-codes";
 import prisma from "../../../prisma/client.js";
-import { AppError } from "../../../errorHelper/appError.js";
+
 import { OtpService } from "../otp/otp.service.js";
 
 import { envVars } from "../../../config/env.js";
 import { createCustomerTokens } from "../../../utils/customerTokenGenerator.js";
 import { sendResponse } from "../../../utils/sendResponse.js";
 import { setCustomerTokenHeader, clearCustomerTokenHeader } from "../../../utils/setCustomerTokenHeader.js";
+import { AppError } from "../../../errorHelper/appError.js";
 
 const credentialLogin = async (req, res, next) => {
   try {

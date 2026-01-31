@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import prisma from "../../../prisma/client.js";
 import { envVars } from "../../../config/env.js";
 import { OtpService } from "../otp/otp.service.js";
+import { AppError } from "../../../errorHelper/appError.js";
 
 
 export const AuthService = {
