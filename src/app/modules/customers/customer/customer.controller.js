@@ -155,12 +155,40 @@ const registerToNewBranch = async (req, res, next) => {
   }
 };
 
+const updateProfile = async (req, res, next) => {
+  try {
+    const customerId = req.user.id;
+    const data = req.body;
+
+    // Remove fields that should not be updated via this route
+    delete data.id;
+    delete data.passwordHash;
+    delete data.role;
+    delete data.isVerified;
+    delete data.qrCode;
+    delete data.qrCodePath;
+    delete data.qrCodeUrl;
+
+    const updatedCustomer = await CustomerService.update(prisma, customerId, data);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Profile updated successfully",
+      data: updatedCustomer,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const CustomerController = {
   registerCustomer,
   getCustomerInfo,
   getCustomerWithBranches,
   getMyBranches,
   updateCustomer,
-  registerToNewBranch
+  registerToNewBranch,
+  updateProfile
 };
 
