@@ -23,6 +23,7 @@ export const BranchController = {
         address: req.body.branchLocation, // Map branchLocation -> address
         city: req.body.city,
         country: req.body.country,
+        staffCount: req.body.staffCount ? parseInt(req.body.staffCount) : 0,
       };
 
       const branch = await BranchService.create(req.prisma, branchData);
