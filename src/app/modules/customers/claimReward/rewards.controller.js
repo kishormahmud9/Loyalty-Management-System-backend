@@ -7,12 +7,8 @@ import { AppError } from "../../../errorHelper/appError.js";
 
 const getBranchRewards = async (req, res, next) => {
     try {
-        const { branchId } = req.body;
+        const { branchId } = req.query; // Changed from req.body to req.query
         const customerId = req.user.id;
-
-        if (!branchId) {
-            throw new AppError(StatusCodes.BAD_REQUEST, "branchId is required in request body");
-        }
 
         const result = await CustomerRewardService.getRewardsByBranch(
             prisma,
@@ -86,10 +82,6 @@ const getRewardsWithClaimStatus = async (req, res, next) => {
     try {
         const { branchId } = req.params;
         const customerId = req.user.id;
-
-        if (!branchId) {
-            throw new AppError(StatusCodes.BAD_REQUEST, "branchId is required in params");
-        }
 
         const result = await CustomerRewardService.getRewardsWithClaimStatus(
             prisma,

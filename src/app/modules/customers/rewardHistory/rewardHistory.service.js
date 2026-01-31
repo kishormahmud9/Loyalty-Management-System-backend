@@ -24,6 +24,17 @@ const getMyHistory = async (customerId) => {
 };
 
 const getMyHistoryByBranch = async (customerId, branchId) => {
+    // 0. Fallback to activeBranchId
+    if (!branchId) {
+        const customer = await prisma.customer.findUnique({
+            where: { id: customerId },
+            select: { activeBranchId: true }
+        });
+        branchId = customer?.activeBranchId;
+    }
+
+    if (!branchId) return null;
+
     return prisma.rewardHistory.findUnique({
         where: {
             customerId_branchId: {
