@@ -25,6 +25,12 @@ router.post(
 );
 
 router.get(
+    "/all-rewards",
+    customerAuthMiddleware,
+    ClaimRewardControllerCustomer.getRewardsWithClaimStatus
+);
+
+router.get(
     "/all-rewards/:branchId",
     customerAuthMiddleware,
     ClaimRewardControllerCustomer.getRewardsWithClaimStatus
