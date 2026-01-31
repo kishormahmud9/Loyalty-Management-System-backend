@@ -14,6 +14,7 @@ router.get(
 
 router.get(
     "/branch-rewards/:branchId",
+    customerAuthMiddleware,
     ClaimRewardControllerCustomer.getRedeemRewardsByBranch
 );
 

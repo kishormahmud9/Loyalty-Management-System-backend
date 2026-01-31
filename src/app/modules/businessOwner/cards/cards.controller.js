@@ -5,22 +5,13 @@ class CardController {
     static async create(req, res) {
         try {
             const userId = req.user?.id;
-            const businessId = req.body.businessId;
-
-            if (!userId) {
-                return sendResponse(res, {
-                    statusCode: 401,
-                    success: false,
-                    message: "Unauthorized",
-                    data: null,
-                });
-            }
+            const { businessId } = req.user;
 
             if (!businessId) {
                 return sendResponse(res, {
                     statusCode: 400,
                     success: false,
-                    message: "businessId is required",
+                    message: "Business ID is missing from your profile",
                     data: null,
                 });
             }
@@ -71,27 +62,27 @@ class CardController {
         }
     }
 
-static async getByBusiness(req, res) {
-    try {
-        const { businessId } = req.params;
+    static async getByBusiness(req, res) {
+        try {
+            const { businessId } = req.user;
 
-        const cards = await CardService.getCardsByBusiness(businessId);
+            const cards = await CardService.getCardsByBusiness(businessId);
 
-        sendResponse(res, {
-            statusCode: 200,
-            success: true,
-            message: "Cards retrieved successfully",
-            data: cards,
-        });
-    } catch (error) {
-        sendResponse(res, {
-            statusCode: 500,
-            success: false,
-            message: error.message,
-            data: null,
-        });
+            sendResponse(res, {
+                statusCode: 200,
+                success: true,
+                message: "Cards retrieved successfully",
+                data: cards,
+            });
+        } catch (error) {
+            sendResponse(res, {
+                statusCode: 500,
+                success: false,
+                message: error.message,
+                data: null,
+            });
+        }
     }
-}
 
     static async getOne(req, res) {
         try {

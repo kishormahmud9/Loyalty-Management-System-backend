@@ -6,10 +6,12 @@ const increasePoints = async (req, res, next) => {
     try {
         const loggedInUserId = req.user.id;
         const { qrCode, branchId } = req.query;
+        const { businessId } = req.user;
         const result = await BusinessRewardHistoryService.increaseRewardPoints({
             ...req.body,
             qrCode,
             branchId,
+            businessId,
             loggedInUserId
         });
 
@@ -43,7 +45,8 @@ const getCustomerBranchHistory = async (req, res, next) => {
 const scanByQr = async (req, res, next) => {
     try {
         const loggedInUserId = req.user.id;
-        const { qrCode, branchId, businessId } = req.query;
+        const { qrCode, branchId } = req.query;
+        const { businessId } = req.user;
         const result = await BusinessRewardHistoryService.getHistoryByQrCode({
             qrCode,
             branchId,
@@ -66,7 +69,8 @@ const updatePoints = async (req, res, next) => {
     try {
         const loggedInUserId = req.user.id;
         const { id } = req.params;
-        const { points, businessId } = req.body;
+        const { points } = req.body;
+        const { businessId } = req.user;
         const result = await BusinessRewardHistoryService.updatePointsById({
             id,
             points,

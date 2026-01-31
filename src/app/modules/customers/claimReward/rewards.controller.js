@@ -34,6 +34,7 @@ const getBranchRewards = async (req, res, next) => {
 const getRedeemRewardsByBranch = async (req, res, next) => {
     try {
         const { branchId } = req.params;
+        const customerId = req.user.id;
 
         if (!branchId) {
             throw new AppError(StatusCodes.BAD_REQUEST, "branchId is required in request params");

@@ -3,7 +3,11 @@ import { sendResponse } from "../../../utils/sendResponse.js";
 
 const createSubscription = async (req, res) => {
     try {
-        const result = await SubscriptionServices.createSubscriptionIntoDB(req.body);
+        const { businessId } = req.user;
+        const result = await SubscriptionServices.createSubscriptionIntoDB({
+            ...req.body,
+            businessId
+        });
         sendResponse(res, {
             statusCode: 201,
             success: true,
