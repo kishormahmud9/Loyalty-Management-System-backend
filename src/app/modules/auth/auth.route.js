@@ -16,6 +16,11 @@ router.post(
   checkAuthMiddleware(...Object.values(Role)),
   AuthController.resetPassword
 );
+router.post(
+  "/change-password",
+  checkAuthMiddleware(...Object.values(Role)),
+  AuthController.changePassword
+);
 // Google login
 router.get("/google", (req, res, next) => {
   let redirect = req.query.redirect || "/";

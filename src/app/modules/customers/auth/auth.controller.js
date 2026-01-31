@@ -34,6 +34,11 @@ const credentialLogin = async (req, res, next) => {
       throw new AppError(StatusCodes.FORBIDDEN, "Authentication failed");
     }
 
+    // Check if customer is verified
+    if (!customer.isVerified) {
+      throw new AppError(StatusCodes.FORBIDDEN, "verify your email frist");
+    }
+
     // Generate access & refresh tokens
     // Using specialized customer token generator
     const tokens = await createCustomerTokens(customer);
@@ -311,12 +316,35 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
+const changePassword = async (req, res, next) => {
+  try {
+    const { id } = req.user;
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "oldPassword and newPassword are required");
+    }
+
+    await AuthService.changePassword(prisma, id, { oldPassword, newPassword });
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: "Password changed successfully",
+      data: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const AuthController = {
   credentialLogin,
   getNewAccessToken,
   logout,
   forgotPassword,
   verifyForgotPasswordOtp,
-  resetPassword
+  resetPassword,
+  changePassword
 };
 

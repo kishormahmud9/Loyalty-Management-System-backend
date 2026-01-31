@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { generateSixDigitCode, generateAndSaveQRCode } from "../../../utils/qrGenerator.js";
 import { envVars } from "../../../config/env.js";
 import { AppError } from "../../../errorHelper/appError.js";
+import { OtpService } from "../otp/otp.service.js";
 
 export const CustomerService = {
 
@@ -171,6 +172,9 @@ export const createCustomerService = async (payload) => {
       ...rest,
     },
   });
+
+  // Send OTP
+  await OtpService.sendOtp(prisma, email, customer.name);
 
   return customer;
 };

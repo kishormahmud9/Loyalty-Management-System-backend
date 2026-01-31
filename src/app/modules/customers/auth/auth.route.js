@@ -15,6 +15,11 @@ router.post(
   customerAuthMiddleware,
   AuthController.resetPassword
 );
+router.post(
+  "/change-password",
+  customerAuthMiddleware,
+  AuthController.changePassword
+);
 
 
 export const CustomerAuthRouter = router;
