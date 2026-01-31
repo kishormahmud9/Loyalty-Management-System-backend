@@ -3,21 +3,59 @@ import EarnRewardService from "./earnReward.service.js";
 import { sendResponse } from "../../../utils/sendResponse.js";
 
 class EarnRewardController {
-    static async create(req, res) {
+    static async create(req, res, next) {
         try {
+            const userId = req.user.id;
             const { businessId } = req.user;
             const { branchId } = req.body;
+
+            // 🔍 Verify user exists to prevent foreign key violation
+            const userExists = await req.prisma.user.findUnique({
+                where: { id: userId },
+            });
+
+            if (!userExists) {
+                return sendResponse(res, {
+                    statusCode: 401,
+                    success: false,
+                    message: "Authenticated user no longer exists in the system",
+                    data: null,
+                });
+            }
 
             if (!businessId || !branchId) {
                 return sendResponse(res, {
                     statusCode: 400,
                     success: false,
-                    message: "branchId is required",
+                    message: "branchId and businessId are required",
                     data: null,
                 });
             }
 
-            // 🖼️ IMAGE HANDLING
+            // � Verify branch exists and belongs to this business
+            const branchExists = await req.prisma.branch.findUnique({
+                where: { id: branchId },
+            });
+
+            if (!branchExists) {
+                return sendResponse(res, {
+                    statusCode: 404,
+                    success: false,
+                    message: "Branch not found",
+                    data: null,
+                });
+            }
+
+            if (branchExists.businessId !== businessId) {
+                return sendResponse(res, {
+                    statusCode: 403,
+                    success: false,
+                    message: "Branch does not belong to your business",
+                    data: null,
+                });
+            }
+
+            // �🖼️ IMAGE HANDLING
             let rewardImageFilePath = null;
             let rewardImage = null;
 
@@ -50,12 +88,7 @@ class EarnRewardController {
                 data: earnReward,
             });
         } catch (error) {
-            return sendResponse(res, {
-                statusCode: error.statusCode || 400,
-                success: false,
-                message: error.message,
-                data: null,
-            });
+            next(error);
         }
     }
 
