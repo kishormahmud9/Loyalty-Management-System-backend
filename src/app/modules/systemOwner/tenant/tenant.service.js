@@ -114,6 +114,8 @@ export const createTenantService = async (prisma, payload) => {
     const createdBranch = await tx.branch.create({
       data: {
         businessId: createdBusiness.id,
+        businessName: createdBusiness.name,
+        managerName: createdOwner.name,
         name: "Main Branch",
         address: branch.address,
         country: business.country,
