@@ -1,4 +1,5 @@
 import prisma from "../../../prisma/client.js";
+import { AppError } from "../../../errorHelper/appError.js";
 
 const getMyHistory = async (customerId) => {
     return prisma.rewardHistory.findMany({
@@ -33,7 +34,9 @@ const getMyHistoryByBranch = async (customerId, branchId) => {
         branchId = customer?.activeBranchId;
     }
 
-    if (!branchId) return null;
+    if (!branchId) {
+        throw new AppError(400, "No branch selected and no active branch found.");
+    }
 
     return prisma.rewardHistory.findUnique({
         where: {
