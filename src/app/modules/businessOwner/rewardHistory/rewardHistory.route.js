@@ -5,7 +5,7 @@ import { Role } from "../../../utils/role.js";
 
 const router = express.Router();
 
-router.post(
+router.patch(
     "/increase-points/:branchId",
     checkAuthMiddleware(Role.BUSINESS_OWNER),
     BusinessRewardHistoryController.increasePoints
