@@ -89,9 +89,31 @@ const updatePoints = async (req, res, next) => {
     }
 }
 
+const findCustomerByQr = async (req, res, next) => {
+    try {
+        const loggedInUserId = req.user.id;
+        const { qrCode } = req.params;
+
+        const result = await BusinessRewardHistoryService.findCustomerByQr({
+            qrCode,
+            loggedInUserId
+        });
+
+        sendResponse(res, {
+            statusCode: StatusCodes.OK,
+            success: true,
+            message: "Customer found and history retrieved successfully",
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 export const BusinessRewardHistoryController = {
     increasePoints,
     getCustomerBranchHistory,
     scanByQr,
-    updatePoints
+    updatePoints,
+    findCustomerByQr
 };
