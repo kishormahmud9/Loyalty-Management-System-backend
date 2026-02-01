@@ -13,6 +13,24 @@ export const authenticate = async (req, res, next) => {
         const jwtToken = token.replace(/^Bearer\s*/i, "");
         const decoded = jwt.verify(jwtToken, envVars.JWT_SECRET_TOKEN);
 
+        // Fetch user from DB to check current status (especially isVerified)
+        const user = await req.prisma.user.findUnique({
+            where: { id: decoded.id },
+            select: { isVerified: true, role: true }
+        });
+
+        if (!user) {
+            return res.status(401).json({ success: false, message: "User not found" });
+        }
+
+        // Enforce isVerified for all users
+        if (!user.isVerified) {
+            return res.status(403).json({
+                success: false,
+                message: "verify your email frist"
+            });
+        }
+
         // Attach standardized payload
         req.user = {
             id: decoded.id,

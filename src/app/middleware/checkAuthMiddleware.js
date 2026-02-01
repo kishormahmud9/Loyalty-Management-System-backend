@@ -38,6 +38,14 @@ export const checkAuthMiddleware =
           });
         }
 
+        // Enforce isVerified for all users
+        if (!user.isVerified) {
+          return res.status(403).json({
+            success: false,
+            message: "verify your email frist",
+          });
+        }
+
         req.user = {
           ...user,
           businessId: decoded.businessId,

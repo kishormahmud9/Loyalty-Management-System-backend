@@ -31,16 +31,21 @@ export const generateQRCodeDataURL = async (text) => {
  * Generates a QR code and saves it as a PNG file.
  * @param {string} text - The text to encode in the QR code.
  * @param {string} filename - The name of the file to save.
+ * @param {string} uploadDir - Optional. The directory to save the file in (default: uploads/qrcodes/).
  * @returns {Promise<string>} Relative path to the saved QR code image.
  */
-export const generateAndSaveQRCode = async (text, filename) => {
-    const uploadPath = "uploads/qrcodes/";
-    if (!fs.existsSync(uploadPath)) {
-        fs.mkdirSync(uploadPath, { recursive: true });
+export const generateAndSaveQRCode = async (text, filename, uploadDir = "uploads/qrcodes/") => {
+    // Ensure the directory ends with a slash
+    if (!uploadDir.endsWith("/")) {
+        uploadDir += "/";
     }
 
-    const filePath = path.join(uploadPath, `${filename}.png`);
-    const relativePath = `uploads/qrcodes/${filename}.png`;
+    if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const filePath = path.join(uploadDir, `${filename}.png`);
+    const relativePath = `${uploadDir}${filename}.png`;
 
     try {
         await QRCode.toFile(filePath, text);
