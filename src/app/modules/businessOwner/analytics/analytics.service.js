@@ -1,4 +1,5 @@
 import prisma from "../../../prisma/client.js";
+import { Prisma } from "@prisma/client";
 
 /* ---------------- SAFE QUERY WRAPPER ---------------- */
 const safe = async (fn, fallback) => {
@@ -69,10 +70,10 @@ export const getAnalyticsData = async (userId, branchId) => {
   /* ---------- TABLE DATA (DAILY AGGREGATION) ---------- */
 
   const table = await safe(async () => {
-    const conditions = [prisma.sql`"businessId" = ${businessId}`];
+    const conditions = [Prisma.sql` "businessId" = ${businessId} `];
 
     if (branchId) {
-      conditions.push(prisma.sql`"branchId" = ${branchId}`);
+      conditions.push(Prisma.sql` "branchId" = ${branchId} `);
     }
 
     const rows = await prisma.$queryRaw`
@@ -83,7 +84,7 @@ export const getAnalyticsData = async (userId, branchId) => {
               THEN 1 ELSE 0 END)::int           AS rewardRedeemed,
           SUM("points")::int                    AS programCost
         FROM "PointTransaction"
-        WHERE ${prisma.join(conditions, prisma.sql` AND `)}
+        WHERE ${Prisma.join(conditions, " AND ")}
         GROUP BY DATE("createdAt")
         ORDER BY DATE("createdAt") DESC
       `;
