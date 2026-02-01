@@ -78,7 +78,7 @@ model User {
   passwordHash String?
   avatarUrl    String?
 
-  role   UserRole   @default(CUSTOMER)
+  role   UserRole   @default(BUSINESS_OWNER)
   status UserStatus @default(ACTIVE)
 
   isVerified Boolean @default(false)
@@ -208,7 +208,7 @@ model Support {
   businessId String
   branchId   String?
   branchName String?
-
+status String?
   date     DateTime
   issue    String
   priority Priority
@@ -426,6 +426,10 @@ model Branch {
   businessName String?
   managerName  String?
   staffCount   Int     @default(0)
+
+  branchQrCode         String?
+  branchQrCodeFilePath String?
+  branchQrCodeUrl      String?
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
