@@ -101,7 +101,15 @@ export const activatePlanForBusinessService = async ({
 
 export const createPlanService = async (data) => {
   try {
-    const { name, price, maxBranches, maxStaff, maxCards } = data;
+    const {
+      name,
+      price,
+      maxBranches,
+      maxStaff,
+      maxCards,
+      stripeMonthlyPriceId,
+      stripeYearlyPriceId,
+    } = data;
 
     // 🔒 Validation (NO THROW)
     if (!name) return { error: "Plan name is required" };
@@ -110,6 +118,13 @@ export const createPlanService = async (data) => {
       return { error: "Invalid maxBranches" };
     if (maxStaff == null || maxStaff < 0) return { error: "Invalid maxStaff" };
     if (maxCards == null || maxCards < 0) return { error: "Invalid maxCards" };
+
+    // ✅ NEW validation (Stripe IDs)
+    if (!stripeMonthlyPriceId)
+      return { error: "Stripe monthly price ID is required" };
+
+    if (!stripeYearlyPriceId)
+      return { error: "Stripe yearly price ID is required" };
 
     // 🔎 Check duplicate plan name
     const existing = await prisma.plan.findUnique({
@@ -128,6 +143,11 @@ export const createPlanService = async (data) => {
         maxBranches,
         maxStaff,
         maxCards,
+
+        // ✅ NEW (Stripe)
+        stripeMonthlyPriceId,
+        stripeYearlyPriceId,
+
         isActive: true,
       },
     });
