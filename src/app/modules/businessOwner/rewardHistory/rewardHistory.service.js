@@ -90,8 +90,8 @@ const increaseRewardPoints = async (data) => {
 
     const customerId = customer.id;
 
-    // 3. Verify if customer is registered at this branch
-    const registration = await prisma.customerBranchData.findFirst({
+    // 3. Verify or Auto-Register customer at this branch
+    let registration = await prisma.customerBranchData.findFirst({
         where: {
             customerId,
             branchId,
@@ -99,15 +99,23 @@ const increaseRewardPoints = async (data) => {
         }
     });
 
-    if (!registration) {
-        throw new AppError(403, "Customer is not registered at this branch");
-    }
-
-    // 4. Update or create reward history for this customer-branch pair (using transaction for atomicity)
+    // 4. Update or create reward history (using transaction for atomicity and auto-registration)
     try {
         console.log(`🚀 [POINTS_UPDATE] Increasing points for Customer: ${customerId} | Branch: ${branchId} | Points: ${points}`);
 
         const result = await prisma.$transaction(async (tx) => {
+            // If not registered, create registration record
+            if (!registration) {
+                console.log(`📝 [AUTO_REG] Registering customer ${customerId} to branch ${branchId}`);
+                await tx.customerBranchData.create({
+                    data: {
+                        customerId,
+                        businessId,
+                        branchId
+                    }
+                });
+            }
+
             const history = await tx.rewardHistory.upsert({
                 where: {
                     customerId_branchId: {
@@ -385,38 +393,55 @@ const findCustomerByQr = async (data) => {
 
     const customerId = customer.id;
 
-    // 2. Find all reward history for this customer in any business owned by this user
+    // 2. Find all businesses owned by this user
     const businesses = await prisma.business.findMany({
         where: { ownerId: loggedInUserId },
-        select: { id: true }
+        select: { id: true, name: true }
     });
 
     const businessIds = businesses.map(b => b.id);
 
-    const rewardHistories = await prisma.rewardHistory.findMany({
-        where: {
-            customerId: customerId,
-            businessId: { in: businessIds }
-        },
-        include: {
-            branch: {
-                select: {
-                    id: true,
-                    name: true
-                }
-            },
+    // 3. Find all branches for these businesses
+    const allBranches = await prisma.branch.findMany({
+        where: { businessId: { in: businessIds } },
+        select: {
+            id: true,
+            name: true,
+            businessId: true,
             business: {
                 select: {
-                    id: true,
                     name: true
                 }
             }
         }
     });
 
+    // 4. Find all reward history for this customer in these businesses
+    const rewardHistories = await prisma.rewardHistory.findMany({
+        where: {
+            customerId: customerId,
+            businessId: { in: businessIds }
+        },
+        select: {
+            id: true,
+            rewardPoints: true,
+            branchId: true
+        }
+    });
+
+    // 5. Merge branches with history
+    const branchesWithHistory = allBranches.map(branch => {
+        const history = rewardHistories.find(h => h.branchId === branch.id);
+        return {
+            ...branch,
+            rewardPoints: history ? history.rewardPoints : 0,
+            historyId: history ? history.id : null
+        };
+    });
+
     return {
         customer,
-        rewardHistories
+        branches: branchesWithHistory
     };
 };
 
