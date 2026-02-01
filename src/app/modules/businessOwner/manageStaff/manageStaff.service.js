@@ -1,6 +1,7 @@
 // services/staff.service.js
 import bcrypt from "bcrypt";
 import { envVars } from "../../../config/env.js";
+import { QueryBuilder } from "../../../utils/QueryBuilder.js";
 
 export const StaffService = {
   async create(prisma, data) {
@@ -53,6 +54,42 @@ export const StaffService = {
         branch: true,
       },
     })
+  },
+
+  async getAllStaffFromDB(prisma, query, businessId) {
+    const staffModel = new QueryBuilder(query)
+      .search(["user.name", "user.email"])
+      .filter({
+        branch: ["name"], // This allows filtering by branch name if passed as { name: '...' } in where
+      })
+      .sort()
+      .paginate()
+      .fields();
+
+    const result = await prisma.staff.findMany({
+      where: {
+        ...staffModel.where,
+        businessId,
+      },
+      ...staffModel.build(),
+      include: {
+        user: true,
+        business: true,
+        branch: true,
+      },
+    });
+
+    const total = await prisma.staff.count({
+      where: {
+        ...staffModel.where,
+        businessId,
+      },
+    });
+
+    return {
+      data: result,
+      meta: staffModel.getMeta(total),
+    };
   },
 
   findById(prisma, id, businessId) {

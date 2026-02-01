@@ -27,6 +27,11 @@ const credentialLogin = async (req, res, next) => {
           );
         }
 
+        // Enforce isVerified check
+        if (!user.isVerified) {
+          return next(new AppError(StatusCodes.FORBIDDEN, "verify your email frist"));
+        }
+
         // Generate access & refresh tokens
         const context = await AuthService.getUserContext(
           prisma,
@@ -281,6 +286,11 @@ const googleCallback = async (req, res, next) => {
 
     if (!user) {
       throw new AppError(StatusCodes.NOT_FOUND, "User not found");
+    }
+
+    // Enforce isVerified check
+    if (!user.isVerified) {
+      return res.redirect(`${envVars.FRONT_END_URL}/login?error=verify your email frist&isError=true`);
     }
 
     // Generate tokens
