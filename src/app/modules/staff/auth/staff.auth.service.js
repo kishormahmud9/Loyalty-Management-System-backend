@@ -42,11 +42,9 @@ export const staffLoginService = async (prisma, payload) => {
     // 🔐 JWT with branchId (SOURCE OF TRUTH)
     const token = jwt.sign(
       {
-        staffId: user.id,
+        id: user.id, // Fixed: use 'id' to match middleware expectation
         role: "STAFF",
         type: "STAFF_TEMP",
-        branchId: user.staffProfile.branchId,
-        businessId: user.staffProfile.businessId,
       },
       envVars.JWT_SECRET_TOKEN,
       { expiresIn: "15m" },
@@ -143,6 +141,12 @@ export const staffPinLoginService = async (prisma, payload) => {
 
       if (match) {
         // ✅ FOUND THE STAFF
+
+        // 🔍 Fetch Business Permissions
+        const permissions = await prisma.staffPermission.findUnique({
+          where: { businessId: staff.businessId }
+        });
+
         const token = jwt.sign(
           {
             id: staff.user.id,
@@ -151,6 +155,8 @@ export const staffPinLoginService = async (prisma, payload) => {
             staffId: staff.id,
             businessId: staff.businessId,
             branchId: staff.branchId,
+            name: staff.user.name,
+            permissions: permissions || {}, // Include permissions for the frontend
           },
           envVars.JWT_SECRET_TOKEN,
           { expiresIn: envVars.JWT_EXPIRES_IN },
