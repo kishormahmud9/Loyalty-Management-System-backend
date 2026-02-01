@@ -1,4 +1,8 @@
-import { setStaffPinService, staffLoginService, staffPinLoginService } from "./staff.auth.service.js";
+import {
+  setStaffPinService,
+  staffLoginService,
+  staffPinLoginService,
+} from "./staff.auth.service.js";
 import { sendResponse } from "../../../utils/sendResponse.js";
 
 export const staffLogin = async (req, res) => {
@@ -18,9 +22,11 @@ export const staffLogin = async (req, res) => {
       statusCode: 200,
       success: true,
       message: "Staff login successful",
+
       data: {
         token: result.token,
         requirePinSetup: result.requirePinSetup,
+        branchId: result.branchId,
       },
     });
   } catch (error) {
@@ -64,7 +70,6 @@ export const setStaffPin = async (req, res) => {
     });
   }
 };
-
 
 export const staffPinLogin = async (req, res) => {
   try {
