@@ -1,4 +1,4 @@
-import { excludeFields } from "../constant.js";
+import { excludeFields } from "./excludesField.js";
 
 
 
@@ -59,7 +59,7 @@ export class QueryBuilder {
 
 
   search(searchConfig = []) {
-    const searchTerm = this.query.searchTerm || this.query.searchParam ;
+    const searchTerm = this.query.searchTerm || this.query.searchParam;
     if (!searchTerm || !searchConfig.length) return this;
 
     this.where.OR = searchConfig.map(field => {

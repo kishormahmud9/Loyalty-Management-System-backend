@@ -10,7 +10,6 @@ export const StaffController = {
     try {
       const { name, email, password, branchId } = req.body;
       const { businessId } = req.user;
-
       const staff = await StaffService.create(req.prisma, {
         name,
         email,
@@ -45,6 +44,27 @@ export const StaffController = {
         success: true,
         message: "Staff retrieved successfully",
         data: staffs,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  getAllStaff: async (req, res, next) => {
+    try {
+      const { businessId } = req.user;
+
+      const { data, meta } = await StaffService.getAllStaffFromDB(
+        req.prisma,
+        req.query,
+        businessId
+      );
+
+      res.json({
+        success: true,
+        message: "All staff retrieved successfully",
+        meta,
+        data,
       });
     } catch (err) {
       next(err);
