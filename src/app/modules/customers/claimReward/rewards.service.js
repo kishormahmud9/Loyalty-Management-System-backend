@@ -57,65 +57,79 @@ const getRedeemRewardsByBranch = async (prisma, branchId) => {
 };
 
 const claimReward = async (prisma, customerId, redeemRewardId) => {
-    return await prisma.$transaction(async (tx) => {
-        // 1. Fetch the reward to get branchId and point cost
-        const reward = await tx.redeemReward.findUnique({
-            where: { id: redeemRewardId }
-        });
+    try {
+        console.log(`🚀 [REWARD_CLAIM] Starting claim for Customer: ${customerId} | RewardID: ${redeemRewardId}`);
 
-        if (!reward) {
-            throw new AppError(404, "Redeem Reward not found");
-        }
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Fetch the reward to get branchId and point cost
+            const reward = await tx.redeemReward.findUnique({
+                where: { id: redeemRewardId }
+            });
 
-        // 2. Check if already claimed
-        const existingClaim = await tx.claimReward.findFirst({
-            where: {
-                customerId,
-                redeemRewardId
+            if (!reward) {
+                console.warn(`⚠️ [REWARD_CLAIM] Reward ${redeemRewardId} not found`);
+                throw new AppError(404, "Redeem Reward not found");
             }
-        });
 
-        if (existingClaim) {
-            throw new AppError(400, "You have already claimed this reward");
-        }
-
-        // 3. Check if customer has enough points in this branch
-        const history = await tx.rewardHistory.findUnique({
-            where: {
-                customerId_branchId: {
+            // 2. Check if already claimed
+            const existingClaim = await tx.claimReward.findFirst({
+                where: {
                     customerId,
-                    branchId: reward.branchId
+                    redeemRewardId
                 }
+            });
+
+            if (existingClaim) {
+                console.warn(`⚠️ [REWARD_CLAIM] Customer ${customerId} already claimed reward ${redeemRewardId}`);
+                throw new AppError(400, "You have already claimed this reward");
             }
+
+            // 3. Check if customer has enough points
+            const history = await tx.rewardHistory.findUnique({
+                where: {
+                    customerId_branchId: {
+                        customerId,
+                        branchId: reward.branchId
+                    }
+                }
+            });
+
+            if (!history || history.rewardPoints < reward.rewardPoints) {
+                console.warn(`🔓 [REWARD_CLAIM_FAILED] Insufficient points for ${customerId}. Has: ${history?.rewardPoints || 0}, Needs: ${reward.rewardPoints}`);
+                throw new AppError(400, `Insufficient points. You have ${history?.rewardPoints || 0} and need ${reward.rewardPoints}`);
+            }
+
+            // 4. Deduct points
+            await tx.rewardHistory.update({
+                where: { id: history.id },
+                data: {
+                    rewardPoints: { decrement: reward.rewardPoints }
+                }
+            });
+
+            // 5. Create claim record
+            const claim = await tx.claimReward.create({
+                data: {
+                    redeemRewardId,
+                    customerId,
+                    branchId: reward.branchId,
+                    claimStatus: 'CLAIMED'
+                },
+                include: {
+                    redeemReward: true
+                }
+            });
+
+            console.log(`✅ [REWARD_CLAIM_SUCCESS] Customer ${customerId} redeemed '${reward.rewardName}' for ${reward.rewardPoints} points.`);
+            return claim;
         });
 
-        if (!history || history.rewardPoints < reward.rewardPoints) {
-            throw new AppError(400, `Insufficient points. You have ${history?.rewardPoints || 0} and need ${reward.rewardPoints}`);
-        }
+        return result;
 
-        // 3. Deduct points from RewardHistory
-        await tx.rewardHistory.update({
-            where: { id: history.id },
-            data: {
-                rewardPoints: { decrement: reward.rewardPoints }
-            }
-        });
-
-        // 4. Create the claim record
-        const claim = await tx.claimReward.create({
-            data: {
-                redeemRewardId,
-                customerId,
-                branchId: reward.branchId,
-                claimStatus: 'CLAIMED'
-            },
-            include: {
-                redeemReward: true
-            }
-        });
-
-        return claim;
-    });
+    } catch (error) {
+        console.error(`🔥 [REWARD_CLAIM_ERROR] Failed for customer ${customerId}:`, error.message);
+        throw error;
+    }
 };
 
 const getRewardsWithClaimStatus = async (prisma, customerId, branchId) => {

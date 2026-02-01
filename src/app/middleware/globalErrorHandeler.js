@@ -3,10 +3,12 @@ import { AppError } from "../errorHelper/appError.js";
 import { envVars } from "../config/env.js";
 
 export const globalErrorHandler = (err, req, res, next) => {
-  if (envVars.NODE_ENV === "development") {
-    console.error(err);
-  }
+  // Enhanced logging for all environments to help with VPS debugging
+  console.error(`🛑 [GLOBAL_ERROR] Path: ${req.originalUrl} | Method: ${req.method} | Error: ${err.message}`);
 
+  if (envVars.NODE_ENV === "development") {
+    console.error(err.stack);
+  }
   let statusCode = 500;
   let message = "Something went wrong!";
   let errorSource = [];

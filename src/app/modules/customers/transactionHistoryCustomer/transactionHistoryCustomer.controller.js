@@ -5,6 +5,7 @@ import { TransactionHistoryCustomerService } from "./transactionHistoryCustomer.
 const getEarnedHistory = async (req, res, next) => {
     try {
         const customerId = req.user.id;
+        console.log(`📥 [API_REQUEST] Customer ${customerId} requesting Earned History`);
         const result = await TransactionHistoryCustomerService.getEarnedPointsHistory(customerId);
 
         sendResponse(res, {

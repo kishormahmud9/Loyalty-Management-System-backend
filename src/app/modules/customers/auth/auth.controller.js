@@ -32,13 +32,17 @@ const credentialLogin = async (req, res, next) => {
     const isPasswordMatch = await bcrypt.compare(password, customer.passwordHash);
 
     if (!isPasswordMatch) {
+      console.warn(`🔓 [AUTH_FAILED] Incorrect password for: ${email}`);
       throw new AppError(StatusCodes.FORBIDDEN, "Authentication failed");
     }
 
     // Check if customer is verified
     if (!customer.isVerified) {
+      console.warn(`✉️ [AUTH_FAILED] Unverified email attempt: ${email}`);
       throw new AppError(StatusCodes.FORBIDDEN, "verify your email frist");
     }
+
+    console.log(`🔑 [AUTH_SUCCESS] Customer logged in: ${email} | ID: ${customer.id}`);
 
     // Generate access & refresh tokens
     // Using specialized customer token generator
@@ -208,7 +212,9 @@ const logout = async (req, res, next) => {
         where: { customerId: customerId },
       });
       deletedSessionsCount = result.count;
-      console.log(`✅ LOGOUT: Wiped ${deletedSessionsCount} session(s) for customer ${customerId}`);
+      console.log(`🚪 [AUTH_LOGOUT] Wiped ${deletedSessionsCount} session(s) for customer: ${customerId}`);
+    } else {
+      console.log(`🚪 [AUTH_LOGOUT] Logout called with no valid customer identification.`);
     }
 
     // Clear tokens/cookies

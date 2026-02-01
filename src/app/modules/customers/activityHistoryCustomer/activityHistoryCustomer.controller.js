@@ -6,6 +6,7 @@ const getMyActivityHistory = async (req, res, next) => {
     try {
         const customerId = req.user.id;
         const { branchId } = req.body;
+        console.log(`📥 [API_REQUEST] Customer ${customerId} requesting Activity History for branch: ${branchId || 'ALL'}`);
         const result = await ActivityHistoryCustomerService.getActivityHistory(customerId, branchId);
 
         sendResponse(res, {
