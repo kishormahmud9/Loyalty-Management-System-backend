@@ -104,59 +104,69 @@ const increaseRewardPoints = async (data) => {
     }
 
     // 4. Update or create reward history for this customer-branch pair (using transaction for atomicity)
-    const result = await prisma.$transaction(async (tx) => {
-        const history = await tx.rewardHistory.upsert({
-            where: {
-                customerId_branchId: {
+    try {
+        console.log(`🚀 [POINTS_UPDATE] Increasing points for Customer: ${customerId} | Branch: ${branchId} | Points: ${points}`);
+
+        const result = await prisma.$transaction(async (tx) => {
+            const history = await tx.rewardHistory.upsert({
+                where: {
+                    customerId_branchId: {
+                        customerId,
+                        branchId
+                    }
+                },
+                update: {
+                    rewardPoints: { increment: Number(points) },
+                    lastRewardReceived: new Date()
+                },
+                create: {
                     customerId,
-                    branchId
+                    businessId,
+                    branchId,
+                    rewardPoints: Number(points),
+                    lastRewardReceived: new Date(),
+                    activeRewards: 0,
+                    availableRewards: 0
                 }
-            },
-            update: {
-                rewardPoints: { increment: Number(points) },
-                lastRewardReceived: new Date()
-            },
-            create: {
+            });
+
+            // 5. Create PointTransaction log so it appears in Customer History
+            await tx.pointTransaction.create({
+                data: {
+                    businessId,
+                    branchId,
+                    customerId,
+                    points: Number(points),
+                    type: "EARN",
+                    staffId: staffProfile ? staffProfile.id : null // If staff performed it, link them
+                }
+            });
+
+            return history;
+        });
+
+        console.log(`✅ [POINTS_UPDATE] Successfully updated points for ${customerId}. New Total: ${result.rewardPoints}`);
+
+        // Log for system audit
+        await auditLog({
+            userId: loggedInUserId,
+            businessId,
+            action: `Increased reward points for customer ${customerId} (QR: ${qrCode}) by ${points}`,
+            actionType: "UPDATE",
+            metadata: {
                 customerId,
-                businessId,
-                branchId,
-                rewardPoints: Number(points),
-                lastRewardReceived: new Date(),
-                activeRewards: 0,
-                availableRewards: 0
+                qrCode,
+                points,
+                branchId
             }
         });
 
-        // 5. Create PointTransaction log so it appears in Customer History
-        await tx.pointTransaction.create({
-            data: {
-                businessId,
-                branchId,
-                customerId,
-                points: Number(points),
-                type: "EARN",
-                staffId: staffProfile ? staffProfile.id : null // If staff performed it, link them
-            }
-        });
+        return result;
 
-        return history;
-    });
-
-    // Log for system audit
-    await auditLog({
-        userId: loggedInUserId,
-        businessId,
-        action: `Increased reward points for customer ${customerId} (QR: ${qrCode}) by ${points}`,
-        actionType: "UPDATE",
-        metadata: {
-            customerId,
-            qrCode,
-            points,
-            branchId
-        }
-    });
-
-    return result;
+    } catch (error) {
+        console.error(`🔥 [POINTS_UPDATE_ERROR] Failed to update points for ${customerId} at branch ${branchId}:`, error);
+        throw error;
+    }
 };
 
 const getRewardHistoryByBranch = async (customerId, branchId) => {
@@ -303,42 +313,52 @@ const updatePointsById = async (data) => {
         throw new AppError(400, "RewardHistory ID and points are required");
     }
 
-    const result = await prisma.$transaction(async (tx) => {
-        const history = await tx.rewardHistory.update({
-            where: { id },
-            data: {
-                rewardPoints: { increment: Number(points) },
-                lastRewardReceived: new Date()
+    try {
+        console.log(`🚀 [POINTS_MANUAL_UPDATE] Updating history record ${id} with ${points} points.`);
+
+        const result = await prisma.$transaction(async (tx) => {
+            const history = await tx.rewardHistory.update({
+                where: { id },
+                data: {
+                    rewardPoints: { increment: Number(points) },
+                    lastRewardReceived: new Date()
+                }
+            });
+
+            // Create PointTransaction log
+            await tx.pointTransaction.create({
+                data: {
+                    businessId: businessId || history.businessId,
+                    branchId: history.branchId,
+                    customerId: history.customerId,
+                    points: Number(points),
+                    type: "EARN"
+                }
+            });
+
+            return history;
+        });
+
+        console.log(`✅ [POINTS_MANUAL_UPDATE] Successfully updated record ${id}.`);
+
+        // Log transaction
+        await auditLog({
+            userId: loggedInUserId,
+            businessId: businessId || result.businessId,
+            action: `Updated reward points for history record ${id} by ${points}`,
+            actionType: "UPDATE",
+            metadata: {
+                historyId: id,
+                points
             }
         });
 
-        // Create PointTransaction log
-        await tx.pointTransaction.create({
-            data: {
-                businessId: businessId || history.businessId,
-                branchId: history.branchId,
-                customerId: history.customerId,
-                points: Number(points),
-                type: "EARN"
-            }
-        });
+        return result;
 
-        return history;
-    });
-
-    // Log transaction
-    await auditLog({
-        userId: loggedInUserId,
-        businessId: businessId || result.businessId,
-        action: `Updated reward points for history record ${id} by ${points}`,
-        actionType: "UPDATE",
-        metadata: {
-            historyId: id,
-            points
-        }
-    });
-
-    return result;
+    } catch (error) {
+        console.error(`🔥 [POINTS_MANUAL_UPDATE_ERROR] Failed to update history record ${id}:`, error);
+        throw error;
+    }
 };
 
 export const BusinessRewardHistoryService = {

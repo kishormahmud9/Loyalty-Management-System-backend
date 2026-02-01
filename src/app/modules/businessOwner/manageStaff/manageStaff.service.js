@@ -7,42 +7,53 @@ export const StaffService = {
   async create(prisma, data) {
     const { name, email, password, branchId, businessId } = data;
 
-    // 1. Hash the password
-    const hashedPassword = await bcrypt.hash(
-      password,
-      Number(envVars.BCRYPT_SALT_ROUND)
-    );
+    try {
+      console.log(`🚀 [MANAGE_STAFF] Creating new staff for branch: ${branchId} | Email: ${email}`);
 
-    // 2. Execute in transaction
-    return await prisma.$transaction(async (tx) => {
-      // Create User
-      const user = await tx.user.create({
-        data: {
-          name,
-          email,
-          passwordHash: hashedPassword,
-          role: 'STAFF',
-        },
+      // 1. Hash the password
+      const hashedPassword = await bcrypt.hash(
+        password,
+        Number(envVars.BCRYPT_SALT_ROUND)
+      );
+
+      // 2. Execute in transaction
+      const result = await prisma.$transaction(async (tx) => {
+        // Create User
+        const user = await tx.user.create({
+          data: {
+            name,
+            email,
+            passwordHash: hashedPassword,
+            role: 'STAFF',
+          },
+        });
+
+        // Create Staff linked to User and Business/Branch
+        const staff = await tx.staff.create({
+          data: {
+            userId: user.id,
+            businessId,
+            branchId,
+            role: 'STAFF', // Default to STAFF role
+            isActive: true,
+          },
+          include: {
+            user: true,
+            business: true,
+            branch: true,
+          },
+        });
+
+        return staff;
       });
 
-      // Create Staff linked to User and Business/Branch
-      const staff = await tx.staff.create({
-        data: {
-          userId: user.id,
-          businessId,
-          branchId,
-          role: 'STAFF', // Default to STAFF role
-          isActive: true,
-        },
-        include: {
-          user: true,
-          business: true,
-          branch: true,
-        },
-      });
+      console.log(`✅ [MANAGE_STAFF] Staff created successfully: ${result.id} (User: ${result.userId})`);
+      return result;
 
-      return staff;
-    });
+    } catch (error) {
+      console.error(`🔥 [MANAGE_STAFF_ERROR] Failed to create staff for email ${email}:`, error.message);
+      throw error;
+    }
   },
 
   findAll(prisma, filters = {}) {

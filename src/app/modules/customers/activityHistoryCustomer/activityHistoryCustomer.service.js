@@ -2,151 +2,141 @@ import prisma from "../../../prisma/client.js";
 import { AppError } from "../../../errorHelper/appError.js";
 
 const getActivityHistory = async (customerId, branchId) => {
-    // 0. If branchId is not provided, try to get it from the customer's profile
-    if (!branchId) {
-        const customer = await prisma.customer.findUnique({
-            where: { id: customerId },
-            select: { activeBranchId: true }
-        });
-        branchId = customer?.activeBranchId;
-    }
+    try {
+        console.log(`� [ACTIVITY_HISTORY] Processing request for customerId: ${customerId} | branchId: ${branchId || 'NONE'}`);
 
-    if (!branchId) {
-        throw new AppError(400, "No branch selected and no active branch found.");
-    }
-
-    // 1. Get Point Transactions (Earn, Redeem Points)
-    const transactionWhere = { customerId };
-    if (branchId) transactionWhere.branchId = branchId;
-
-    const transactions = await prisma.pointTransaction.findMany({
-        where: transactionWhere,
-        include: {
-            branch: {
-                select: { name: true }
-            }
-        },
-        orderBy: { createdAt: "desc" }
-    });
-
-    // 2. Get Claimed Rewards (Free item redeems)
-    const claimWhere = { customerId };
-    if (branchId) claimWhere.branchId = branchId;
-
-    const claims = await prisma.claimReward.findMany({
-        where: claimWhere,
-        include: {
-            branch: {
-                select: { name: true }
-            },
-            redeemReward: {
-                select: { rewardName: true }
-            }
-        },
-        orderBy: { createdAt: "desc" }
-    });
-
-    // 3. Merge and format activities
-    const activities = [
-        ...transactions.map(t => ({
-            id: t.id,
-            type: "POINT_TRANSACTION",
-            transactionType: t.type, // EARN, REDEEM
-            icon: t.type === "EARN" ? "plus" : "minus",
-            activityName: t.type === "EARN"
-                ? `${t.points} ${t.points === 1 ? 'Point' : 'Points'} earned at ${t.branch?.name || "Unknown Branch"}`
-                : `${t.points} Points redeemed at ${t.branch?.name || "Unknown Branch"}`,
-            points: t.points,
-            branchName: t.branch?.name || "Unknown Branch",
-            date: t.createdAt
-        })),
-        ...claims.map(c => ({
-            id: c.id,
-            type: "CLAIM_REWARD",
-            icon: "reward",
-            activityName: `Reward '${c.redeemReward?.rewardName || "Unknown Reward"}' redeemed`,
-            rewardName: c.redeemReward?.rewardName || "Unknown Reward",
-            branchName: c.branch?.name || "Unknown Branch",
-            date: c.createdAt
-        }))
-    ];
-
-    // 4. Sort by date desc
-    activities.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    // 5. Calculate Reward Progress Summary (if branchId is provided)
-    let summary = null;
-    if (branchId) {
-        const history = await prisma.rewardHistory.findUnique({
-            where: {
-                customerId_branchId: { customerId, branchId }
-            },
-            include: {
-                branch: { select: { name: true } }
-            }
-        });
-
-        if (history) {
-            // Get user's existing claims to distinguish between 'CLAIM' (pending) and 'CLAIMED' (used)
-            const userClaims = await prisma.claimReward.findMany({
-                where: { customerId, branchId },
-                select: { redeemRewardId: true, claimStatus: true }
+        // 0. If branchId is not provided, try to get it from the customer's profile
+        if (!branchId) {
+            const customer = await prisma.customer.findUnique({
+                where: { id: customerId },
+                select: { activeBranchId: true }
             });
-
-            const handledRewardIds = userClaims.map(c => c.redeemRewardId);
-            const pendingClaimsCount = userClaims.filter(c => c.claimStatus === "CLAIM").length;
-
-            // Get all active rewards for the branch
-            const activeRewards = await prisma.redeemReward.findMany({
-                where: { branchId, rewardStatus: "ACTIVE" },
-                orderBy: { rewardPoints: "asc" } // Get cheapest first
-            });
-
-            // Potential rewards are those the user hasn't handled yet (neither CLAIM nor CLAIMED)
-            const potentialRewards = activeRewards.filter(r => !handledRewardIds.includes(r.id));
-
-            const currentPoints = history.rewardPoints;
-            const canClaimNow = potentialRewards.filter(r => currentPoints >= r.rewardPoints);
-            const minReward = potentialRewards.length > 0 ? potentialRewards[0] : null;
-
-            let statusMessage = "No rewards available at this branch yet.";
-            let progressPercentage = 0;
-            let canClaim = canClaimNow.length > 0;
-            let pointsNeeded = 0;
-
-            if (minReward) {
-                const threshold = minReward.rewardPoints;
-                progressPercentage = Math.min(Math.round((currentPoints / threshold) * 100), 100);
-
-                if (canClaim) {
-                    statusMessage = "you can claim reward";
-                } else {
-                    pointsNeeded = threshold - currentPoints;
-                    statusMessage = `${pointsNeeded} point needed to claim next reward`;
-                }
-            }
-
-            summary = {
-                branchId,
-                branchName: history.branch?.name,
-                totalAvailablePoints: currentPoints,
-                claimableRewardsCount: pendingClaimsCount, // Show count of rewards ready to be used (status: CLAIM)
-                progressPercentage,
-                canClaim,
-                pointsNeeded,
-                statusMessage,
-                nextReward: !canClaim && minReward ? {
-                    name: minReward.rewardName,
-                    cost: minReward.rewardPoints
-                } : null
-            };
+            branchId = customer?.activeBranchId;
+            console.log(`ℹ️ [ACTIVITY_HISTORY] Using activeBranchId from profile: ${branchId}`);
         }
-    }
 
-    return {
-        summary,
-        activities
-    };
+        if (!branchId) {
+            console.warn(`⚠️ [ACTIVITY_HISTORY] No branch selection found for customer ${customerId}`);
+            throw new AppError(400, "No branch selected and no active branch found.");
+        }
+
+        // 1. Get Point Transactions
+        const transactionWhere = { customerId };
+        if (branchId) transactionWhere.branchId = branchId;
+
+        const transactions = await prisma.pointTransaction.findMany({
+            where: transactionWhere,
+            include: { branch: { select: { name: true } } },
+            orderBy: { createdAt: "desc" }
+        });
+        console.log(`✅ [ACTIVITY_HISTORY] Fetched ${transactions.length} point transactions.`);
+
+        // 2. Get Claimed Rewards
+        const claimWhere = { customerId };
+        if (branchId) claimWhere.branchId = branchId;
+
+        const claims = await prisma.claimReward.findMany({
+            where: claimWhere,
+            include: {
+                branch: { select: { name: true } },
+                redeemReward: { select: { rewardName: true } }
+            },
+            orderBy: { createdAt: "desc" }
+        });
+        console.log(`✅ [ACTIVITY_HISTORY] Fetched ${claims.length} claims.`);
+
+        // 3. Format activities
+        const activities = [
+            ...transactions.map(t => ({
+                id: t.id,
+                type: "POINT_TRANSACTION",
+                transactionType: t.type,
+                icon: t.type === "EARN" ? "plus" : "minus",
+                activityName: t.type === "EARN"
+                    ? `${t.points} ${t.points === 1 ? 'Point' : 'Points'} earned at ${t.branch?.name || "Unknown Branch"}`
+                    : `${t.points} Points redeemed at ${t.branch?.name || "Unknown Branch"}`,
+                points: t.points,
+                branchName: t.branch?.name || "Unknown Branch",
+                date: t.createdAt
+            })),
+            ...claims.map(c => ({
+                id: c.id,
+                type: "CLAIM_REWARD",
+                icon: "reward",
+                activityName: `Reward '${c.redeemReward?.rewardName || "Unknown Reward"}' redeemed`,
+                rewardName: c.redeemReward?.rewardName || "Unknown Reward",
+                branchName: c.branch?.name || "Unknown Branch",
+                date: c.createdAt
+            }))
+        ];
+
+        activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // 4. Calculate Summary
+        let summary = null;
+        if (branchId) {
+            const history = await prisma.rewardHistory.findUnique({
+                where: { customerId_branchId: { customerId, branchId } },
+                include: { branch: { select: { name: true } } }
+            });
+
+            console.log(`ℹ️ [ACTIVITY_HISTORY] Reward history found: ${history ? 'YES' : 'NO'} | Points: ${history?.rewardPoints || 0}`);
+
+            if (history) {
+                const userClaims = await prisma.claimReward.findMany({
+                    where: { customerId, branchId },
+                    select: { redeemRewardId: true, claimStatus: true }
+                });
+
+                const handledRewardIds = userClaims.map(c => c.redeemRewardId);
+                const pendingClaimsCount = userClaims.filter(c => c.claimStatus === "CLAIM").length;
+
+                const activeRewards = await prisma.redeemReward.findMany({
+                    where: { branchId, rewardStatus: "ACTIVE" },
+                    orderBy: { rewardPoints: "asc" }
+                });
+
+                const potentialRewards = activeRewards.filter(r => !handledRewardIds.includes(r.id));
+                const currentPoints = history.rewardPoints;
+                const canClaimNow = potentialRewards.filter(r => currentPoints >= r.rewardPoints);
+                const minReward = potentialRewards.length > 0 ? potentialRewards[0] : null;
+
+                let statusMessage = "No rewards available at this branch yet.";
+                let progressPercentage = 0;
+                let canClaim = canClaimNow.length > 0;
+                let pointsNeeded = 0;
+
+                if (minReward) {
+                    const threshold = minReward.rewardPoints;
+                    progressPercentage = Math.min(Math.round((currentPoints / threshold) * 100), 100);
+                    if (canClaim) statusMessage = "you can claim reward";
+                    else {
+                        pointsNeeded = threshold - currentPoints;
+                        statusMessage = `${pointsNeeded} point needed to claim next reward`;
+                    }
+                }
+
+                summary = {
+                    branchId,
+                    branchName: history.branch?.name,
+                    totalAvailablePoints: currentPoints,
+                    claimableRewardsCount: pendingClaimsCount,
+                    progressPercentage,
+                    canClaim,
+                    pointsNeeded,
+                    statusMessage,
+                    nextReward: !canClaim && minReward ? { name: minReward.rewardName, cost: minReward.rewardPoints } : null
+                };
+            }
+        }
+
+        console.log(`✨ [ACTIVITY_HISTORY] Successfully prepared history with ${activities.length} activities.`);
+        return { summary, activities };
+
+    } catch (error) {
+        console.error(`🔥 [ACTIVITY_HISTORY_ERROR] Error for customer ${customerId}:`, error);
+        throw error;
+    }
 };
 
 export const ActivityHistoryCustomerService = {

@@ -14,6 +14,16 @@ export const BranchController = {
         select: { name: true },
       });
 
+      // 🖼️ IMAGE HANDLING
+      let branchImageFilePath = null;
+      let branchImageUrl = null;
+
+      if (req.file) {
+        branchImageFilePath = req.file.path.replace(/\\/g, "/");
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        branchImageUrl = `${baseUrl}/${branchImageFilePath}`;
+      }
+
       // Map field names from request to match Branch model schema
       const branchData = {
         businessId: businessId, // 🔒 Force businessId from authenticated user
@@ -24,6 +34,8 @@ export const BranchController = {
         city: req.body.city,
         country: req.body.country,
         staffCount: req.body.staffCount ? parseInt(req.body.staffCount) : 0,
+        branchImageUrl,
+        branchImageFilePath,
       };
 
       const branch = await BranchService.create(req.prisma, branchData);
@@ -97,7 +109,21 @@ export const BranchController = {
 
   update: async (req, res, next) => {
     try {
-      const branch = await BranchService.update(req.prisma, req.params.id, req.body);
+      // 🖼️ IMAGE HANDLING
+      let branchImageFilePath = undefined;
+      let branchImageUrl = undefined;
+
+      if (req.file) {
+        branchImageFilePath = req.file.path.replace(/\\/g, "/");
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        branchImageUrl = `${baseUrl}/${branchImageFilePath}`;
+      }
+
+      const branch = await BranchService.update(req.prisma, req.params.id, {
+        ...req.body,
+        branchImageUrl,
+        branchImageFilePath,
+      });
 
       sendResponse(res, {
         statusCode: 200,
