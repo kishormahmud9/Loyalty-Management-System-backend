@@ -31,7 +31,8 @@ class CustomerCardController {
                 });
             }
 
-            const cards = await CustomerCardService.getCardsByBusiness(businessId);
+            const customerId = req.user?.id;
+            const cards = await CustomerCardService.getCardsByBusiness(businessId, customerId);
 
             sendResponse(res, {
                 statusCode: 200,
@@ -59,6 +60,27 @@ class CustomerCardController {
                 success: true,
                 message: "Card retrieved successfully",
                 data: card,
+            });
+        } catch (error) {
+            sendResponse(res, {
+                statusCode: error.statusCode || 500,
+                success: false,
+                message: error.message,
+                data: null,
+            });
+        }
+    }
+
+    static async getMyCards(req, res) {
+        try {
+            const customerId = req.user.id;
+            const result = await CustomerCardService.getMyCards(customerId);
+
+            sendResponse(res, {
+                statusCode: 200,
+                success: true,
+                message: "My cards retrieved successfully",
+                data: result,
             });
         } catch (error) {
             sendResponse(res, {
