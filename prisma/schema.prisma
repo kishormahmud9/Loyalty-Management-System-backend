@@ -208,7 +208,7 @@ model Support {
   businessId String
   branchId   String?
   branchName String?
-status String?
+status String? @default("pending")
   date     DateTime
   issue    String
   priority Priority

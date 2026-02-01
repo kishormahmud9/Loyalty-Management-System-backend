@@ -33,6 +33,7 @@ import { CustomerReviewRoutes } from "../modules/customers/review/review.route.j
 import { CustomerNotificationRoutes } from "../modules/customers/customerNotification/customerNotification.route.js";
 import { CustomerActivityHistoryRoutes } from "../modules/customers/activityHistoryCustomer/activityHistoryCustomer.route.js";
 import { EarnRewardCustomerRoutes } from "../modules/customers/earnRewardCustomer/earnRewardCustomer.route.js";
+import { CustomerTransactionHistoryRoutes } from "../modules/customers/transactionHistoryCustomer/transactionHistoryCustomer.route.js";
 import { ActivePlanRoutes } from "../modules/systemOwner/plan/activePlan.route.js";
 
 import staffRoutes from "../modules/staff/customer/customer.route.js";
@@ -95,6 +96,10 @@ const moduleRoutes = [
   {
     path: "/customer/earn-reward",
     route: EarnRewardCustomerRoutes,
+  },
+  {
+    path: "/customer/transaction-history",
+    route: CustomerTransactionHistoryRoutes,
   },
 
   {

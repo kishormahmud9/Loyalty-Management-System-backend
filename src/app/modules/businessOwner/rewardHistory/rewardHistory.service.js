@@ -103,30 +103,46 @@ const increaseRewardPoints = async (data) => {
         throw new AppError(403, "Customer is not registered at this branch");
     }
 
-    // 4. Update or create reward history for this customer-branch pair
-    const history = await prisma.rewardHistory.upsert({
-        where: {
-            customerId_branchId: {
+    // 4. Update or create reward history for this customer-branch pair (using transaction for atomicity)
+    const result = await prisma.$transaction(async (tx) => {
+        const history = await tx.rewardHistory.upsert({
+            where: {
+                customerId_branchId: {
+                    customerId,
+                    branchId
+                }
+            },
+            update: {
+                rewardPoints: { increment: Number(points) },
+                lastRewardReceived: new Date()
+            },
+            create: {
                 customerId,
-                branchId
+                businessId,
+                branchId,
+                rewardPoints: Number(points),
+                lastRewardReceived: new Date(),
+                activeRewards: 0,
+                availableRewards: 0
             }
-        },
-        update: {
-            rewardPoints: { increment: Number(points) },
-            lastRewardReceived: new Date()
-        },
-        create: {
-            customerId,
-            businessId,
-            branchId,
-            rewardPoints: Number(points),
-            lastRewardReceived: new Date(),
-            activeRewards: 0,
-            availableRewards: 0
-        }
+        });
+
+        // 5. Create PointTransaction log so it appears in Customer History
+        await tx.pointTransaction.create({
+            data: {
+                businessId,
+                branchId,
+                customerId,
+                points: Number(points),
+                type: "EARN",
+                staffId: staffProfile ? staffProfile.id : null // If staff performed it, link them
+            }
+        });
+
+        return history;
     });
 
-    // Log transaction
+    // Log for system audit
     await auditLog({
         userId: loggedInUserId,
         businessId,
@@ -140,7 +156,7 @@ const increaseRewardPoints = async (data) => {
         }
     });
 
-    return history;
+    return result;
 };
 
 const getRewardHistoryByBranch = async (customerId, branchId) => {
@@ -287,18 +303,33 @@ const updatePointsById = async (data) => {
         throw new AppError(400, "RewardHistory ID and points are required");
     }
 
-    const history = await prisma.rewardHistory.update({
-        where: { id },
-        data: {
-            rewardPoints: { increment: Number(points) },
-            lastRewardReceived: new Date()
-        }
+    const result = await prisma.$transaction(async (tx) => {
+        const history = await tx.rewardHistory.update({
+            where: { id },
+            data: {
+                rewardPoints: { increment: Number(points) },
+                lastRewardReceived: new Date()
+            }
+        });
+
+        // Create PointTransaction log
+        await tx.pointTransaction.create({
+            data: {
+                businessId: businessId || history.businessId,
+                branchId: history.branchId,
+                customerId: history.customerId,
+                points: Number(points),
+                type: "EARN"
+            }
+        });
+
+        return history;
     });
 
     // Log transaction
     await auditLog({
         userId: loggedInUserId,
-        businessId: businessId || history.businessId,
+        businessId: businessId || result.businessId,
         action: `Updated reward points for history record ${id} by ${points}`,
         actionType: "UPDATE",
         metadata: {
@@ -307,7 +338,7 @@ const updatePointsById = async (data) => {
         }
     });
 
-    return history;
+    return result;
 };
 
 export const BusinessRewardHistoryService = {
