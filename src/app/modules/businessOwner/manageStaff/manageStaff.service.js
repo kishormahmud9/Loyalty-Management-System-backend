@@ -25,6 +25,7 @@ export const StaffService = {
             email,
             passwordHash: hashedPassword,
             role: 'STAFF',
+            isVerified: true, // Staff users are verified by default
           },
         });
 
