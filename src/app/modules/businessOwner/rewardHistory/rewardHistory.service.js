@@ -7,6 +7,7 @@ const increaseRewardPoints = async (data) => {
         qrCode,
         businessId,
         branchId,
+        rewardHistoryId, // Add this line
         points,
         loggedInUserId, // For audit log and context
         earningRule,
@@ -116,13 +117,13 @@ const increaseRewardPoints = async (data) => {
                 });
             }
 
-            // Define how we find the record (prioritize ID if it came from the search results)
-            const whereClause = (rewardHistoryId && rewardHistoryId !== "null")
-                ? { id: rewardHistoryId }
-                : { customerId_branchId: { customerId, branchId } };
-
             const history = await tx.rewardHistory.upsert({
-                where: whereClause,
+                where: {
+                    customerId_branchId: {
+                        customerId,
+                        branchId
+                    }
+                },
                 update: {
                     rewardPoints: { increment: Number(points) },
                     lastRewardReceived: new Date()
