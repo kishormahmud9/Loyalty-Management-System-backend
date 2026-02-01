@@ -6,19 +6,29 @@ import prisma from "../../../prisma/client.js";
  */
 const getEarnedPointsHistory = async (customerId, branchId) => {
     try {
-        console.log(`🚀 [TX_HISTORY] Fetching earned history for customerId: ${customerId} | branchId: ${branchId || 'ALL'}`);
+        console.log(`🚀 [TX_HISTORY] Fetching earned history for customerId: ${customerId} | branchId: ${branchId || 'NONE'}`);
 
-        const where = {
-            customerId: customerId,
-            type: "EARN"
-        };
+        // 0. If branchId is not provided, try to get it from the customer's profile
+        if (!branchId) {
+            const customer = await prisma.customer.findUnique({
+                where: { id: customerId },
+                select: { activeBranchId: true }
+            });
+            branchId = customer?.activeBranchId;
+            console.log(`ℹ️ [TX_HISTORY] Using activeBranchId from profile: ${branchId}`);
+        }
 
-        if (branchId) {
-            where.branchId = branchId;
+        if (!branchId) {
+            console.warn(`⚠️ [TX_HISTORY] No branch selection found for customer ${customerId}`);
+            throw new AppError(400, "No branch selected and no active branch found.");
         }
 
         const transactions = await prisma.pointTransaction.findMany({
-            where,
+            where: {
+                customerId: customerId,
+                branchId: branchId,
+                type: "EARN"
+            },
             select: {
                 id: true,
                 points: true,
