@@ -18,7 +18,7 @@ export const getSystemOwnerSupportTicketsService = async (query) => {
   };
 
   const [tickets, total] = await Promise.all([
-    prisma.supportTicket.findMany({
+    prisma.support.findMany({
       where,
       include: {
         business: {
@@ -29,7 +29,7 @@ export const getSystemOwnerSupportTicketsService = async (query) => {
       skip: (page - 1) * limit,
       take: Number(limit),
     }),
-    prisma.supportTicket.count({ where }),
+    prisma.support.count({ where }),
   ]);
 
   return {
@@ -55,7 +55,7 @@ export const getSystemOwnerSupportTicketsService = async (query) => {
    VIEW SUPPORT TICKET (BY ID)
 ========================= */
 export const getSystemOwnerSupportTicketByIdService = async (id) => {
-  return prisma.supportTicket.findUnique({
+  return prisma.support.findUnique({
     where: { id },
     include: {
       business: {
@@ -89,7 +89,7 @@ export const updateSystemOwnerSupportTicketStatusByIdService = async (
     updateData.closedAt = new Date();
   }
 
-  return prisma.supportTicket.update({
+  return prisma.support.update({
     where: { id },
     data: updateData,
   });
