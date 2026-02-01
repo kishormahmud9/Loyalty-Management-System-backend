@@ -29,4 +29,10 @@ router.patch(
     BusinessRewardHistoryController.updatePoints
 );
 
+router.get(
+    "/find-customer/:qrCode",
+    checkAuthMiddleware(Role.BUSINESS_OWNER),
+    BusinessRewardHistoryController.findCustomerByQr
+);
+
 export const BusinessRewardHistoryRoutes = router;
