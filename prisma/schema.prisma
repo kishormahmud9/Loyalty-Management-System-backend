@@ -408,6 +408,10 @@ model Business {
   reviews              Review[]
   staffPermission      StaffPermission?
   cards                Card[]
+
+  businessLogo         String?
+  businessLogoFilePath String?
+  businessLogoUrl      String?
 }
 
 /**
