@@ -361,9 +361,69 @@ const updatePointsById = async (data) => {
     }
 };
 
+const findCustomerByQr = async (data) => {
+    const { qrCode, loggedInUserId } = data;
+
+    if (!qrCode) {
+        throw new AppError(400, "qrCode is required");
+    }
+
+    // 1. Find customer
+    const customer = await prisma.customer.findUnique({
+        where: { qrCode },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            qrCode: true
+        }
+    });
+
+    if (!customer) {
+        throw new AppError(404, "Customer not found");
+    }
+
+    const customerId = customer.id;
+
+    // 2. Find all reward history for this customer in any business owned by this user
+    const businesses = await prisma.business.findMany({
+        where: { ownerId: loggedInUserId },
+        select: { id: true }
+    });
+
+    const businessIds = businesses.map(b => b.id);
+
+    const rewardHistories = await prisma.rewardHistory.findMany({
+        where: {
+            customerId: customerId,
+            businessId: { in: businessIds }
+        },
+        include: {
+            branch: {
+                select: {
+                    id: true,
+                    name: true
+                }
+            },
+            business: {
+                select: {
+                    id: true,
+                    name: true
+                }
+            }
+        }
+    });
+
+    return {
+        customer,
+        rewardHistories
+    };
+};
+
 export const BusinessRewardHistoryService = {
     increaseRewardPoints,
     getRewardHistoryByBranch,
     getHistoryByQrCode,
-    updatePointsById
+    updatePointsById,
+    findCustomerByQr
 };
