@@ -4,15 +4,21 @@ import prisma from "../../../prisma/client.js";
  * Get earned points history for a customer
  * Shows only "EARN" type transactions with branch name and business logo
  */
-const getEarnedPointsHistory = async (customerId) => {
+const getEarnedPointsHistory = async (customerId, branchId) => {
     try {
-        console.log(`🚀 [TX_HISTORY] Fetching earned history for customerId: ${customerId}`);
+        console.log(`🚀 [TX_HISTORY] Fetching earned history for customerId: ${customerId} | branchId: ${branchId || 'ALL'}`);
+
+        const where = {
+            customerId: customerId,
+            type: "EARN"
+        };
+
+        if (branchId) {
+            where.branchId = branchId;
+        }
 
         const transactions = await prisma.pointTransaction.findMany({
-            where: {
-                customerId: customerId,
-                type: "EARN"
-            },
+            where,
             select: {
                 id: true,
                 points: true,
