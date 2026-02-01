@@ -24,6 +24,14 @@ router.post(
 );
 
 router.get(
+    "/",
+    authenticate,
+    authorize(PERMISSIONS.BUSINESS.READ),
+    businessScope,
+    CardController.getByBusiness
+);
+
+router.get(
     "/business",
     authenticate,
     authorize(PERMISSIONS.BUSINESS.READ),

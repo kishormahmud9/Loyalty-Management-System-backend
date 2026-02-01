@@ -7,10 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/**
- * ENUMS
- */
-
 enum UserRole {
   SYSTEM_OWNER
   BUSINESS_OWNER
@@ -67,158 +63,10 @@ enum ClaimStatus {
   CLAIMED
 }
 
-/**
- * USER
- */
-
-model User {
-  id           String  @id @default(uuid())
-  name         String
-  email        String  @unique
-  passwordHash String?
-  avatarUrl    String?
-
-  role   UserRole   @default(BUSINESS_OWNER)
-  status UserStatus @default(ACTIVE)
-
-  isVerified Boolean @default(false)
-
-  pinHash  String? // hashed 6-digit PIN
-  isPinSet Boolean @default(false)
-
-  oauthProvider   OAuthProvider @default(email)
-  oauthProviderId String?
-
-  forgotPasswordStatus Boolean @default(false)
-
-  phone   String?
-  address String?
-
-  // Relations
-  businessesOwned Business[]      @relation("BusinessOwner")
-  staffProfile    Staff?
-  ticketsCreated  SupportTicket[] @relation("TicketCreator")
-  activityLogs    ActivityLog[]
-  support         Support[]
-  redeemRewards   RedeemReward[]
-  earnRewards     EarnReward[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
-  @@index([role])
-}
-
-/**
- * CUSTOMER
- */
-
-model Customer {
-  id                   String   @id @default(uuid())
-  name                 String
-  email                String   @unique
-  passwordHash         String?
-  avatarUrl            String?
-  isVerified           Boolean  @default(false)
-  role                 UserRole @default(CUSTOMER)
-  forgotPasswordStatus Boolean  @default(false)
-
-  qrCode     String  @unique // The 6 digit code
-  qrScanner  String? // Additional field requested
-  qrCodePath String?
-  qrCodeUrl  String?
-
-  // Relations
-  branchData         CustomerBranchData[]
-  rewardHistory      RewardHistory[]
-  sessions           CustomerSession[]
-  reviews            Review[]
-  undoRequests       TransactionUndoRequest[]
-  adjustmentRequests PointAdjustmentRequest[]
-  claims             ClaimReward[]
-  notifications      CustomerNotification?
-
-  phone          String?
-  address        String?
-  avatarFilePath String?
-  activeBranchId String?
-
-  createdAt                  DateTime                    @default(now())
-  updatedAt                  DateTime                    @updatedAt
-  notificationCustomerStates NotificationCustomerState[]
-}
-
-model CustomerNotification {
-  id               String  @id @default(uuid())
-  customerId       String  @unique
-  smsUpdates       Boolean @default(false)
-  allowLocation    Boolean @default(false)
-  pushNotification Boolean @default(false)
-  birthdayRewards  Boolean @default(false)
-
-  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  // notificationStates NotificationCustomerState[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model CustomerBranchData {
-  id         String @id @default(uuid())
-  customerId String
-  businessId String
-  branchId   String
-
-  customer Customer @relation(fields: [customerId], references: [id])
-  business Business @relation(fields: [businessId], references: [id])
-  branch   Branch   @relation(fields: [branchId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([customerId, branchId])
-}
-
-model CustomerSession {
-  id          String   @id @default(uuid())
-  customerId  String
-  refreshHash String
-  userAgent   String?
-  ipAddress   String?
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
-
-  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  @@index([customerId])
-}
-
-// Business Owner Starts 
-
 enum Priority {
   LOW
   MEDIUM
   HIGH
-}
-
-model Support {
-  id       String @id @default(uuid())
-  ticketId String @unique
-
-  userId     String
-  businessId String
-  branchId   String?
-  branchName String?
-  status     String?  @default("pending")
-  date       DateTime
-  issue      String
-  priority   Priority
-
-  user     User     @relation(fields: [userId], references: [id])
-  business Business @relation(fields: [businessId], references: [id])
-  branch   Branch?  @relation(fields: [branchId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 enum RewardStatus {
@@ -230,82 +78,6 @@ enum RewardType {
   FREE_ITEM
   EARN
   REDEEM
-}
-
-model RedeemReward {
-  id String @id @default(uuid())
-
-  rewardName          String
-  rewardPoints        Int
-  rewardType          RewardType
-  rewardImageFilePath String? // 🔐 internal use
-  rewardImage         String? // 🌍 frontend use
-  expiryDays          Int
-  earningRule         String
-  reward              String
-  rewardStatus        RewardStatus @default(ACTIVE)
-
-  userId     String
-  businessId String
-  branchId   String
-
-  user     User     @relation(fields: [userId], references: [id])
-  business Business @relation(fields: [businessId], references: [id])
-  branch   Branch   @relation(fields: [branchId], references: [id])
-
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  claims    ClaimReward[]
-
-  @@index([businessId])
-  @@index([branchId])
-}
-
-model ClaimReward {
-  id String @id @default(uuid())
-
-  redeemRewardId String
-  branchId       String
-  customerId     String
-  claimStatus    ClaimStatus @default(CLAIM)
-
-  redeemReward RedeemReward @relation(fields: [redeemRewardId], references: [id])
-  branch       Branch       @relation(fields: [branchId], references: [id])
-  customer     Customer     @relation(fields: [customerId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([customerId])
-  @@index([branchId])
-}
-
-model EarnReward {
-  id String @id @default(uuid())
-
-  rewardName          String
-  earnPoint           Int
-  rewardType          RewardType
-  rewardImageFilePath String? // 🔐 internal use
-  rewardImage         String? // 🌍 frontend use
-  expiryDays          Int
-  earningRule         String
-  reward              String
-  rewardStatus        RewardStatus @default(ACTIVE)
-
-  userId     String
-  businessId String
-  branchId   String
-
-  user     User     @relation(fields: [userId], references: [id])
-  business Business @relation(fields: [businessId], references: [id])
-  branch   Branch   @relation(fields: [branchId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([businessId])
-  @@index([branchId])
 }
 
 enum CardType {
@@ -323,287 +95,6 @@ enum RewardProgram {
   visit
 }
 
-model Card {
-  id            String        @id @default(uuid())
-  // Business
-  businessId    String
-  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  // Card identity
-  cardType      CardType      @default(stamp_card)
-  cardDesc      String
-  companyName   String
-  // Reward logic
-  rewardProgram RewardProgram @default(spend)
-  stampsCount   Int           @default(0)
-  // Earning rule (CORE LOGIC)
-  earnRuleType  String?
-  earnValue     Int? // e.g. 500 dollars or 10 visits
-  earnUnit      Int? // e.g. 5 stamps or 1 stamp
-  // Barcode
-  barcodeType   BarcodeType   @default(qr_code)
-
-  // UI / Branding
-  logo                String?
-  logoFilePath        String?
-  cardBackground      String?
-  stampBackground     String?
-  stampBackgroundPath String?
-  activeStamp         String?
-  inactiveStamp       String?
-  textColor           String?
-
-  // Messaging
-  earnedRewardMessage String?
-
-  // Meta
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([businessId])
-}
-
-// Business Owner ends 
-
-/**
- * BUSINESS (TENANT)
- */
-
-model Business {
-  id       String  @id @default(uuid())
-  ownerId  String
-  name     String
-  industry String?
-  phone    String?
-  address  String?
-  city     String?
-  country  String?
-
-  qrCode      String    @unique
-  isActive    Boolean   @default(true)
-  trialEndsAt DateTime?
-
-  //  Stripe (Business Owner pays)
-  stripeCustomerId String? @unique
-
-  // Relations
-  owner              User                     @relation("BusinessOwner", fields: [ownerId], references: [id])
-  branches           Branch[]
-  staff              Staff[]
-  loyaltyRule        LoyaltyRule?
-  redeemRewards      RedeemReward[]
-  earnRewards        EarnReward[]
-  transactions       PointTransaction[]
-  supportTickets     SupportTicket[]
-  supports           Support[]
-  billings           Billing[]
-  customerBranchData CustomerBranchData[]
-  rewardHistory      RewardHistory[]
-  undoRequests       TransactionUndoRequest[]
-  adjustmentRequests PointAdjustmentRequest[]
-
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  activityLogs         ActivityLog[]
-  businessSubscription BusinessSubscription?
-  reviews              Review[]
-  staffPermission      StaffPermission?
-  cards                Card[]
-
-  businessLogo         String?
-  businessLogoFilePath String?
-  businessLogoUrl      String?
-}
-
-/**
- * BRANCH
- */
-
-model Branch {
-  id         String  @id @default(uuid())
-  businessId String
-  name       String?
-  address    String
-  city       String?
-  country    String?
-  isActive   Boolean @default(true)
-
-  businessName String?
-  managerName  String?
-  staffCount   Int     @default(0)
-
-  branchQrCode         String?
-  branchQrCodeFilePath String?
-  branchQrCodeUrl      String?
-
-  branchImageUrl      String?
-  branchImageFilePath String?
-
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  supports           Support[]
-  redeemRewards      RedeemReward[]
-  earnRewards        EarnReward[]
-  staff              Staff[]
-  customerBranchData CustomerBranchData[]
-  rewardHistory      RewardHistory[]
-
-  pointTransactions  PointTransaction[]
-  undoRequests       TransactionUndoRequest[]
-  adjustmentRequests PointAdjustmentRequest[]
-
-  reviews Review[]
-  claims  ClaimReward[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model RewardHistory {
-  id String @id @default(uuid())
-
-  rewardPoints       Int       @default(0)
-  activeRewards      Int       @default(0)
-  availableRewards   Int       @default(0)
-  lastRewardReceived DateTime?
-  cardExpireDate     DateTime?
-  earningRule        String?
-  walletApp          String? // Google Wallet or Apple Wallet
-
-  customerId String
-  businessId String
-  branchId   String
-
-  customer Customer @relation(fields: [customerId], references: [id])
-  business Business @relation(fields: [businessId], references: [id])
-  branch   Branch   @relation(fields: [branchId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([customerId, branchId])
-  @@index([businessId])
-  @@index([branchId])
-}
-
-/**
- * STAFF
- */
-
-model Staff {
-  id         String    @id @default(uuid())
-  userId     String    @unique
-  businessId String
-  branchId   String
-  role       StaffRole
-  isActive   Boolean   @default(true)
-
-  user     User     @relation(fields: [userId], references: [id])
-  business Business @relation(fields: [businessId], references: [id])
-  branch   Branch   @relation(fields: [branchId], references: [id])
-
-  undoRequests       TransactionUndoRequest[]
-  adjustmentRequests PointAdjustmentRequest[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-/**
- * LOYALTY RULE
- */
-
-model LoyaltyRule {
-  id         String  @id @default(uuid())
-  businessId String  @unique
-  pointsRate Int
-  minSpend   Float?
-  isActive   Boolean @default(true)
-
-  business Business @relation(fields: [businessId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-/**
- * POINT TRANSACTION
- */
-
-model PointTransaction {
-  id String @id @default(uuid())
-
-  businessId String
-  branchId   String?
-  staffId    String?
-  customerId String?
-
-  points Int
-  type   TransactionType
-
-  // link to adjustment request (APPROVED only)
-  adjustmentRequestId String?                 @unique
-  adjustmentRequest   PointAdjustmentRequest? @relation(fields: [adjustmentRequestId], references: [id])
-
-  // REQUIRED opposite relations
-  business Business @relation(fields: [businessId], references: [id])
-  branch   Branch?  @relation(fields: [branchId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@index([businessId])
-  @@index([branchId])
-}
-
-/**
- * SUPPORT TICKET
- */
-
-model SupportTicket {
-  id       String @id @default(uuid())
-  ticketNo String @unique
-
-  businessId String?
-  createdBy  String
-
-  subject     String
-  description String
-  priority    TicketPriority
-  status      TicketStatus   @default(OPEN)
-
-  resolvedAt DateTime?
-  closedAt   DateTime?
-
-  business Business? @relation(fields: [businessId], references: [id])
-  creator  User      @relation("TicketCreator", fields: [createdBy], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([priority])
-  @@index([status])
-}
-
-/**
- * BILLING
- */
-
-model Billing {
-  id         String        @id @default(uuid())
-  businessId String
-  status     BillingStatus @default(PENDING)
-  issue      Boolean       @default(false)
-
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([businessId])
-  @@index([issue])
-}
-
-// ACTIVITY LOG
-
 enum ActivityActionType {
   CREATE
   UPDATE
@@ -613,87 +104,10 @@ enum ActivityActionType {
   OTHER
 }
 
-model ActivityLog {
-  id String @id @default(uuid())
-
-  userId     String
-  businessId String?
-
-  action     String
-  actionType ActivityActionType @default(OTHER)
-
-  metadata Json?
-
-  user     User      @relation(fields: [userId], references: [id])
-  business Business? @relation(fields: [businessId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@index([businessId])
-  @@index([actionType])
-  @@index([createdAt])
-}
-
-/**
- * PLAN (SYSTEM OWNER)
- */
-
-model Plan {
-  id    String @id @default(uuid())
-  name  String @unique // Starter, Grow, Business
-  price Int // 25, 45, 60
-
-  // Stripe prices
-  stripeMonthlyPriceId String?
-  stripeYearlyPriceId  String?
-
-  maxBranches Int
-  maxStaff    Int
-  maxCards    Int
-
-  isActive Boolean @default(true)
-
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  businessSubscriptions BusinessSubscription[]
-}
-
-/**
- * BUSINESS SUBSCRIPTION
- */
-
 enum SubscriptionStatus {
   ACTIVE
   EXPIRED
   CANCELLED
-}
-
-model BusinessSubscription {
-  id         String @id @default(uuid())
-  businessId String @unique
-  planId     String
-
-  //  Stripe
-  stripeSubscriptionId String? @unique
-  stripePriceId        String?
-  stripeStatus         String? // active | trialing | past_due | canceled
-
-  status    SubscriptionStatus @default(ACTIVE)
-  startDate DateTime           @default(now())
-  endDate   DateTime?
-
-  // snapshot fields (TEMPORARILY OPTIONAL)
-  planName    String?
-  price       Float?
-  maxBranches Int?
-  maxStaff    Int?
-  maxCards    Int?
-
-  business Business @relation(fields: [businessId], references: [id])
-  plan     Plan     @relation(fields: [planId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 enum UndoRequestStatus {
@@ -702,29 +116,466 @@ enum UndoRequestStatus {
   REJECTED
 }
 
-model TransactionUndoRequest {
-  id String @id @default(uuid())
+enum AdjustmentType {
+  ADD
+  REDEEM
+  UNDO
+}
 
-  adjustmentRequestId String
-  customerId          String
+model User {
+  id                   String          @id @default(uuid())
+  name                 String
+  email                String          @unique
+  passwordHash         String?
+  avatarUrl            String?
+  role                 UserRole        @default(BUSINESS_OWNER)
+  isVerified           Boolean         @default(false)
+  oauthProvider        OAuthProvider   @default(email)
+  oauthProviderId      String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  forgotPasswordStatus Boolean         @default(false)
+  address              String?
+  phone                String?
+  status               UserStatus      @default(ACTIVE)
+  isPinSet             Boolean         @default(false)
+  pinHash              String?
+  activityLogs         ActivityLog[]
+  businessesOwned      Business[]      @relation("BusinessOwner")
+  earnRewards          EarnReward[]
+  redeemRewards        RedeemReward[]
+  staffProfile         Staff?
+  support              Support[]
+  ticketsCreated       SupportTicket[] @relation("TicketCreator")
+
+  @@index([role])
+}
+
+model Customer {
+  id                         String                      @id @default(uuid())
+  name                       String
+  email                      String                      @unique
+  passwordHash               String?
+  avatarUrl                  String?
+  isVerified                 Boolean                     @default(false)
+  forgotPasswordStatus       Boolean                     @default(false)
+  qrCode                     String                      @unique
+  qrScanner                  String?
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  role                       UserRole                    @default(CUSTOMER)
+  qrCodePath                 String?
+  qrCodeUrl                  String?
+  address                    String?
+  phone                      String?
+  avatarFilePath             String?
+  activeBranchId             String?
+  claims                     ClaimReward[]
+  branchData                 CustomerBranchData[]
+  cardWallets                CustomerCardWallet[]
+  notifications              CustomerNotification?
+  sessions                   CustomerSession[]
+  notificationCustomerStates NotificationCustomerState[]
+  adjustmentRequests         PointAdjustmentRequest[]
+  reviews                    Review[]
+  rewardHistory              RewardHistory[]
+  undoRequests               TransactionUndoRequest[]
+}
+
+model CustomerNotification {
+  id               String   @id @default(uuid())
+  customerId       String   @unique
+  smsUpdates       Boolean  @default(false)
+  allowLocation    Boolean  @default(false)
+  pushNotification Boolean  @default(false)
+  birthdayRewards  Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model CustomerBranchData {
+  id         String   @id @default(uuid())
+  customerId String
+  businessId String
+  branchId   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  branch     Branch   @relation(fields: [branchId], references: [id])
+  business   Business @relation(fields: [businessId], references: [id])
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  @@unique([customerId, branchId])
+}
+
+model CustomerSession {
+  id          String   @id @default(uuid())
+  customerId  String
+  refreshHash String
+  userAgent   String?
+  ipAddress   String?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+model Support {
+  id         String   @id @default(uuid())
+  businessId String
+  branchId   String?
+  issue      String
+  priority   Priority
+  date       DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  userId     String
+  ticketId   String   @unique
+  branchName String?
+  status     String?  @default("pending")
+  branch     Branch?  @relation(fields: [branchId], references: [id])
+  business   Business @relation(fields: [businessId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model RedeemReward {
+  id                  String        @id @default(uuid())
+  rewardName          String
+  rewardPoints        Int
+  rewardType          RewardType
+  rewardImageFilePath String?
+  rewardImage         String?
+  expiryDays          Int
+  earningRule         String
+  reward              String
+  rewardStatus        RewardStatus  @default(ACTIVE)
+  userId              String
+  businessId          String
+  branchId            String
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  claims              ClaimReward[]
+  branch              Branch        @relation(fields: [branchId], references: [id])
+  business            Business      @relation(fields: [businessId], references: [id])
+  user                User          @relation(fields: [userId], references: [id])
+
+  @@index([businessId])
+  @@index([branchId])
+}
+
+model ClaimReward {
+  id             String       @id @default(uuid())
+  redeemRewardId String
+  branchId       String
+  customerId     String
+  claimStatus    ClaimStatus  @default(CLAIM)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  branch         Branch       @relation(fields: [branchId], references: [id])
+  customer       Customer     @relation(fields: [customerId], references: [id])
+  redeemReward   RedeemReward @relation(fields: [redeemRewardId], references: [id])
+
+  @@index([customerId])
+  @@index([branchId])
+}
+
+model EarnReward {
+  id                  String       @id @default(uuid())
+  rewardName          String
+  earnPoint           Int
+  rewardType          RewardType
+  rewardImageFilePath String?
+  rewardImage         String?
+  expiryDays          Int
+  earningRule         String
+  reward              String
+  rewardStatus        RewardStatus @default(ACTIVE)
+  userId              String
+  businessId          String
+  branchId            String
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  branch              Branch       @relation(fields: [branchId], references: [id])
+  business            Business     @relation(fields: [businessId], references: [id])
+  user                User         @relation(fields: [userId], references: [id])
+
+  @@index([businessId])
+  @@index([branchId])
+}
+
+model Card {
+  id                  String        @id @default(uuid())
+  businessId          String
+  cardType            CardType      @default(stamp_card)
+  cardDesc            String
+  companyName         String
+  rewardProgram       RewardProgram @default(spend)
+  stampsCount         Int           @default(0)
+  earnRuleType        String?
+  earnValue           Int?
+  earnUnit            Int?
+  barcodeType         BarcodeType   @default(qr_code)
+  logo                String?
+  cardBackground      String?
+  stampBackground     String?
+  activeStamp         String?
+  inactiveStamp       String?
+  textColor           String?
+  earnedRewardMessage String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  isActive            Boolean       @default(true)
+  expiryDate          DateTime?
+  logoFilePath        String?
+  stampBackgroundPath String?
+  business            Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  cardWallets         CustomerCardWallet[]
+
+  @@index([businessId])
+}
+
+model Business {
+  id                   String                   @id @default(uuid())
+  name                 String
+  isActive             Boolean                  @default(true)
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  address              String?
+  city                 String?
+  country              String?
+  industry             String?
+  ownerId              String
+  phone                String?
+  qrCode               String                   @unique
+  trialEndsAt          DateTime?
+  stripeCustomerId     String?                  @unique
+  businessLogo         String?
+  businessLogoFilePath String?
+  businessLogoUrl      String?
+  activityLogs         ActivityLog[]
+  billings             Billing[]
+  branches             Branch[]
+  owner                User                     @relation("BusinessOwner", fields: [ownerId], references: [id])
+  businessSubscription BusinessSubscription?
+  cards                Card[]
+  customerBranchData   CustomerBranchData[]
+  earnRewards          EarnReward[]
+  loyaltyRule          LoyaltyRule?
+  adjustmentRequests   PointAdjustmentRequest[]
+  transactions         PointTransaction[]
+  redeemRewards        RedeemReward[]
+  reviews              Review[]
+  rewardHistory        RewardHistory[]
+  staff                Staff[]
+  staffPermission      StaffPermission?
+  supports             Support[]
+  supportTickets       SupportTicket[]
+  undoRequests         TransactionUndoRequest[]
+}
+
+model Branch {
+  id                   String                   @id @default(uuid())
+  businessId           String
+  name                 String?
+  address              String
+  city                 String?
+  isActive             Boolean                  @default(true)
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  country              String?
+  businessName         String?
+  managerName          String?
+  staffCount           Int                      @default(0)
+  branchQrCode         String?
+  branchQrCodeFilePath String?
+  branchQrCodeUrl      String?
+  branchImageFilePath  String?
+  branchImageUrl       String?
+  business             Business                 @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  claims               ClaimReward[]
+  customerBranchData   CustomerBranchData[]
+  earnRewards          EarnReward[]
+  adjustmentRequests   PointAdjustmentRequest[]
+  pointTransactions    PointTransaction[]
+  redeemRewards        RedeemReward[]
+  reviews              Review[]
+  rewardHistory        RewardHistory[]
+  staff                Staff[]
+  supports             Support[]
+  undoRequests         TransactionUndoRequest[]
+}
+
+model RewardHistory {
+  id                 String    @id @default(uuid())
+  rewardPoints       Int       @default(0)
+  activeRewards      Int       @default(0)
+  availableRewards   Int       @default(0)
+  lastRewardReceived DateTime?
+  cardExpireDate     DateTime?
+  earningRule        String?
+  walletApp          String?
+  customerId         String
+  businessId         String
+  branchId           String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  branch             Branch    @relation(fields: [branchId], references: [id])
+  business           Business  @relation(fields: [businessId], references: [id])
+  customer           Customer  @relation(fields: [customerId], references: [id])
+
+  @@unique([customerId, branchId])
+  @@index([businessId])
+  @@index([branchId])
+}
+
+model Staff {
+  id                 String                   @id @default(uuid())
+  userId             String                   @unique
+  businessId         String
+  role               StaffRole
+  isActive           Boolean                  @default(true)
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  branchId           String
+  adjustmentRequests PointAdjustmentRequest[]
+  branch             Branch                   @relation(fields: [branchId], references: [id])
+  business           Business                 @relation(fields: [businessId], references: [id])
+  user               User                     @relation(fields: [userId], references: [id])
+  undoRequests       TransactionUndoRequest[]
+}
+
+model LoyaltyRule {
+  id         String   @id @default(uuid())
+  businessId String   @unique
+  pointsRate Int
+  minSpend   Float?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  business   Business @relation(fields: [businessId], references: [id])
+}
+
+model PointTransaction {
+  id                  String                  @id @default(uuid())
+  businessId          String
+  staffId             String?
+  points              Int
+  type                TransactionType
+  createdAt           DateTime                @default(now())
+  branchId            String?
+  customerId          String?
+  adjustmentRequestId String?                 @unique
+  adjustmentRequest   PointAdjustmentRequest? @relation(fields: [adjustmentRequestId], references: [id])
+  branch              Branch?                 @relation(fields: [branchId], references: [id])
+  business            Business                @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
+  @@index([branchId])
+}
+
+model SupportTicket {
+  id          String         @id @default(uuid())
+  priority    TicketPriority
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  businessId  String?
+  createdBy   String
+  description String
+  status      TicketStatus   @default(OPEN)
+  subject     String
+  closedAt    DateTime?
+  resolvedAt  DateTime?
+  ticketNo    String         @unique
+  business    Business?      @relation(fields: [businessId], references: [id])
+  creator     User           @relation("TicketCreator", fields: [createdBy], references: [id])
+
+  @@index([priority])
+  @@index([status])
+}
+
+model Billing {
+  id         String        @id @default(uuid())
+  businessId String
+  status     BillingStatus @default(PENDING)
+  issue      Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  business   Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([issue])
+}
+
+model ActivityLog {
+  id         String             @id @default(uuid())
+  userId     String
+  action     String
+  metadata   Json?
+  createdAt  DateTime           @default(now())
+  actionType ActivityActionType @default(OTHER)
+  businessId String?
+  business   Business?          @relation(fields: [businessId], references: [id])
+  user       User               @relation(fields: [userId], references: [id])
+
+  @@index([businessId])
+  @@index([actionType])
+  @@index([createdAt])
+}
+
+model Plan {
+  id                    String                 @id @default(uuid())
+  name                  String                 @unique
+  price                 Int
+  maxBranches           Int
+  maxStaff              Int
+  maxCards              Int
+  isActive              Boolean                @default(true)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  stripeMonthlyPriceId  String?
+  stripeYearlyPriceId   String?
+  businessSubscriptions BusinessSubscription[]
+}
+
+model BusinessSubscription {
+  id                   String             @id @default(uuid())
+  businessId           String             @unique
+  planId               String
+  status               SubscriptionStatus @default(ACTIVE)
+  startDate            DateTime           @default(now())
+  endDate              DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  maxBranches          Int?
+  maxCards             Int?
+  maxStaff             Int?
+  planName             String?
+  price                Float?
+  stripePriceId        String?
+  stripeStatus         String?
+  stripeSubscriptionId String?            @unique
+  business             Business           @relation(fields: [businessId], references: [id])
+  plan                 Plan               @relation(fields: [planId], references: [id])
+}
+
+model TransactionUndoRequest {
+  id                  String            @id @default(uuid())
   businessId          String
   branchId            String?
   staffId             String?
   reason              String
-
-  status UndoRequestStatus @default(PENDING)
-
-  reviewedBy String?
-  reviewedAt DateTime?
-
-  // NO Prisma relation to PointAdjustmentRequest
-  customer Customer @relation(fields: [customerId], references: [id])
-  business Business @relation(fields: [businessId], references: [id])
-  branch   Branch?  @relation(fields: [branchId], references: [id])
-  staff    Staff?   @relation(fields: [staffId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status              UndoRequestStatus @default(PENDING)
+  reviewedBy          String?
+  reviewedAt          DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  customerId          String
+  adjustmentRequestId String
+  branch              Branch?           @relation(fields: [branchId], references: [id])
+  business            Business          @relation(fields: [businessId], references: [id])
+  customer            Customer          @relation(fields: [customerId], references: [id])
+  staff               Staff?            @relation(fields: [staffId], references: [id])
 
   @@index([staffId, customerId])
   @@index([adjustmentRequestId])
@@ -741,10 +592,9 @@ model Review {
   hideStatus Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  branch   Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([branchId])
@@ -762,43 +612,28 @@ model StaffPermission {
   addRemoveOtherStaff      Boolean  @default(false)
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
-
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-}
-
-enum AdjustmentType {
-  ADD
-  REDEEM
-  UNDO
+  business                 Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
 
 model PointAdjustmentRequest {
-  id String @id @default(uuid())
-
-  type   AdjustmentType
-  points Int
-
-  customerId String
-  staffId    String?
-  businessId String
-  branchId   String?
-
-  reason String?
-  status UndoRequestStatus @default(PENDING)
-
-  reviewedBy String?
-  reviewedAt DateTime?
-
-  // reverse relation (THIS FIXES THE ERROR)
+  id          String            @id @default(uuid())
+  type        AdjustmentType
+  points      Int
+  customerId  String
+  staffId     String?
+  businessId  String
+  branchId    String?
+  reason      String?
+  status      UndoRequestStatus @default(PENDING)
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  branch      Branch?           @relation(fields: [branchId], references: [id])
+  business    Business          @relation(fields: [businessId], references: [id])
+  customer    Customer          @relation(fields: [customerId], references: [id])
+  staff       Staff?            @relation(fields: [staffId], references: [id])
   transaction PointTransaction?
-
-  customer Customer @relation(fields: [customerId], references: [id])
-  staff    Staff?   @relation(fields: [staffId], references: [id])
-  business Business @relation(fields: [businessId], references: [id])
-  branch   Branch?  @relation(fields: [branchId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@index([staffId, customerId])
   @@index([branchId])
@@ -806,15 +641,12 @@ model PointAdjustmentRequest {
 }
 
 model Notification {
-  id          String  @id @default(uuid())
-  businessId  String
-  branchId    String?
-  message     String
-  sentByStaff String
-
-  createdAt DateTime @default(now())
-
-  // Relations
+  id             String                      @id @default(uuid())
+  businessId     String
+  branchId       String?
+  message        String
+  sentByStaff    String
+  createdAt      DateTime                    @default(now())
   customerStates NotificationCustomerState[]
 
   @@index([businessId])
@@ -822,19 +654,36 @@ model Notification {
 }
 
 model NotificationCustomerState {
-  id             String @id @default(uuid())
+  id             String       @id @default(uuid())
   notificationId String
   customerId     String
-
-  isRead    Boolean @default(false)
-  isDeleted Boolean @default(false)
-
-  createdAt DateTime @default(now())
-
-  // Relations
-  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
-  customer     Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  isRead         Boolean      @default(false)
+  isDeleted      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  customer       Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
 
   @@unique([notificationId, customerId])
   @@index([customerId])
+}
+
+
+
+model CustomerCardWallet {
+  id                    String   @id @default(uuid())
+  customerId            String
+  cardId                String
+  isAddedToGoogleWallet Boolean  @default(false)
+  isAddedToAppleWallet  Boolean  @default(false)
+  lastSyncedAt          DateTime? @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  card     Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([customerId, cardId])
+  @@index([customerId])
+  @@index([cardId])
 }
