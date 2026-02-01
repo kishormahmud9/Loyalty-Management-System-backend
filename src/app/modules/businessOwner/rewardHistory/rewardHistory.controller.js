@@ -5,13 +5,16 @@ import { StatusCodes } from "http-status-codes";
 const increasePoints = async (req, res, next) => {
     try {
         const loggedInUserId = req.user.id;
-        const { qrCode, branchId } = req.query;
+        const { branchId } = req.params;
+        const { qrCode, rewardHistoryId, points } = req.body;
         const { businessId } = req.user;
         const result = await BusinessRewardHistoryService.increaseRewardPoints({
             ...req.body,
             qrCode,
             branchId,
             businessId,
+            rewardHistoryId,
+            points,
             loggedInUserId
         });
 

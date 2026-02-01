@@ -116,13 +116,13 @@ const increaseRewardPoints = async (data) => {
                 });
             }
 
+            // Define how we find the record (prioritize ID if it came from the search results)
+            const whereClause = (rewardHistoryId && rewardHistoryId !== "null")
+                ? { id: rewardHistoryId }
+                : { customerId_branchId: { customerId, branchId } };
+
             const history = await tx.rewardHistory.upsert({
-                where: {
-                    customerId_branchId: {
-                        customerId,
-                        branchId
-                    }
-                },
+                where: whereClause,
                 update: {
                     rewardPoints: { increment: Number(points) },
                     lastRewardReceived: new Date()
@@ -421,27 +421,36 @@ const findCustomerByQr = async (data) => {
         where: {
             customerId: customerId,
             businessId: { in: businessIds }
-        },
-        select: {
-            id: true,
-            rewardPoints: true,
-            branchId: true
         }
     });
 
-    // 5. Merge branches with history
-    const branchesWithHistory = allBranches.map(branch => {
+    // 5. Merge branches with history into RewardHistory model structure
+    const rewardHistoriesResult = allBranches.map(branch => {
         const history = rewardHistories.find(h => h.branchId === branch.id);
+
         return {
-            ...branch,
+            id: history ? history.id : null,
             rewardPoints: history ? history.rewardPoints : 0,
-            historyId: history ? history.id : null
+            activeRewards: history ? history.activeRewards : 0,
+            availableRewards: history ? history.availableRewards : 0,
+            lastRewardReceived: history ? history.lastRewardReceived : null,
+            customerId: customerId,
+            businessId: branch.businessId,
+            branchId: branch.id,
+            branch: {
+                id: branch.id,
+                name: branch.name
+            },
+            business: {
+                id: branch.businessId,
+                name: branch.business ? branch.business.name : null
+            }
         };
     });
 
     return {
         customer,
-        branches: branchesWithHistory
+        rewardHistories: rewardHistoriesResult
     };
 };
 
