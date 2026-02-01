@@ -65,73 +65,84 @@ export const searchCustomerService = async ({ body, staff }) => {
 export const addPointsInstantService = async ({ body, staff }) => {
   const { customerId, points } = body;
 
-  if (!customerId || !points || points <= 0) {
-    throw new Error("Invalid request data");
-  }
+  try {
+    if (!customerId || !points || points <= 0) {
+      console.warn(`⚠️ [STAFF_POINTS_UPDATE] Invalid request received. Body: ${JSON.stringify(body)}`);
+      throw new Error("Invalid request data");
+    }
 
-  const { branchId, businessId, id: staffId } = staff;
+    const { branchId, businessId, id: staffId } = staff;
+    console.log(`🚀 [STAFF_POINTS_UPDATE] Staff ${staffId} adding ${points} points to Customer ${customerId} at branch ${branchId}`);
 
-  // 1️⃣ Ensure customer belongs to staff branch
-  const customerBranch = await prisma.customerBranchData.findUnique({
-    where: {
-      customerId_branchId: {
-        customerId,
-        branchId,
-      },
-    },
-  });
-
-  if (!customerBranch) {
-    throw new Error("Customer not found in your branch");
-  }
-
-  // 2️⃣ Atomic transaction (VERY IMPORTANT)
-  const result = await prisma.$transaction(async (tx) => {
-    // Create transaction log
-    const transaction = await tx.pointTransaction.create({
-      data: {
-        businessId,
-        branchId,
-        staffId,
-        customerId,
-        points,
-        type: "EARN",
-      },
-    });
-
-    // Update reward history
-    const reward = await tx.rewardHistory.upsert({
+    // 1️⃣ Ensure customer belongs to staff branch
+    const customerBranch = await prisma.customerBranchData.findUnique({
       where: {
         customerId_branchId: {
           customerId,
           branchId,
         },
       },
-      update: {
-        rewardPoints: { increment: points },
-        availableRewards: { increment: points },
-        lastRewardReceived: new Date(),
-      },
-      create: {
-        customerId,
-        businessId,
-        branchId,
-        rewardPoints: points,
-        availableRewards: points,
-        activeRewards: 0,
-        lastRewardReceived: new Date(),
-      },
     });
 
-    return { transaction, reward };
-  });
+    if (!customerBranch) {
+      console.warn(`⚠️ [STAFF_POINTS_UPDATE] Customer ${customerId} not registered at branch ${branchId}`);
+      throw new Error("Customer not found in your branch");
+    }
 
-  return {
-    transactionId: result.transaction.id,
-    reward: {
-      rewardPoints: result.reward.rewardPoints,
-      availableRewards: result.reward.availableRewards,
-      lastRewardReceived: result.reward.lastRewardReceived,
-    },
-  };
+    // 2️⃣ Atomic transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create transaction log
+      const transaction = await tx.pointTransaction.create({
+        data: {
+          businessId,
+          branchId,
+          staffId,
+          customerId,
+          points,
+          type: "EARN",
+        },
+      });
+
+      // Update reward history
+      const reward = await tx.rewardHistory.upsert({
+        where: {
+          customerId_branchId: {
+            customerId,
+            branchId,
+          },
+        },
+        update: {
+          rewardPoints: { increment: points },
+          availableRewards: { increment: points },
+          lastRewardReceived: new Date(),
+        },
+        create: {
+          customerId,
+          businessId,
+          branchId,
+          rewardPoints: points,
+          availableRewards: points,
+          activeRewards: 0,
+          lastRewardReceived: new Date(),
+        },
+      });
+
+      return { transaction, reward };
+    });
+
+    console.log(`✅ [STAFF_POINTS_SUCCESS] Points successfully added by staff ${staffId}. New Total: ${result.reward.rewardPoints}`);
+
+    return {
+      transactionId: result.transaction.id,
+      reward: {
+        rewardPoints: result.reward.rewardPoints,
+        availableRewards: result.reward.availableRewards,
+        lastRewardReceived: result.reward.lastRewardReceived,
+      },
+    };
+
+  } catch (error) {
+    console.error(`🔥 [STAFF_POINTS_ERROR] Failed for staff member:`, error.message);
+    throw error;
+  }
 };

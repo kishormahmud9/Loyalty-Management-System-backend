@@ -431,6 +431,9 @@ model Branch {
   branchQrCodeFilePath String?
   branchQrCodeUrl      String?
 
+  branchImageUrl      String?
+  branchImageFilePath String?
+
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   supports           Support[]
