@@ -29,17 +29,24 @@ export const staffLoginService = async (prisma, payload) => {
       return { error: "Password not set" };
     }
 
+    if (!user.staffProfile) {
+      return { error: "Staff profile not found" };
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
       return { error: "Invalid credentials" };
     }
 
+    // 🔐 JWT with branchId (SOURCE OF TRUTH)
     const token = jwt.sign(
       {
-        id: user.id,
+        staffId: user.id,
         role: "STAFF",
         type: "STAFF_TEMP",
+        branchId: user.staffProfile.branchId,
+        businessId: user.staffProfile.businessId,
       },
       envVars.JWT_SECRET_TOKEN,
       { expiresIn: "15m" },
@@ -47,7 +54,8 @@ export const staffLoginService = async (prisma, payload) => {
 
     return {
       token,
-      requirePinSetup: !user.isPinSet,
+      requirePinSetup: user.staffProfile.pinHash === null,
+      branchId: user.staffProfile.branchId,
     };
   } catch (error) {
     console.error("Staff Login Service Error:", error.message);
