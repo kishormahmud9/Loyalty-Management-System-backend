@@ -5,9 +5,9 @@ import { TransactionHistoryCustomerService } from "./transactionHistoryCustomer.
 const getEarnedHistory = async (req, res, next) => {
     try {
         const customerId = req.user.id;
-        const { branchId } = req.query;
+        const { branchId } = req.body; // Getting branchId from body for consistency
 
-        console.log(`📥 [API_REQUEST] Customer ${customerId} requesting Earned History for branch: ${branchId || 'ALL'}`);
+        console.log(`📥 [API_REQUEST] Customer ${customerId} requesting Earned History for branch: ${branchId || 'AUTO'}`);
         const result = await TransactionHistoryCustomerService.getEarnedPointsHistory(customerId, branchId);
 
         sendResponse(res, {
