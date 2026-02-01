@@ -87,18 +87,31 @@ const getActivityHistory = async (customerId, branchId) => {
         });
 
         if (history) {
+            // Get user's existing claims to distinguish between 'CLAIM' (pending) and 'CLAIMED' (used)
+            const userClaims = await prisma.claimReward.findMany({
+                where: { customerId, branchId },
+                select: { redeemRewardId: true, claimStatus: true }
+            });
+
+            const handledRewardIds = userClaims.map(c => c.redeemRewardId);
+            const pendingClaimsCount = userClaims.filter(c => c.claimStatus === "CLAIM").length;
+
+            // Get all active rewards for the branch
             const activeRewards = await prisma.redeemReward.findMany({
                 where: { branchId, rewardStatus: "ACTIVE" },
                 orderBy: { rewardPoints: "asc" } // Get cheapest first
             });
 
+            // Potential rewards are those the user hasn't handled yet (neither CLAIM nor CLAIMED)
+            const potentialRewards = activeRewards.filter(r => !handledRewardIds.includes(r.id));
+
             const currentPoints = history.rewardPoints;
-            const claimableRewards = activeRewards.filter(r => currentPoints >= r.rewardPoints);
-            const minReward = activeRewards.length > 0 ? activeRewards[0] : null;
+            const canClaimNow = potentialRewards.filter(r => currentPoints >= r.rewardPoints);
+            const minReward = potentialRewards.length > 0 ? potentialRewards[0] : null;
 
             let statusMessage = "No rewards available at this branch yet.";
             let progressPercentage = 0;
-            let canClaim = claimableRewards.length > 0;
+            let canClaim = canClaimNow.length > 0;
             let pointsNeeded = 0;
 
             if (minReward) {
@@ -117,7 +130,7 @@ const getActivityHistory = async (customerId, branchId) => {
                 branchId,
                 branchName: history.branch?.name,
                 totalAvailablePoints: currentPoints,
-                claimableRewardsCount: claimableRewards.length,
+                claimableRewardsCount: pendingClaimsCount, // Show count of rewards ready to be used (status: CLAIM)
                 progressPercentage,
                 canClaim,
                 pointsNeeded,
