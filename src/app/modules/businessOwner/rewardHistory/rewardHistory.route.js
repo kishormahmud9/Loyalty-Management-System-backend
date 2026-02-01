@@ -6,7 +6,7 @@ import { Role } from "../../../utils/role.js";
 const router = express.Router();
 
 router.post(
-    "/increase-points",
+    "/increase-points/:branchId",
     checkAuthMiddleware(Role.BUSINESS_OWNER),
     BusinessRewardHistoryController.increasePoints
 );
