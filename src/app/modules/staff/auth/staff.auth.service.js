@@ -1,6 +1,9 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import { StatusCodes } from "http-status-codes";
 import { envVars } from "../../../config/env.js";
+import { OtpService } from "../../otp/otp.service.js";
+import { AppError } from "../../../errorHelper/appError.js";
+import jwt from "jsonwebtoken";
 
 export const staffLoginService = async (prisma, payload) => {
   try {
@@ -144,7 +147,7 @@ export const staffPinLoginService = async (prisma, payload) => {
 
         // 🔍 Fetch Business Permissions
         const permissions = await prisma.staffPermission.findUnique({
-          where: { businessId: staff.businessId }
+          where: { businessId: staff.businessId },
         });
 
         const token = jwt.sign(
@@ -171,4 +174,73 @@ export const staffPinLoginService = async (prisma, payload) => {
     console.error("Staff PIN Login Error:", error.message);
     return { error: "Failed to login with PIN" };
   }
+};
+
+export const forgotPinService = async (prisma, email) => {
+  const staffUser = await prisma.user.findFirst({
+    where: {
+      email,
+      role: "STAFF",
+    },
+  });
+
+  if (!staffUser) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Staff not found");
+  }
+
+  await prisma.user.update({
+    where: { id: staffUser.id },
+    data: { forgotPasswordStatus: false },
+  });
+
+  await OtpService.sendForgotPasswordOtp(prisma, email);
+  return true;
+};
+
+export const verifyForgotPinOtpService = async (prisma, email, otp) => {
+  await OtpService.verifyForgotPasswordOtp(prisma, email, otp);
+
+  await prisma.user.update({
+    where: { email },
+    data: { forgotPasswordStatus: true },
+  });
+
+  return true;
+};
+
+export const resetPinService = async (prisma, email, newPin, confirmPin) => {
+  if (newPin !== confirmPin) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "PINs do not match");
+  }
+
+  const staffUser = await prisma.user.findFirst({
+    where: {
+      email,
+      role: "STAFF",
+    },
+  });
+
+  if (!staffUser) {
+    throw new AppError(StatusCodes.NOT_FOUND, "Staff not found");
+  }
+
+  if (!staffUser.forgotPasswordStatus) {
+    throw new AppError(StatusCodes.FORBIDDEN, "Please verify OTP first");
+  }
+
+  const hashedPin = await bcrypt.hash(
+    newPin,
+    Number(envVars.BCRYPT_SALT_ROUND || 10),
+  );
+
+  await prisma.user.update({
+    where: { id: staffUser.id },
+    data: {
+      pinHash: hashedPin,
+      isPinSet: true,
+      forgotPasswordStatus: false,
+    },
+  });
+
+  return true;
 };
