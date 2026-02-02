@@ -6,15 +6,13 @@ import { BranchService } from "./branchs.service.js";
 export const BranchController = {
   create: async (req, res, next) => {
     try {
-      const { businessId } = req.user;
+      const { businessId, id: ownerId } = req.user; // 🔥 ADD ownerId
 
-      // Fetch business name from Business table
       const business = await req.prisma.business.findUnique({
         where: { id: businessId },
         select: { name: true },
       });
 
-      // 🖼️ IMAGE HANDLING
       let branchImageFilePath = null;
       let branchImageUrl = null;
 
@@ -24,13 +22,13 @@ export const BranchController = {
         branchImageUrl = `${baseUrl}/${branchImageFilePath}`;
       }
 
-      // Map field names from request to match Branch model schema
       const branchData = {
-        businessId: businessId, // 🔒 Force businessId from authenticated user
+        businessId,
+        ownerId, // 🔥 PASS TO SERVICE
         businessName: business?.name || null,
         managerName: req.body.managerName || null,
-        name: req.body.branchName, // Map branchName -> name
-        address: req.body.branchLocation, // Map branchLocation -> address
+        name: req.body.branchName,
+        address: req.body.branchLocation,
         city: req.body.city,
         country: req.body.country,
         staffCount: req.body.staffCount ? parseInt(req.body.staffCount) : 0,
@@ -71,7 +69,10 @@ export const BranchController = {
     try {
       const { businessId } = req.user;
 
-      const branches = await BranchService.findMyBranchesMinimal(req.prisma, businessId);
+      const branches = await BranchService.findMyBranchesMinimal(
+        req.prisma,
+        businessId,
+      );
       sendResponse(res, {
         statusCode: 200,
         success: true,
@@ -109,6 +110,8 @@ export const BranchController = {
 
   update: async (req, res, next) => {
     try {
+      const { id: ownerId, businessId } = req.user;
+
       // 🖼️ IMAGE HANDLING
       let branchImageFilePath = undefined;
       let branchImageUrl = undefined;
@@ -123,6 +126,8 @@ export const BranchController = {
         ...req.body,
         branchImageUrl,
         branchImageFilePath,
+        ownerId, // 🔥 audit only
+        businessId, // 🔥 audit only
       });
 
       sendResponse(res, {
@@ -138,13 +143,17 @@ export const BranchController = {
 
   delete: async (req, res, next) => {
     try {
-      await BranchService.remove(req.prisma, req.params.id);
+      const { id: ownerId, businessId } = req.user;
+
+      await BranchService.remove(req.prisma, req.params.id, {
+        ownerId,
+        businessId,
+      });
 
       sendResponse(res, {
         statusCode: 200,
         success: true,
         message: "Branch deleted successfully",
-        data: null,
       });
     } catch (err) {
       next(err);

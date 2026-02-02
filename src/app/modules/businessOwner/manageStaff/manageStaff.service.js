@@ -2,18 +2,21 @@
 import bcrypt from "bcrypt";
 import { envVars } from "../../../config/env.js";
 import { QueryBuilder } from "../../../utils/QueryBuilder.js";
+import { auditLog } from "../../../utils/auditLogger.js";
 
 export const StaffService = {
   async create(prisma, data) {
     const { name, email, password, branchId, businessId } = data;
 
     try {
-      console.log(`🚀 [MANAGE_STAFF] Creating new staff for branch: ${branchId} | Email: ${email}`);
+      console.log(
+        `🚀 [MANAGE_STAFF] Creating new staff for branch: ${branchId} | Email: ${email}`,
+      );
 
       // 1. Hash the password
       const hashedPassword = await bcrypt.hash(
         password,
-        Number(envVars.BCRYPT_SALT_ROUND)
+        Number(envVars.BCRYPT_SALT_ROUND),
       );
 
       // 2. Execute in transaction
@@ -24,7 +27,7 @@ export const StaffService = {
             name,
             email,
             passwordHash: hashedPassword,
-            role: 'STAFF',
+            role: "STAFF",
             isVerified: true, // Staff users are verified by default
           },
         });
@@ -35,7 +38,7 @@ export const StaffService = {
             userId: user.id,
             businessId,
             branchId,
-            role: 'STAFF', // Default to STAFF role
+            role: "STAFF", // Default to STAFF role
             isActive: true,
           },
           include: {
@@ -48,11 +51,36 @@ export const StaffService = {
         return staff;
       });
 
-      console.log(`✅ [MANAGE_STAFF] Staff created successfully: ${result.id} (User: ${result.userId})`);
-      return result;
+      console.log(
+        `✅ [MANAGE_STAFF] Staff created successfully: ${result.id} (User: ${result.userId})`,
+      );
 
+      await auditLog({
+        userId: data.ownerId, // business owner
+        businessId,
+        action: "STAFF_CREATE",
+        actionType: "CREATE",
+        metadata: {
+          staffId: result.id,
+          staffName: result.user?.name,
+          staffEmail: result.user?.email,
+          staffRole: result.role,
+          branchId: result.branchId,
+          branchName: result.branch?.name,
+        },
+      });
+
+      console.log("AUDIT LOG DEBUG:", {
+        ownerId: data.ownerId,
+        businessId,
+      });
+
+      return result;
     } catch (error) {
-      console.error(`🔥 [MANAGE_STAFF_ERROR] Failed to create staff for email ${email}:`, error.message);
+      console.error(
+        `🔥 [MANAGE_STAFF_ERROR] Failed to create staff for email ${email}:`,
+        error.message,
+      );
       throw error;
     }
   },
@@ -65,7 +93,7 @@ export const StaffService = {
         business: true,
         branch: true,
       },
-    })
+    });
   },
 
   async getAllStaffFromDB(prisma, query, businessId) {
@@ -118,8 +146,7 @@ export const StaffService = {
   async update(prisma, id, businessId, data) {
     const { name, email, branchId, role, isActive } = data;
 
-    return await prisma.$transaction(async (tx) => {
-      // 1. Find staff and check ownership
+    const updatedStaff = await prisma.$transaction(async (tx) => {
       const staff = await tx.staff.findFirst({
         where: { id, businessId },
       });
@@ -130,7 +157,6 @@ export const StaffService = {
         throw error;
       }
 
-      // 2. Update User details if provided
       if (name || email) {
         await tx.user.update({
           where: { id: staff.userId },
@@ -141,7 +167,6 @@ export const StaffService = {
         });
       }
 
-      // 3. Update Staff details if provided
       const updatedStaff = await tx.staff.update({
         where: { id },
         data: {
@@ -158,6 +183,25 @@ export const StaffService = {
 
       return updatedStaff;
     });
+
+    // ✅ NOW audit log is POSSIBLE
+    await auditLog({
+      userId: data.ownerId,
+      businessId,
+      action: "STAFF_UPDATE",
+      actionType: "UPDATE",
+      metadata: {
+        staffId: updatedStaff.id,
+        staffName: updatedStaff.user?.name,
+        updatedFields: Object.keys(data),
+        staffRole: updatedStaff.role,
+        branchId: updatedStaff.branchId,
+        branchName: updatedStaff.branch?.name,
+        isActive: updatedStaff.isActive,
+      },
+    });
+
+    return updatedStaff;
   },
 
   deactivate(prisma, id, businessId) {
@@ -167,11 +211,15 @@ export const StaffService = {
     });
   },
 
-  async remove(prisma, id, businessId) {
-    return await prisma.$transaction(async (tx) => {
-      // 1. Find staff to get userId and check ownership
+  async remove(prisma, id, businessId, ownerId) {
+    const staff = await prisma.$transaction(async (tx) => {
+      // 1. Find staff and check ownership
       const staff = await tx.staff.findFirst({
         where: { id, businessId },
+        include: {
+          user: true,
+          branch: true,
+        },
       });
 
       if (!staff) {
@@ -180,7 +228,7 @@ export const StaffService = {
         throw error;
       }
 
-      // 2. Delete Staff record first (due to foreign key)
+      // 2. Delete Staff record
       await tx.staff.delete({
         where: { id },
       });
@@ -190,7 +238,25 @@ export const StaffService = {
         where: { id: staff.userId },
       });
 
-      return { success: true };
+      return staff; // 👈 return for audit log
     });
+
+    // ✅ AUDIT LOG (OUTSIDE TRANSACTION)
+    await auditLog({
+      userId: ownerId,
+      businessId,
+      action: "STAFF_DELETE",
+      actionType: "DELETE",
+      metadata: {
+        staffId: staff.id,
+        staffName: staff.user?.name,
+        staffEmail: staff.user?.email,
+        staffRole: staff.role,
+        branchId: staff.branchId,
+        branchName: staff.branch?.name,
+      },
+    });
+
+    return { success: true };
   },
-}
+};
