@@ -1,21 +1,19 @@
 // controllers/staff.controller.js
 
-import { StaffService } from "./manageStaff.service.js"
-
-
-
+import { StaffService } from "./manageStaff.service.js";
 
 export const StaffController = {
   create: async (req, res, next) => {
     try {
       const { name, email, password, branchId } = req.body;
-      const { businessId } = req.user;
+      const { businessId, id: ownerId } = req.user;
       const staff = await StaffService.create(req.prisma, {
         name,
         email,
         password,
         branchId,
         businessId,
+        ownerId,
       });
 
       res.status(201).json({
@@ -57,7 +55,7 @@ export const StaffController = {
       const { data, meta } = await StaffService.getAllStaffFromDB(
         req.prisma,
         req.query,
-        businessId
+        businessId,
       );
 
       res.json({
@@ -77,7 +75,7 @@ export const StaffController = {
       const staff = await StaffService.findById(
         req.prisma,
         req.params.id,
-        businessId
+        businessId,
       );
 
       res.json({
@@ -92,12 +90,16 @@ export const StaffController = {
 
   update: async (req, res, next) => {
     try {
-      const { businessId } = req.user;
+      const { businessId, id: ownerId } = req.user;
+
       const staff = await StaffService.update(
         req.prisma,
         req.params.id,
         businessId,
-        req.body
+        {
+          ...req.body,
+          ownerId, // 🔥 THIS WAS MISSING
+        },
       );
 
       res.json({
@@ -116,7 +118,7 @@ export const StaffController = {
       const staff = await StaffService.deactivate(
         req.prisma,
         req.params.id,
-        businessId
+        businessId,
       );
 
       res.json({
@@ -131,8 +133,8 @@ export const StaffController = {
 
   delete: async (req, res, next) => {
     try {
-      const { businessId } = req.user;
-      await StaffService.remove(req.prisma, req.params.id, businessId);
+      const { businessId, id: ownerId } = req.user;
+      await StaffService.remove(req.prisma, req.params.id, businessId, ownerId);
 
       res.status(200).json({
         success: true,
@@ -142,4 +144,4 @@ export const StaffController = {
       next(err);
     }
   },
-}
+};
