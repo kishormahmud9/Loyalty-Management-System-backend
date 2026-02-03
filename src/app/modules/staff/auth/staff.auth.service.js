@@ -64,6 +64,34 @@ export const staffLoginService = async (prisma, payload) => {
   }
 };
 
+// Helper function to check if PIN is unique within the branch
+const checkPinUniqueness = async (prisma, branchId, pin, excludeUserId) => {
+  const branchStaffs = await prisma.staff.findMany({
+    where: {
+      branchId,
+      user: {
+        isPinSet: true,
+        NOT: {
+          id: excludeUserId,
+        },
+      },
+    },
+    include: {
+      user: true,
+    },
+  });
+
+  for (const staff of branchStaffs) {
+    if (staff.user.pinHash) {
+      const isMatch = await bcrypt.compare(pin, staff.user.pinHash);
+      if (isMatch) {
+        return false; // PIN is already in use
+      }
+    }
+  }
+  return true;
+};
+
 export const setStaffPinService = async (prisma, userId, payload) => {
   try {
     const { pin, confirmPin } = payload;
@@ -82,6 +110,9 @@ export const setStaffPinService = async (prisma, userId, payload) => {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
+      include: {
+        staffProfile: true, // Fetch staff profile to get branchId
+      },
     });
 
     if (!user || user.role !== "STAFF") {
@@ -90,6 +121,22 @@ export const setStaffPinService = async (prisma, userId, payload) => {
 
     if (user.isPinSet) {
       return { error: "PIN already set" };
+    }
+
+    if (!user.staffProfile) {
+      return { error: "Staff profile not found" };
+    }
+
+    // Check for unique PIN in the branch
+    const isUnique = await checkPinUniqueness(
+      prisma,
+      user.staffProfile.branchId,
+      pin,
+      userId,
+    );
+
+    if (!isUnique) {
+      return { error: "This PIN is already in use by another staff member in this branch. Please choose a different PIN." };
     }
 
     const pinHash = await bcrypt.hash(pin, Number(envVars.BCRYPT_SALT_ROUND));
@@ -218,6 +265,9 @@ export const resetPinService = async (prisma, email, newPin, confirmPin) => {
       email,
       role: "STAFF",
     },
+    include: {
+      staffProfile: true, // Fetch staff profile to get branchId
+    },
   });
 
   if (!staffUser) {
@@ -226,6 +276,22 @@ export const resetPinService = async (prisma, email, newPin, confirmPin) => {
 
   if (!staffUser.forgotPasswordStatus) {
     throw new AppError(StatusCodes.FORBIDDEN, "Please verify OTP first");
+  }
+
+  if (!staffUser.staffProfile) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "Staff profile not found");
+  }
+
+  // Check for unique PIN in the branch
+  const isUnique = await checkPinUniqueness(
+    prisma,
+    staffUser.staffProfile.branchId,
+    newPin,
+    staffUser.id,
+  );
+
+  if (!isUnique) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "This PIN is already in use by another staff member in this branch. Please choose a different PIN.");
   }
 
   const hashedPin = await bcrypt.hash(
