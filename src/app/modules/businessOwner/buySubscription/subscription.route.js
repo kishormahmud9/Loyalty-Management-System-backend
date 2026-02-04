@@ -1,11 +1,15 @@
 import express from "express";
 import { SubscriptionControllers } from "./subscription.controller.js";
 
+import { checkAuthMiddleware } from "../../../middleware/checkAuthMiddleware.js";
+import { Role } from "../../../utils/role.js";
+
 const router = express.Router();
 
-router.post("/create", SubscriptionControllers.createSubscription);
-router.get("/", SubscriptionControllers.getAllSubscription);
-router.get("/:id", SubscriptionControllers.getSubscriptionById);
-router.patch("/:id", SubscriptionControllers.updateSubscription);
+router.post("/create", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.createSubscription);
+router.get("/available-plans", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.getAllAvailablePlans);
+router.get("/", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.getAllSubscription);
+router.get("/:id", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.getSubscriptionById);
+router.patch("/:id", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.updateSubscription);
 
 export const SubscriptionRoutes = router;
