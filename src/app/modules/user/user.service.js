@@ -91,7 +91,7 @@ export const createUserService = async (payload) => {
       passwordHash: hashedPassword,
       avatarUrl: picture,
       isVerified: false,
-      role: Role.CUSTOMER, // Default role
+      role: role || Role.CUSTOMER, // Use provided role or default to CUSTOMER
       oauthProvider: "email",
       ...rest,
     },

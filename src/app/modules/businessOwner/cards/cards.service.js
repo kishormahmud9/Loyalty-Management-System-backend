@@ -1,6 +1,7 @@
 import prisma from "../../../prisma/client.js";
 import { AppError } from "../../../errorHelper/appError.js";
 import { auditLog } from "../../../utils/auditLogger.js";
+import { googleWalletService } from "../../../utils/googleWallet.service.js";
 
 class CardService {
     /* =========================
@@ -32,6 +33,22 @@ class CardService {
         if (!businessId) throw new AppError(400, "businessId is required");
         if (!userId) throw new AppError(401, "userId is required");
 
+        // 🔐 LIMIT VALIDATION: Only 2 active cards allowed at a time
+        const activeCardsCount = await prisma.card.count({
+            where: {
+                businessId,
+                isActive: true,
+                OR: [
+                    { expiryDate: null },
+                    { expiryDate: { gt: new Date() } }
+                ]
+            }
+        });
+
+        if (activeCardsCount >= 2) {
+            throw new AppError(400, "You have reached the maximum limit of 2 active cards. Please delete or deactivate an existing card before creating a new one.");
+        }
+
         // ✅ CREATE CARD
         const card = await prisma.card.create({
             data: {
@@ -54,6 +71,8 @@ class CardService {
                 inactiveStamp,
                 textColor,
                 earnedRewardMessage,
+                expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined,
+                isActive: data.isActive !== undefined ? data.isActive : true,
             },
         });
 
@@ -70,6 +89,13 @@ class CardService {
             },
         });
 
+        // 🔐 SYNCHRONIZE WITH GOOGLE WALLET
+        try {
+            await googleWalletService.createOrUpdateClass(card);
+        } catch (error) {
+            console.error("Failed to sync card with Google Wallet:", error);
+        }
+
         return card;
     }
 
@@ -82,6 +108,7 @@ class CardService {
             orderBy: { createdAt: "desc" },
         });
     }
+
     /* =========================
          GET CARD BY ID
       ========================= */
@@ -111,6 +138,9 @@ class CardService {
         if (updateData.earnUnit !== undefined)
             updateData.earnUnit = Number(updateData.earnUnit);
 
+        if (updateData.expiryDate !== undefined)
+            updateData.expiryDate = updateData.expiryDate ? new Date(updateData.expiryDate) : null;
+
         const card = await prisma.card.update({
             where: { id },
             data: updateData,
@@ -126,6 +156,13 @@ class CardService {
                 cardId: card.id,
             },
         });
+
+        // 🔐 SYNCHRONIZE WITH GOOGLE WALLET
+        try {
+            await googleWalletService.createOrUpdateClass(card);
+        } catch (error) {
+            console.error("Failed to sync card with Google Wallet:", error);
+        }
 
         return card;
     }
