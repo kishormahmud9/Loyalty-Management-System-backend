@@ -1,6 +1,7 @@
 import prisma from "../../../prisma/client.js";
 import { AppError } from "../../../errorHelper/appError.js";
 import { auditLog } from "../../../utils/auditLogger.js";
+import { googleWalletService } from "../../../utils/googleWallet.service.js";
 
 const increaseRewardPoints = async (data) => {
     let {
@@ -153,6 +154,20 @@ const increaseRewardPoints = async (data) => {
 
             return history;
         });
+
+        // 🔐 SYNCHRONIZE POINTS WITH GOOGLE WALLET
+        try {
+            // Find the card for this business to get the cardId (which is the classId suffix)
+            const card = await prisma.card.findFirst({
+                where: { businessId }
+            });
+
+            if (card) {
+                await googleWalletService.updatePoints(customerId, card.id, result.rewardPoints);
+            }
+        } catch (error) {
+            console.error("Failed to sync points with Google Wallet:", error);
+        }
 
         console.log(`✅ [POINTS_UPDATE] Successfully updated points for ${customerId}. New Total: ${result.rewardPoints}`);
 
