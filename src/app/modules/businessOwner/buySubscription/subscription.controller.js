@@ -83,9 +83,29 @@ const updateSubscription = async (req, res) => {
     }
 };
 
+const getAllAvailablePlans = async (req, res) => {
+    try {
+        const result = await SubscriptionServices.getAllAvailablePlansFromDB();
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: "Available plans retrieved successfully",
+            data: result,
+        });
+    } catch (err) {
+        sendResponse(res, {
+            statusCode: 500,
+            success: false,
+            message: err.message || "Something went wrong",
+            data: null,
+        });
+    }
+};
+
 export const SubscriptionControllers = {
     createSubscription,
     getAllSubscription,
     getSubscriptionById,
     updateSubscription,
+    getAllAvailablePlans,
 };

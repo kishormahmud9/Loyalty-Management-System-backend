@@ -40,9 +40,22 @@ const updateSubscriptionIntoDB = async (id, payload) => {
     return result;
 };
 
+const getAllAvailablePlansFromDB = async () => {
+    const result = await prisma.plan.findMany({
+        where: {
+            isActive: true,
+        },
+        orderBy: {
+            price: "asc",
+        },
+    });
+    return result;
+};
+
 export const SubscriptionServices = {
     createSubscriptionIntoDB,
     getAllSubscriptionFromDB,
     getSubscriptionByIdFromDB,
     updateSubscriptionIntoDB,
+    getAllAvailablePlansFromDB,
 };
