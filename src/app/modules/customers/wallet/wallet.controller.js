@@ -2,30 +2,74 @@ import httpStatus from "http-status-codes";
 import CustomerWalletService from "./wallet.service.js";
 import { sendResponse } from "../../../utils/sendResponse.js";
 
-
 const getGoogleWalletLink = async (req, res) => {
-   try {
-     const customerId = req.user.id; // From auth middleware
-    const { cardId } = req.params;
+    try {
+        const customerId = req.user.id; // From auth middleware
+        const { cardId } = req.params;
 
-    const result = await CustomerWalletService.getGoogleWalletLink(customerId, cardId);
+        const result = await CustomerWalletService.getGoogleWalletLink(customerId, cardId);
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "Google Wallet link generated successfully",
-        data: result,
-    });
-   } catch (error) {
-     sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: false,
-        message: "Google Wallet link generated failed",
-        data: error.message,
-    });
-   }
+        sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: "Google Wallet link generated successfully",
+            data: result,
+        });
+    } catch (error) {
+        sendResponse(res, {
+            statusCode: error.statusCode || httpStatus.INTERNAL_SERVER_ERROR,
+            success: false,
+            message: error.message || "Google Wallet link generation failed",
+            data: null,
+        });
+    }
+}
+
+const addAppleWallet = async (req, res) => {
+    try {
+        const { cardId } = req.params;
+        const customerId = req.user.id;
+
+        const { buffer, filename } = await CustomerWalletService.getAppleWalletPass(customerId, cardId);
+
+        // Set headers for .pkpass download
+        res.setHeader("Content-Type", "application/vnd.apple.pkpass");
+        res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+        return res.status(httpStatus.OK).send(buffer);
+    } catch (error) {
+        sendResponse(res, {
+            statusCode: error.statusCode || httpStatus.INTERNAL_SERVER_ERROR,
+            success: false,
+            message: error.message || "Apple Wallet pass generation failed",
+            data: null,
+        });
+    }
+}
+
+const getWalletHistory = async (req, res) => {
+    try {
+        const customerId = req.user.id;
+        const result = await CustomerWalletService.getWalletHistory(customerId);
+
+        sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: "Wallet history retrieved successfully",
+            data: result,
+        });
+    } catch (error) {
+        sendResponse(res, {
+            statusCode: error.statusCode || httpStatus.INTERNAL_SERVER_ERROR,
+            success: false,
+            message: error.message || "Failed to retrieve wallet history",
+            data: null,
+        });
+    }
 }
 
 export const CustomerWalletController = {
     getGoogleWalletLink,
+    addAppleWallet,
+    getWalletHistory
 };
