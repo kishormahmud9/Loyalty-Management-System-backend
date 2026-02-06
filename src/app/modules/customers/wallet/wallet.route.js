@@ -10,4 +10,16 @@ router.get(
     CustomerWalletController.getGoogleWalletLink
 );
 
+router.get(
+    "/apple-wallet-pass/:cardId",
+    customerAuthMiddleware,
+    CustomerWalletController.addAppleWallet
+);
+
+router.get(
+    "/history",
+    customerAuthMiddleware,
+    CustomerWalletController.getWalletHistory
+);
+
 export const CustomerWalletRoutes = router;
