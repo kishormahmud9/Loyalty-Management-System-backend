@@ -145,6 +145,26 @@ class CustomerWalletService {
 
         return Object.values(history);
     }
+
+    static async getMyWallets(customerId) {
+        return prisma.customerCardWallet.findMany({
+            where: {
+                customerId,
+                OR: [
+                    { isAddedToGoogleWallet: true },
+                    { isAddedToAppleWallet: true }
+                ]
+            },
+            include: {
+                card: {
+                    include: {
+                        business: true
+                    }
+                }
+            },
+            orderBy: { lastSyncedAt: 'desc' }
+        });
+    }
 }
 
 export default CustomerWalletService;
