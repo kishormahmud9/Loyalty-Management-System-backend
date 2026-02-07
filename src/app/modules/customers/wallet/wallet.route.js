@@ -27,4 +27,10 @@ router.get(
     CustomerWalletController.getWalletHistory
 );
 
+router.get(
+    "/my-wallets",
+    customerAuthMiddleware,
+    CustomerWalletController.getMyWallets
+);
+
 export const CustomerWalletRoutes = router;
