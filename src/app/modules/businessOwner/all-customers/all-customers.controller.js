@@ -76,6 +76,37 @@ class AllCustomersController {
             });
         }
     }
+
+    static async getCustomerWalletsByBusiness(req, res) {
+        try {
+            const ownerId = req.user?.id;
+
+            if (!ownerId) {
+                return sendResponse(res, {
+                    statusCode: 401,
+                    success: false,
+                    message: "Unauthorized",
+                    data: null,
+                });
+            }
+
+            const wallets = await AllCustomersService.getCustomerWalletsByBusiness(ownerId);
+
+            return sendResponse(res, {
+                statusCode: 200,
+                success: true,
+                message: "Customer wallets retrieved successfully",
+                data: wallets,
+            });
+        } catch (error) {
+            return sendResponse(res, {
+                statusCode: error.statusCode || 500,
+                success: false,
+                message: error.message,
+                data: null,
+            });
+        }
+    }
 }
 
 export default AllCustomersController;

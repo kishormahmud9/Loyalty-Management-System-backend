@@ -17,4 +17,7 @@ router.get("/customer/:customerId", AllCustomersController.getSingleCustomer);
 // Route to delete a customer by ID
 router.delete("/customer/:customerId", AllCustomersController.deleteCustomer);
 
+// Route to get all customer wallets for the logged-in business owner
+router.get("/customer-wallets", AllCustomersController.getCustomerWalletsByBusiness);
+
 export const AllCustomersRoutes = router;

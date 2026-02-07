@@ -90,9 +90,31 @@ const getWalletHistory = async (req, res) => {
     }
 }
 
+const getMyWallets = async (req, res) => {
+    try {
+        const customerId = req.user.id;
+        const result = await CustomerWalletService.getMyWallets(customerId);
+
+        sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: "Your added wallets retrieved successfully",
+            data: result,
+        });
+    } catch (error) {
+        sendResponse(res, {
+            statusCode: error.statusCode || httpStatus.INTERNAL_SERVER_ERROR,
+            success: false,
+            message: error.message || "Failed to retrieve your wallets",
+            data: null,
+        });
+    }
+}
+
 export const CustomerWalletController = {
     getGoogleWalletLink,
     getAppleWalletLink,
     addAppleWallet,
-    getWalletHistory
+    getWalletHistory,
+    getMyWallets
 };
