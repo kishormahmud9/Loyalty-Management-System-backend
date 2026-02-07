@@ -124,6 +124,8 @@ const loadEnvVars = () => {
       TEAM_ID: process.env.APPLE_TEAM_ID,
       P12_PASSWORD: process.env.APPLE_P12_PASSWORD,
       P12_PATH: process.env.APPLE_P12_PATH,
+      SIGNER_CERT_PATH: process.env.APPLE_SIGNER_CERT_PATH || "signerCert.pem",
+      SIGNER_KEY_PATH: process.env.APPLE_SIGNER_KEY_PATH || "signerKey.pem",
     },
   };
 };
