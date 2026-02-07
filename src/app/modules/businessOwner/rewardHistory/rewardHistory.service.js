@@ -155,18 +155,23 @@ const increaseRewardPoints = async (data) => {
             return history;
         });
 
-        // 🔐 SYNCHRONIZE POINTS WITH GOOGLE WALLET
+        // 🔐 SYNCHRONIZE POINTS WITH WALLETS (Google/Apple)
         try {
-            // Find the card for this business to get the cardId (which is the classId suffix)
+            // Find the active card for this business
             const card = await prisma.card.findFirst({
-                where: { businessId }
+                where: { businessId, isActive: true }
             });
 
             if (card) {
+                // Sync with Google Wallet
                 await googleWalletService.updatePoints(customerId, card.id, result.rewardPoints);
+
+                // Note: Apple Wallet updates require PassKit Web Service implementation
+                // Logic can be added here once APNs and web service endpoints are ready
+                console.log(`📡 [WALLET_SYNC] Syncing points for ${customerId} with wallets.`);
             }
         } catch (error) {
-            console.error("Failed to sync points with Google Wallet:", error);
+            console.error("Failed to sync points with wallets:", error);
         }
 
         console.log(`✅ [POINTS_UPDATE] Successfully updated points for ${customerId}. New Total: ${result.rewardPoints}`);
@@ -362,6 +367,20 @@ const updatePointsById = async (data) => {
 
             return history;
         });
+
+        // 🔐 SYNCHRONIZE WITH WALLETS
+        try {
+            const card = await prisma.card.findFirst({
+                where: { businessId: result.businessId, isActive: true }
+            });
+
+            if (card) {
+                await googleWalletService.updatePoints(result.customerId, card.id, result.rewardPoints);
+                console.log(`📡 [WALLET_SYNC] Points synced for record ${id}`);
+            }
+        } catch (error) {
+            console.error("Failed to sync points with wallets after manual update:", error);
+        }
 
         console.log(`✅ [POINTS_MANUAL_UPDATE] Successfully updated record ${id}.`);
 

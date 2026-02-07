@@ -39,6 +39,12 @@ const loadEnvVars = () => {
     "STRIPE_WEBHOOK_SECRET",
     "STRIPE_SUCCESS_URL",
     "STRIPE_CANCEL_URL",
+
+    // Apple Wallet
+    "APPLE_PASS_TYPE_ID",
+    "APPLE_TEAM_ID",
+    "APPLE_P12_PASSWORD",
+    "APPLE_P12_PATH",
   ];
 
   requiredVars.forEach((key) => {
@@ -108,6 +114,18 @@ const loadEnvVars = () => {
       SMTP_USER: process.env.SMTP_USER,
       SMTP_PASS: process.env.SMTP_PASS,
       SMTP_FROM: process.env.SMTP_FROM,
+    },
+
+    // ===============================
+    // Apple Wallet
+    // ===============================
+    APPLE_WALLET: {
+      PASS_TYPE_ID: process.env.APPLE_PASS_TYPE_ID,
+      TEAM_ID: process.env.APPLE_TEAM_ID,
+      P12_PASSWORD: process.env.APPLE_P12_PASSWORD,
+      P12_PATH: process.env.APPLE_P12_PATH,
+      SIGNER_CERT_PATH: process.env.APPLE_SIGNER_CERT_PATH || "signerCert.pem",
+      SIGNER_KEY_PATH: process.env.APPLE_SIGNER_KEY_PATH || "signerKey.pem",
     },
   };
 };
