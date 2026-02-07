@@ -25,12 +25,34 @@ const getGoogleWalletLink = async (req, res) => {
     }
 }
 
+const getAppleWalletLink = async (req, res) => {
+    try {
+        const customerId = req.user.id;
+        const { cardId } = req.params;
+
+        const result = await CustomerWalletService.getAppleWalletLink(customerId, cardId);
+
+        sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: "Apple Wallet link generated successfully",
+            data: result,
+        });
+    } catch (error) {
+        sendResponse(res, {
+            statusCode: error.statusCode || httpStatus.INTERNAL_SERVER_ERROR,
+            success: false,
+            message: error.message || "Apple Wallet link generation failed",
+            data: null,
+        });
+    }
+}
+
 const addAppleWallet = async (req, res) => {
     try {
-        const { cardId } = req.params;
-        const customerId = req.user.id;
+        const { walletId } = req.params;
 
-        const { buffer, filename } = await CustomerWalletService.getAppleWalletPass(customerId, cardId);
+        const { buffer, filename } = await CustomerWalletService.getAppleWalletPass(walletId);
 
         // Set headers for .pkpass download
         res.setHeader("Content-Type", "application/vnd.apple.pkpass");
@@ -70,6 +92,7 @@ const getWalletHistory = async (req, res) => {
 
 export const CustomerWalletController = {
     getGoogleWalletLink,
+    getAppleWalletLink,
     addAppleWallet,
     getWalletHistory
 };

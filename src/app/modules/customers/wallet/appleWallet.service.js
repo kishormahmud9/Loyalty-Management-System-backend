@@ -12,7 +12,8 @@ class AppleWalletService {
         this.passTypeId = envVars.APPLE_WALLET.PASS_TYPE_ID;
         this.teamId = envVars.APPLE_WALLET.TEAM_ID;
         this.p12Passphrase = envVars.APPLE_WALLET.P12_PASSWORD;
-        this.p12Path = path.resolve(process.cwd(), envVars.APPLE_WALLET.P12_PATH || "apple_wallet.p12");
+        this.signerCertPath = path.resolve(process.cwd(), envVars.APPLE_WALLET.SIGNER_CERT_PATH || "signerCert.pem");
+        this.signerKeyPath = path.resolve(process.cwd(), envVars.APPLE_WALLET.SIGNER_KEY_PATH || "signerKey.pem");
 
         // WWDR certificate is required for signing. 
         this.wwdrPath = path.resolve(process.cwd(), "WWDR.pem");
@@ -27,13 +28,18 @@ class AppleWalletService {
     async generatePass(data, card) {
         try {
             // Check if certificates exist
-            if (!fs.existsSync(this.p12Path)) {
-                throw new Error(`Apple Wallet P12 certificate not found at: ${this.p12Path}`);
+            if (!fs.existsSync(this.signerCertPath)) {
+                throw new Error(`Apple Wallet Signer Certificate not found at: ${this.signerCertPath}. Since version 3.0.0, passkit-generator requires PEM format.`);
+            }
+            if (!fs.existsSync(this.signerKeyPath)) {
+                throw new Error(`Apple Wallet Signer Key not found at: ${this.signerKeyPath}. Since version 3.0.0, passkit-generator requires PEM format.`);
             }
 
             // Apple Developer Portal WWDR certificate is also needed.
-            // If not provided in root, we might fail.
             const wwdrContent = fs.existsSync(this.wwdrPath) ? fs.readFileSync(this.wwdrPath) : null;
+            if (!wwdrContent) {
+                throw new Error(`WWDR certificate not found at: ${this.wwdrPath}`);
+            }
 
             // 1. Prepare the core pass.json content
             const passJson = {
@@ -77,8 +83,8 @@ class AppleWalletService {
                 },
                 {
                     wwdr: wwdrContent,
-                    signerCert: fs.readFileSync(this.p12Path),
-                    signerKey: fs.readFileSync(this.p12Path),
+                    signerCert: fs.readFileSync(this.signerCertPath),
+                    signerKey: fs.readFileSync(this.signerKeyPath),
                     signerKeyPassphrase: this.p12Passphrase,
                 },
                 {

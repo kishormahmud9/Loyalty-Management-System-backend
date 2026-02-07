@@ -11,8 +11,13 @@ router.get(
 );
 
 router.get(
-    "/apple-wallet-pass/:cardId",
+    "/apple-wallet-link/:cardId",
     customerAuthMiddleware,
+    CustomerWalletController.getAppleWalletLink
+);
+
+router.get(
+    "/apple-wallet-pass/:walletId",
     CustomerWalletController.addAppleWallet
 );
 
