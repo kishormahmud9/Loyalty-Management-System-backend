@@ -372,6 +372,7 @@ model Business {
   supports             Support[]
   supportTickets       SupportTicket[]
   undoRequests         TransactionUndoRequest[]
+  notificationSettings businessOwnerNotification?
 }
 
 model Branch {
@@ -404,6 +405,7 @@ model Branch {
   staff                Staff[]
   supports             Support[]
   undoRequests         TransactionUndoRequest[]
+  notificationSetting  BranchNotificationSetting?
 }
 
 model RewardHistory {
@@ -668,6 +670,29 @@ model NotificationCustomerState {
 }
 
 
+
+
+model businessOwnerNotification {
+  id                   String   @id @default(uuid())
+  businessId           String   @unique
+  loginAlerts          Boolean  @default(true)
+  passwordChange       Boolean  @default(true)
+  inAppNotification    Boolean  @default(true)
+  smsAlerts            Boolean  @default(false)
+  enableCardAllLocation Boolean @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  business             Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model BranchNotificationSetting {
+  id         String   @id @default(uuid())
+  branchId   String   @unique
+  isEnabled  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+}
 
 model CustomerCardWallet {
   id                    String   @id @default(uuid())
