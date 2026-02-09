@@ -106,6 +106,7 @@ enum ActivityActionType {
 
 enum SubscriptionStatus {
   ACTIVE
+  INACTIVE
   EXPIRED
   CANCELLED
 }
@@ -305,17 +306,17 @@ model EarnReward {
 }
 
 model Card {
-  id                  String        @id @default(uuid())
+  id                  String               @id @default(uuid())
   businessId          String
-  cardType            CardType      @default(stamp_card)
+  cardType            CardType             @default(stamp_card)
   cardDesc            String
   companyName         String
-  rewardProgram       RewardProgram @default(spend)
-  stampsCount         Int           @default(0)
+  rewardProgram       RewardProgram        @default(spend)
+  stampsCount         Int                  @default(0)
   earnRuleType        String?
   earnValue           Int?
   earnUnit            Int?
-  barcodeType         BarcodeType   @default(qr_code)
+  barcodeType         BarcodeType          @default(qr_code)
   logo                String?
   cardBackground      String?
   stampBackground     String?
@@ -323,77 +324,77 @@ model Card {
   inactiveStamp       String?
   textColor           String?
   earnedRewardMessage String?
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
-  isActive            Boolean       @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  isActive            Boolean              @default(true)
   expiryDate          DateTime?
   logoFilePath        String?
   stampBackgroundPath String?
-  business            Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business            Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
   cardWallets         CustomerCardWallet[]
 
   @@index([businessId])
 }
 
 model Business {
-  id                   String                   @id @default(uuid())
-  name                 String
-  isActive             Boolean                  @default(true)
-  createdAt            DateTime                 @default(now())
-  updatedAt            DateTime                 @updatedAt
-  address              String?
-  city                 String?
-  country              String?
-  industry             String?
-  ownerId              String
-  phone                String?
-  qrCode               String                   @unique
-  trialEndsAt          DateTime?
-  stripeCustomerId     String?                  @unique
-  businessLogo         String?
-  businessLogoFilePath String?
-  businessLogoUrl      String?
-  activityLogs         ActivityLog[]
-  billings             Billing[]
-  branches             Branch[]
-  owner                User                     @relation("BusinessOwner", fields: [ownerId], references: [id])
-  businessSubscription BusinessSubscription?
-  cards                Card[]
-  customerBranchData   CustomerBranchData[]
-  earnRewards          EarnReward[]
-  loyaltyRule          LoyaltyRule?
-  adjustmentRequests   PointAdjustmentRequest[]
-  transactions         PointTransaction[]
-  redeemRewards        RedeemReward[]
-  reviews              Review[]
-  rewardHistory        RewardHistory[]
-  staff                Staff[]
-  staffPermission      StaffPermission?
-  supports             Support[]
-  supportTickets       SupportTicket[]
-  undoRequests         TransactionUndoRequest[]
-  notificationSettings businessOwnerNotification?
+  id                    String                     @id @default(uuid())
+  name                  String
+  isActive              Boolean                    @default(true)
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
+  address               String?
+  city                  String?
+  country               String?
+  industry              String?
+  ownerId               String
+  phone                 String?
+  qrCode                String                     @unique
+  trialEndsAt           DateTime?
+  stripeCustomerId      String?                    @unique
+  businessLogo          String?
+  businessLogoFilePath  String?
+  businessLogoUrl       String?
+  activityLogs          ActivityLog[]
+  billings              Billing[]
+  branches              Branch[]
+  owner                 User                       @relation("BusinessOwner", fields: [ownerId], references: [id])
+  businessSubscriptions BusinessSubscription[]
+  cards                 Card[]
+  customerBranchData    CustomerBranchData[]
+  earnRewards           EarnReward[]
+  loyaltyRule           LoyaltyRule?
+  adjustmentRequests    PointAdjustmentRequest[]
+  transactions          PointTransaction[]
+  redeemRewards         RedeemReward[]
+  reviews               Review[]
+  rewardHistory         RewardHistory[]
+  staff                 Staff[]
+  staffPermission       StaffPermission?
+  supports              Support[]
+  supportTickets        SupportTicket[]
+  undoRequests          TransactionUndoRequest[]
+  notificationSettings  businessOwnerNotification?
 }
 
 model Branch {
-  id                   String                   @id @default(uuid())
+  id                   String                     @id @default(uuid())
   businessId           String
   name                 String?
   address              String
   city                 String?
-  isActive             Boolean                  @default(true)
-  createdAt            DateTime                 @default(now())
-  updatedAt            DateTime                 @updatedAt
+  isActive             Boolean                    @default(true)
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
   country              String?
   businessName         String?
   managerName          String?
-  staffCount           Int                      @default(0)
+  staffCount           Int                        @default(0)
   branchQrCode         String?
   branchQrCodeFilePath String?
   branchQrCodeUrl      String?
   branchImageFilePath  String?
   branchImageUrl       String?
-  business             Business                 @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business             Business                   @relation(fields: [businessId], references: [id], onDelete: Cascade)
   claims               ClaimReward[]
   customerBranchData   CustomerBranchData[]
   earnRewards          EarnReward[]
@@ -542,7 +543,7 @@ model Plan {
 
 model BusinessSubscription {
   id                   String             @id @default(uuid())
-  businessId           String             @unique
+  businessId           String
   planId               String
   status               SubscriptionStatus @default(ACTIVE)
   startDate            DateTime           @default(now())
@@ -559,6 +560,8 @@ model BusinessSubscription {
   stripeSubscriptionId String?            @unique
   business             Business           @relation(fields: [businessId], references: [id])
   plan                 Plan               @relation(fields: [planId], references: [id])
+
+  @@index([businessId])
 }
 
 model TransactionUndoRequest {
@@ -669,9 +672,6 @@ model NotificationCustomerState {
   @@index([customerId])
 }
 
-
-
-
 model businessOwnerNotification {
   id         String   @id @default(uuid())
   businessId String   @unique
@@ -682,20 +682,20 @@ model businessOwnerNotification {
 }
 
 model BranchNotificationSetting {
-  id         String   @id @default(uuid())
-  branchId   String   @unique
-  settings   Json     @default("[]")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  branchId  String   @unique
+  settings  Json     @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  branch    Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
 }
 
 model CustomerCardWallet {
-  id                    String   @id @default(uuid())
+  id                    String    @id @default(uuid())
   customerId            String
   cardId                String
-  isAddedToGoogleWallet Boolean  @default(false)
-  isAddedToAppleWallet  Boolean  @default(false)
+  isAddedToGoogleWallet Boolean   @default(false)
+  isAddedToAppleWallet  Boolean   @default(false)
   lastSyncedAt          DateTime? @default(now())
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)

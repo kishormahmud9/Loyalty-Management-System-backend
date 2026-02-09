@@ -8,6 +8,7 @@ const router = express.Router();
 
 router.post("/create", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.createSubscription);
 router.get("/available-plans", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.getAllAvailablePlans);
+router.get("/my-plans", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.getMySubscriptions);
 router.get("/", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.getAllSubscription);
 router.get("/:id", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.getSubscriptionById);
 router.patch("/:id", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.updateSubscription);
