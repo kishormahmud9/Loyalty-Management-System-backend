@@ -15,34 +15,34 @@ dotenv.config();
 
 const app = express();
 
-// ===============================
+// 
 // Stripe Webhook (RAW BODY FIRST)
-// ===============================
+// 
 app.post(
   "/api/payments/webhook",
   express.raw({ type: "application/json" }),
   paymentRoutes,
 );
 
-// ===============================
+// 
 // Global middlewares
-// ===============================
+// 
 app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
 app.use(passport.initialize());
 
-// ===============================
+// 
 // Prisma injection
-// ===============================
+// 
 app.use((req, res, next) => {
   req.prisma = prisma;
   next();
 });
 
-// ===============================
+// 
 // Routes
-// ===============================
+// 
 app.use("/api", router);
 
 // Upload
