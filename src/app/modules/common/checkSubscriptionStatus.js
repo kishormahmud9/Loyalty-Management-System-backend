@@ -1,8 +1,8 @@
 import prisma from "../../prisma/client.js";
 
 export const checkSubscriptionStatus = async (businessId) => {
-  const subscription = await prisma.businessSubscription.findUnique({
-    where: { businessId },
+  const subscription = await prisma.businessSubscription.findFirst({
+    where: { businessId, status: "ACTIVE" },
   });
 
   if (!subscription) {

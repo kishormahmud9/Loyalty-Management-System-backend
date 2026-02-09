@@ -7,10 +7,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 // CREATE CHECKOUT SESSION (BUSINESS OWNER ONLY)
 
-export const createCheckoutSession = async ({ user, planId, billingCycle }) => {
+export const createCheckoutSession = async ({ user, businessId, planId, billingCycle }) => {
   // 1️⃣ Find business owned by user
   const business = await prisma.business.findFirst({
-    where: { ownerId: user.id },
+    where: { id: businessId, ownerId: user.id },
   });
 
   if (!business) {
@@ -55,7 +55,14 @@ export const createCheckoutSession = async ({ user, planId, billingCycle }) => {
     });
   }
 
-  // 4️⃣ Create checkout session
+  // 4️⃣ Check for existing subscription to determine trial eligibility
+  const existingSubscription = await prisma.businessSubscription.findFirst({
+    where: { businessId: business.id },
+  });
+
+  const trialDays = existingSubscription ? undefined : 14;
+
+  // 5️⃣ Create checkout session
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: stripeCustomerId,
@@ -66,7 +73,7 @@ export const createCheckoutSession = async ({ user, planId, billingCycle }) => {
       },
     ],
     subscription_data: {
-      trial_period_days: 14,
+      ...(trialDays && { trial_period_days: trialDays }),
       metadata: {
         businessId: business.id,
         planId: plan.id,
@@ -123,19 +130,25 @@ const onSubscriptionCreated = async (subscription) => {
 
   if (!businessId || !planId) return;
 
-  await prisma.businessSubscription.upsert({
-    where: { businessId },
-    update: {
-      stripeSubscriptionId: subscription.id,
-      stripeStatus: subscription.status,
-      stripePriceId: subscription.items.data[0].price.id,
-      status: "ACTIVE",
-      startDate: new Date(subscription.start_date * 1000),
-      endDate: subscription.current_period_end
-        ? new Date(subscription.current_period_end * 1000)
-        : null,
-    },
-    create: {
+  // 1️⃣ Find existing active subscription to update history
+  const existingActive = await prisma.businessSubscription.findFirst({
+    where: { businessId, status: "ACTIVE" },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  if (existingActive) {
+    const now = new Date();
+    const newStatus = existingActive.endDate && existingActive.endDate < now ? "EXPIRED" : "INACTIVE";
+
+    await prisma.businessSubscription.update({
+      where: { id: existingActive.id },
+      data: { status: newStatus }
+    });
+  }
+
+  // 2️⃣ Create the new active subscription record
+  await prisma.businessSubscription.create({
+    data: {
       businessId,
       planId,
       stripeSubscriptionId: subscription.id,

@@ -7,7 +7,14 @@ import {
 
 export const createCheckout = async (req, res, next) => {
   try {
+    const { businessId } = req.user;
     const { planId, billingCycle } = req.body;
+
+    if (!businessId) {
+      return res.status(403).json({
+        message: "No business context found in token",
+      });
+    }
 
     if (!planId || !billingCycle) {
       return res.status(400).json({
@@ -17,6 +24,7 @@ export const createCheckout = async (req, res, next) => {
 
     const checkoutUrl = await createCheckoutSession({
       user: req.user,
+      businessId,
       planId,
       billingCycle,
     });
