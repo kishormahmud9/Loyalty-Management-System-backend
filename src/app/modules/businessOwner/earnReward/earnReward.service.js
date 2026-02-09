@@ -12,9 +12,9 @@ const rewardTypeMap = {
 };
 
 class EarnRewardService {
-    /* =========================
+    /* 
        CREATE EARN REWARD
-    ========================= */
+     */
     static async createEarnReward(data) {
         let {
             rewardName,
@@ -91,9 +91,9 @@ class EarnRewardService {
         return createdEarnReward;
     }
 
-    /* =========================
+    /* 
        GET ALL EARN REWARDS
-    ========================= */
+     */
     static async getAllEarnRewards() {
         return prisma.earnReward.findMany({
             orderBy: { createdAt: "desc" },
@@ -120,9 +120,9 @@ class EarnRewardService {
         });
     }
 
-    /* =========================
+    /* 
        UPDATE EARN REWARD
-    ========================= */
+     */
     static async updateEarnReward(id, data) {
         if (!id) throw new Error("Earn Reward ID is required");
 
@@ -183,9 +183,9 @@ class EarnRewardService {
         return updatedEarnReward;
     }
 
-    /* =========================
+    /* 
        DELETE EARN REWARD
-    ========================= */
+     */
     static async deleteEarnReward(id) {
         const deletedEarnReward = await prisma.earnReward.delete({
             where: { id },

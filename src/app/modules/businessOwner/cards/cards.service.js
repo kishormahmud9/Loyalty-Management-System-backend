@@ -4,9 +4,9 @@ import { auditLog } from "../../../utils/auditLogger.js";
 import { googleWalletService } from "../../../utils/googleWallet.service.js";
 
 class CardService {
-    /* =========================
+    /* 
          CREATE CARD
-      ========================= */
+       */
     static async createCard(data) {
         const {
             businessId,
@@ -99,9 +99,9 @@ class CardService {
         return card;
     }
 
-    /* =========================
+    /* 
          GET ALL CARDS BY BUSINESS
-      ========================= */
+       */
     static async getCardsByBusiness(businessId) {
         return prisma.card.findMany({
             where: { businessId },
@@ -109,9 +109,9 @@ class CardService {
         });
     }
 
-    /* =========================
+    /* 
          GET CARD BY ID
-      ========================= */
+       */
     static async getCardById(id) {
         const card = await prisma.card.findUnique({
             where: { id },
@@ -124,9 +124,9 @@ class CardService {
         return card;
     }
 
-    /* =========================
+    /* 
          UPDATE CARD
-      ========================= */
+       */
     static async updateCard(id, data) {
         const { userId, ...updateData } = data;
 
@@ -167,9 +167,9 @@ class CardService {
         return card;
     }
 
-    /* =========================
+    /* 
          DELETE CARD
-      ========================= */
+       */
     static async deleteCard(id, userId) {
         const card = await prisma.card.delete({
             where: { id },

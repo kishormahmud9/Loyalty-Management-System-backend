@@ -6,9 +6,9 @@ import {
 
 import { sendResponse } from "../../../utils/sendResponse.js";
 
-/* =========================
+/* 
    LIST SUPPORT TICKETS
-========================= */
+ */
 export const getSystemOwnerSupportTickets = async (req, res) => {
   try {
     const data = await getSystemOwnerSupportTicketsService(req.query);
@@ -31,9 +31,9 @@ export const getSystemOwnerSupportTickets = async (req, res) => {
   }
 };
 
-/* =========================
+/* 
    VIEW SUPPORT TICKET (VIEW BUTTON)
-========================= */
+ */
 export const getSystemOwnerSupportTicketById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -67,9 +67,9 @@ export const getSystemOwnerSupportTicketById = async (req, res) => {
   }
 };
 
-/* =========================
+/* 
    UPDATE SUPPORT TICKET STATUS
-========================= */
+ */
 export const updateSystemOwnerSupportTicketStatus = async (req, res) => {
   try {
     const { id } = req.params;

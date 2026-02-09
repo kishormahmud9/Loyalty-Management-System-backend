@@ -9,9 +9,9 @@ class SupportService {
     return "TCK-" + crypto.randomBytes(4).toString("hex").toUpperCase();
   }
 
-  /* =========================
+  /* 
      CREATE SUPPORT TICKET
-  ========================= */
+   */
   static async createSupport(data) {
     const allowedPriority = ["NORMAL", "HIGH", "MEDIUM"];
 
@@ -54,18 +54,18 @@ class SupportService {
     return createdSupport;
   }
 
-  /* =========================
+  /* 
      GET ALL SUPPORT
-  ========================= */
+   */
   static async getAllSupport() {
     return prisma.support.findMany({
       orderBy: { createdAt: "desc" },
     });
   }
 
-  /* =========================
+  /* 
      GET SUPPORT BY ID
-  ========================= */
+   */
   static async getSupportById(id) {
     return prisma.support.findUnique({
       where: { id },
