@@ -3,82 +3,100 @@ import { AppError } from "../../../errorHelper/appError.js";
 
 class NotificationSettingsService {
     /**
-     * Get all notification settings for a business, including branch-specific toggles
+     * Get notification settings for a business owner (Dynamic JSON)
      */
-    static async getSettings(businessId) {
-        const [generalSettings, branches] = await Promise.all([
-            prisma.businessOwnerNotification.findUnique({
-                where: { businessId }
-            }),
-            prisma.branch.findMany({
-                where: { businessId },
-                include: { notificationSetting: true }
-            })
-        ]);
+    static async getBusinessOwnerSettings(businessId) {
+        let record = await prisma.businessOwnerNotification.findUnique({
+            where: { businessId }
+        });
 
-        return {
-            general: generalSettings || {
-                loginAlerts: true,
-                passwordChange: true,
-                inAppNotification: true,
-                smsAlerts: false,
-                enableCardAllLocation: true
-            },
-            branches: branches.map(b => ({
-                id: b.id,
-                name: b.name,
-                isEnabled: b.notificationSetting?.isEnabled ?? true
-            }))
-        };
+        if (!record) {
+            // Default settings based on UI Design
+            const defaultSettings = [
+                { option: "Login Alerts", channel: "Email,In App", value: true },
+                { option: "Password Change", channel: "In App", value: true },
+                { option: "In App Notification", channel: "Bell Icon", value: true },
+                { option: "SMS Alerts", channel: "Critical Alert", value: false },
+                { option: "Enable Card All Location", channel: "App", value: true }
+            ];
+
+            record = await prisma.businessOwnerNotification.create({
+                data: {
+                    businessId,
+                    settings: defaultSettings
+                }
+            });
+        }
+
+        return record.settings;
     }
 
     /**
-     * Unified upsert for all notification settings
+     * Upsert notification settings for a business owner
      */
-    static async upsertSettings(businessId, data) {
-        const { general, branches } = data;
-
-        const operations = [];
-
-        // 1. Upsert General Settings if provided
-        if (general) {
-            const { id, createdAt, updatedAt, businessId: bId, ...updateData } = general;
-            operations.push(
-                prisma.businessOwnerNotification.upsert({
-                    where: { businessId },
-                    update: updateData,
-                    create: {
-                        businessId,
-                        ...updateData
-                    }
-                })
-            );
+    static async upsertBusinessOwnerSettings(businessId, settings) {
+        if (!Array.isArray(settings)) {
+            throw new AppError(400, "Settings must be an array of objects: [{option, channel, value}]");
         }
 
-        // 2. Upsert Branch Settings if provided
-        if (branches && Array.isArray(branches)) {
-            for (const branch of branches) {
-                const { branchId, isEnabled } = branch;
-
-                // Security verify branch belongs to business
-                const branchExists = await prisma.branch.findFirst({
-                    where: { id: branchId, businessId }
-                });
-
-                if (branchExists) {
-                    operations.push(
-                        prisma.branchNotificationSetting.upsert({
-                            where: { branchId },
-                            update: { isEnabled },
-                            create: { branchId, isEnabled }
-                        })
-                    );
-                }
+        const record = await prisma.businessOwnerNotification.upsert({
+            where: { businessId },
+            update: { settings },
+            create: {
+                businessId,
+                settings
             }
+        });
+
+        return record.settings;
+    }
+
+    /**
+     * Get notification settings for ALL branches of a business
+     */
+    static async getAllBranchesSettings(businessId) {
+        const branches = await prisma.branch.findMany({
+            where: { businessId },
+            include: { notificationSetting: true }
+        });
+
+        return branches.map(branch => {
+            const settings = branch.notificationSetting?.settings || [
+                { option: branch.name || "Branch Notification", channel: "App", value: true }
+            ];
+            return {
+                branchId: branch.id,
+                branchName: branch.name,
+                settings
+            };
+        });
+    }
+
+    /**
+     * Upsert notification settings for ALL branches of a business
+     */
+    static async upsertAllBranchesSettings(businessId, settings) {
+        if (!Array.isArray(settings)) {
+            throw new AppError(400, "Settings must be an array of objects: [{option, channel, value}]");
         }
+
+        const branches = await prisma.branch.findMany({
+            where: { businessId }
+        });
+
+        const operations = branches.map(branch =>
+            prisma.branchNotificationSetting.upsert({
+                where: { branchId: branch.id },
+                update: { settings },
+                create: {
+                    branchId: branch.id,
+                    settings
+                }
+            })
+        );
 
         await Promise.all(operations);
-        return this.getSettings(businessId);
+        return this.getAllBranchesSettings(businessId);
     }
 }
 
