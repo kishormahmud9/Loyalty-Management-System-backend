@@ -124,6 +124,10 @@ class CardController {
                     if (req.files[field] && req.files[field][0]) {
                         const filePath = req.files[field][0].path.replace(/\\/g, "/");
                         imageUrls[field] = `${baseUrl}/${filePath}`;
+
+                        if (field === "logo") imageUrls.logoFilePath = filePath;
+                        if (field === "stampBackground")
+                            imageUrls.stampBackgroundPath = filePath;
                     }
                 });
             }
