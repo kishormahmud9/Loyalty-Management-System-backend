@@ -46,7 +46,7 @@ class AppleWalletService {
                 formatVersion: 1,
                 passTypeIdentifier: this.passTypeId,
                 teamIdentifier: this.teamId,
-                organizationName: card.companyName || "Belbedia",
+                organizationName: card.companyName || "Belbeda",
                 description: card.cardDesc || "Loyalty Card",
                 sharingProhibited: false,
                 backgroundColor: card.cardBackground,
@@ -97,9 +97,13 @@ class AppleWalletService {
                 if (!filePath) return false;
                 const absolutePath = path.resolve(process.cwd(), filePath);
                 if (fs.existsSync(absolutePath)) {
-                    pass.addBuffer(`${passName}.png`, fs.readFileSync(absolutePath));
-                    pass.addBuffer(`${passName}@2x.png`, fs.readFileSync(absolutePath));
+                    const buffer = fs.readFileSync(absolutePath);
+                    pass.addBuffer(`${passName}.png`, buffer);
+                    pass.addBuffer(`${passName}@2x.png`, buffer);
+                    pass.addBuffer(`${passName}@3x.png`, buffer);
                     return true;
+                } else {
+                    console.warn(`Apple Wallet: Image file not found at ${absolutePath} for ${passName}`);
                 }
                 return false;
             };
