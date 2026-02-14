@@ -41,48 +41,9 @@ class AppleWalletService {
                 throw new Error(`WWDR certificate not found at: ${this.wwdrPath}`);
             }
 
-            // 1. Prepare the core pass.json content
-            const passJson = {
-                formatVersion: 1,
-                passTypeIdentifier: this.passTypeId,
-                teamIdentifier: this.teamId,
-                organizationName: card.companyName || "Belbeda",
-                description: card.cardDesc || "Loyalty Card",
-                sharingProhibited: false,
-                backgroundColor: card.cardBackground,
-                labelColor: card.textColor,
-                foregroundColor: card.textColor,
-                barcodes: [
-                    {
-                        format: "PKBarcodeFormatQR",
-                        message: data.customerId,
-                        messageEncoding: "iso-8859-1",
-                    },
-                ],
-                // PKPass generator requires one of the pass types (storeCard, generic, etc.)
-                storeCard: {
-                    primaryFields: [
-                        {
-                            key: "points",
-                            label: "POINTS",
-                            value: data.points || 0,
-                        },
-                    ],
-                    secondaryFields: [
-                        {
-                            key: "customerName",
-                            label: "CUSTOMER",
-                            value: data.customerName || "Customer",
-                        },
-                    ],
-                },
-            };
-
-            // 2. Initialize PKPass with the pass.json buffer
+            // 1. Initialize PKPass
             const pass = new PKPass(
-                {
-                    "pass.json": Buffer.from(JSON.stringify(passJson)),
-                },
+                {}, // No additional buffers initially
                 {
                     wwdr: wwdrContent,
                     signerCert: fs.readFileSync(this.signerCertPath),
@@ -93,6 +54,44 @@ class AppleWalletService {
                     serialNumber: data.serialNumber,
                 }
             );
+
+            // 2. Explicitly set the pass type
+            // This is the CRITICAL fix for "type is missing" error in v3.5.7
+            pass.type = "storeCard";
+
+            // 3. Set pass properties via .props object
+            Object.assign(pass.props, {
+                formatVersion: 1,
+                passTypeIdentifier: this.passTypeId,
+                teamIdentifier: this.teamId,
+                organizationName: card.companyName || "Belbeda",
+                description: card.cardDesc || "Loyalty Card",
+                sharingProhibited: false,
+                backgroundColor: card.cardBackground,
+                labelColor: card.textColor,
+                foregroundColor: card.textColor,
+            });
+
+            // 4. Set Barcodes
+            pass.setBarcodes({
+                format: "PKBarcodeFormatQR",
+                message: data.customerId,
+                messageEncoding: "iso-8859-1",
+            });
+
+            // 5. Set Fields
+            // In v3.5.7, these are proxies to arrays. Pushing to them works.
+            pass.primaryFields.push({
+                key: "points",
+                label: "POINTS",
+                value: data.points || 0,
+            });
+
+            pass.secondaryFields.push({
+                key: "customerName",
+                label: "CUSTOMER",
+                value: data.customerName || "Customer",
+            });
 
             // 3. Add images (Mandatory: icon, Optional: logo)
             const addImageFromPath = async (filePath, passName) => {
