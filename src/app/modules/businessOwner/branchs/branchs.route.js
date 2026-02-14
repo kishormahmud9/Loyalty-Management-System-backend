@@ -7,7 +7,7 @@ import {
   authorize,
   businessScope,
 } from "../../../middleware/auth.middleware.js";
-// import { enforceSubscription } from "../../../middleware/enforceSubscription.js";
+import { enforceSubscription } from "../../../middleware/enforceSubscription.js";
 import { PERMISSIONS } from "../../../config/permissions.js";
 
 import { upload } from "../../../utils/fileUpload.js";
@@ -19,7 +19,7 @@ router.post(
   authenticate,
   authorize(PERMISSIONS.BRANCH.CREATE),
   businessScope,
-//   enforceSubscription,
+  enforceSubscription,
   upload.single("branchImage"),
   BranchController.create,
 );
@@ -28,7 +28,7 @@ router.get(
   authenticate,
   authorize(PERMISSIONS.BRANCH.READ),
   businessScope,
-//   enforceSubscription,
+  enforceSubscription,
   BranchController.findAll,
 );
 router.get(
@@ -36,7 +36,7 @@ router.get(
   authenticate,
   authorize(PERMISSIONS.BRANCH.READ),
   businessScope,
-//   enforceSubscription,
+  enforceSubscription,
   BranchController.getMyBranches,
 );
 router.get(
@@ -44,7 +44,7 @@ router.get(
   authenticate,
   authorize(PERMISSIONS.BRANCH.READ),
   businessScope,
-//   enforceSubscription,
+  enforceSubscription,
   BranchController.findOne,
 );
 router.put(
@@ -52,7 +52,7 @@ router.put(
   authenticate,
   authorize(PERMISSIONS.BRANCH.UPDATE),
   businessScope,
-//   enforceSubscription,
+  enforceSubscription,
   upload.single("branchImage"),
   BranchController.update,
 );
@@ -61,7 +61,7 @@ router.delete(
   authenticate,
   authorize(PERMISSIONS.BRANCH.DELETE),
   businessScope,
-//   enforceSubscription,
+  enforceSubscription,
   BranchController.delete,
 );
 
