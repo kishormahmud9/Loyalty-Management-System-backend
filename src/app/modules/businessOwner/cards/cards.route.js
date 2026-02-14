@@ -1,7 +1,7 @@
 import express from "express";
 import CardController from "./cards.controller.js";
 import { authenticate, authorize, businessScope } from "../../../middleware/auth.middleware.js";
-import { enforceSubscription } from "../../../middleware/enforceSubscription.js";
+// import { enforceSubscription } from "../../../middleware/enforceSubscription.js";
 import { PERMISSIONS } from "../../../config/permissions.js";
 import { upload } from "../../../utils/fileUpload.js";
 
@@ -21,7 +21,7 @@ router.post(
     authorize(PERMISSIONS.CARD.CREATE),
     upload.fields(cardUploadFields),
     businessScope,
-    enforceSubscription,
+    // enforceSubscription,
     CardController.create
 );
 
@@ -30,7 +30,7 @@ router.get(
     authenticate,
     authorize(PERMISSIONS.BUSINESS.READ),
     businessScope,
-    enforceSubscription,
+    // enforceSubscription,
     CardController.getByBusiness
 );
 
@@ -39,7 +39,7 @@ router.get(
     authenticate,
     authorize(PERMISSIONS.BUSINESS.READ),
     businessScope,
-    enforceSubscription,
+    // enforceSubscription,
     CardController.getByBusiness
 );
 
@@ -48,7 +48,7 @@ router.get(
     authenticate,
     authorize(PERMISSIONS.CARD.READ),
     businessScope,
-    enforceSubscription,
+    // enforceSubscription,
     CardController.getOne
 );
 
@@ -58,7 +58,7 @@ router.patch(
     authorize(PERMISSIONS.CARD.UPDATE),
     upload.fields(cardUploadFields),
     businessScope,
-    enforceSubscription,
+    // enforceSubscription,
     CardController.update
 );
 
@@ -67,7 +67,7 @@ router.delete(
     authenticate,
     authorize(PERMISSIONS.CARD.DELETE),
     businessScope,
-    enforceSubscription,
+    // enforceSubscription,
     CardController.remove
 );
 

@@ -108,7 +108,48 @@ class CustomerWalletService {
     }
 
     static async getWalletHistory(customerId) {
-        // Get all wallet records with card and business info
+        // 1. Identify all businesses the customer has interacted with
+        const rewardHistories = await prisma.rewardHistory.findMany({
+            where: { customerId },
+            select: { businessId: true }
+        });
+        const businessIds = [...new Set(rewardHistories.map(h => h.businessId))];
+
+        if (businessIds.length > 0) {
+            // 2. Fetch all active cards for these businesses
+            const activeCards = await prisma.card.findMany({
+                where: {
+                    businessId: { in: businessIds },
+                    isActive: true,
+                    OR: [
+                        { expiryDate: null },
+                        { expiryDate: { gt: new Date() } }
+                    ]
+                }
+            });
+
+            // 3. Proactive Discovery: Check status for these cards and update tracker
+            await Promise.all(activeCards.map(async (card) => {
+                try {
+                    const existingWallet = await prisma.customerCardWallet.findUnique({
+                        where: { customerId_cardId: { customerId, cardId: card.id } }
+                    });
+
+                    if (!existingWallet) {
+                        const walletObject = await googleWalletService.getLoyaltyObject(customerId, card.id);
+                        if (walletObject && walletObject.state === 'ACTIVE') {
+                            await prisma.customerCardWallet.create({
+                                data: { customerId, cardId: card.id, isAddedToGoogleWallet: true }
+                            }).catch(() => { });
+                        }
+                    }
+                } catch (error) {
+                    // Fail silently
+                }
+            }));
+        }
+
+        // 4. Get all wallet records with card and business info
         const cardWallets = await prisma.customerCardWallet.findMany({
             where: { customerId },
             include: {
@@ -147,6 +188,48 @@ class CustomerWalletService {
     }
 
     static async getMyWallets(customerId) {
+        // 1. Identify all businesses the customer has interacted with
+        const rewardHistories = await prisma.rewardHistory.findMany({
+            where: { customerId },
+            select: { businessId: true }
+        });
+        const businessIds = [...new Set(rewardHistories.map(h => h.businessId))];
+
+        if (businessIds.length === 0) return [];
+
+        // 2. Fetch all active cards for these businesses
+        const activeCards = await prisma.card.findMany({
+            where: {
+                businessId: { in: businessIds },
+                isActive: true,
+                OR: [
+                    { expiryDate: null },
+                    { expiryDate: { gt: new Date() } }
+                ]
+            }
+        });
+
+        // 3. Proactive Discovery: Check status for these cards and update tracker
+        await Promise.all(activeCards.map(async (card) => {
+            try {
+                const existingWallet = await prisma.customerCardWallet.findUnique({
+                    where: { customerId_cardId: { customerId, cardId: card.id } }
+                });
+
+                if (!existingWallet) {
+                    const walletObject = await googleWalletService.getLoyaltyObject(customerId, card.id);
+                    if (walletObject && walletObject.state === 'ACTIVE') {
+                        await prisma.customerCardWallet.create({
+                            data: { customerId, cardId: card.id, isAddedToGoogleWallet: true }
+                        }).catch(() => { });
+                    }
+                }
+            } catch (error) {
+                // Fail silently
+            }
+        }));
+
+        // 4. Return the final flat list
         return prisma.customerCardWallet.findMany({
             where: {
                 customerId,
@@ -157,9 +240,7 @@ class CustomerWalletService {
             },
             include: {
                 card: {
-                    include: {
-                        business: true
-                    }
+                    include: { business: true }
                 }
             },
             orderBy: { lastSyncedAt: 'desc' }

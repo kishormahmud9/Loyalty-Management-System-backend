@@ -24,29 +24,36 @@ class CustomerCardService {
         if (!customerId) return allCards;
 
         // Proactive Discovery: Check status for these cards and update tracker
-        // This ensures cards added before tracking was implemented are "discovered"
         const cardsWithDiscovery = await Promise.all(allCards.map(async (card) => {
             let isAddedToWallet = false;
             try {
-                const walletObject = await googleWalletService.getLoyaltyObject(customerId, card.id);
-                isAddedToWallet = !!(walletObject && walletObject.state === 'ACTIVE');
+                // Check local tracker first for efficiency
+                const existingWallet = await prisma.customerCardWallet.findUnique({
+                    where: { customerId_cardId: { customerId, cardId: card.id } }
+                });
+
+                if (existingWallet) {
+                    isAddedToWallet = existingWallet.isAddedToGoogleWallet || existingWallet.isAddedToAppleWallet;
+                } else {
+                    // Fallback to Google Wallet check (Discovery)
+                    const walletObject = await googleWalletService.getLoyaltyObject(customerId, card.id);
+                    isAddedToWallet = !!(walletObject && walletObject.state === 'ACTIVE');
+
+                    // If discovered, save to tracker
+                    if (isAddedToWallet) {
+                        await prisma.customerCardWallet.create({
+                            data: { customerId, cardId: card.id, isAddedToGoogleWallet: true }
+                        }).catch(() => { });
+                    }
+                }
             } catch (error) {
                 // Fail silently
             }
 
-            // Update tracker
-            await prisma.customerCardWallet.upsert({
-                where: { customerId_cardId: { customerId, cardId: card.id } },
-                update: { isAddedToGoogleWallet: isAddedToWallet, lastSyncedAt: new Date() },
-                create: { customerId, cardId: card.id, isAddedToGoogleWallet: isAddedToWallet }
-            }).catch(() => { });
-
             return { ...card, isAddedToWallet };
         }));
 
-        // Now filter out the ones already added for the "Business Card List" 
-        // as the user wants to see only NOT added cards here.
-        return cardsWithDiscovery.filter(card => !card.isAddedToWallet);
+        return cardsWithDiscovery;
     }
 
     /**
@@ -67,7 +74,55 @@ class CustomerCardService {
     }
 
     static async getMyCards(customerId) {
-        // 1. Fetch all cards that have been flagged as added to either Google or Apple Wallet
+        // 1. Identify all businesses the customer has interacted with
+        const rewardHistories = await prisma.rewardHistory.findMany({
+            where: { customerId },
+            select: { businessId: true }
+        });
+        const businessIds = [...new Set(rewardHistories.map(h => h.businessId))];
+
+        if (businessIds.length === 0) return [];
+
+        // 2. Fetch all active cards for these businesses
+        const activeCards = await prisma.card.findMany({
+            where: {
+                businessId: { in: businessIds },
+                isActive: true,
+                OR: [
+                    { expiryDate: null },
+                    { expiryDate: { gt: new Date() } }
+                ]
+            },
+            include: { business: true }
+        });
+
+        // 3. Proactive Discovery: Check status for these cards and update tracker
+        await Promise.all(activeCards.map(async (card) => {
+            try {
+                // Check if we already have a record
+                const existingWallet = await prisma.customerCardWallet.findUnique({
+                    where: { customerId_cardId: { customerId, cardId: card.id } }
+                });
+
+                if (!existingWallet) {
+                    // Try to discover from Google Wallet
+                    const walletObject = await googleWalletService.getLoyaltyObject(customerId, card.id);
+                    if (walletObject && walletObject.state === 'ACTIVE') {
+                        await prisma.customerCardWallet.create({
+                            data: {
+                                customerId,
+                                cardId: card.id,
+                                isAddedToGoogleWallet: true
+                            }
+                        }).catch(() => { });
+                    }
+                }
+            } catch (error) {
+                // Fail silently
+            }
+        }));
+
+        // 4. Fetch the final list of added wallets for this customer
         const addedWallets = await prisma.customerCardWallet.findMany({
             where: {
                 customerId,
@@ -78,27 +133,22 @@ class CustomerCardService {
             },
             include: {
                 card: {
-                    include: {
-                        business: true
-                    }
+                    include: { business: true }
                 }
             },
             orderBy: { lastSyncedAt: 'desc' }
         });
 
-        if (addedWallets.length === 0) return [];
+        // 5. Group by Business
+        const businessMap = new Map();
 
-        // 2. Fetch Reward History effectively for these businesses
-        const uniqueBusinessIds = [...new Set(addedWallets.map(w => w.card.businessId))];
-        const rewardHistories = await prisma.rewardHistory.findMany({
+        // Re-fetch points to ensure we have them for the grouping
+        const latestRewardHistories = await prisma.rewardHistory.findMany({
             where: {
                 customerId,
-                businessId: { in: uniqueBusinessIds }
+                businessId: { in: [...new Set(addedWallets.map(w => w.card.businessId))] }
             }
         });
-
-        // 3. Group everything by Business
-        const businessMap = new Map();
 
         for (const wallet of addedWallets) {
             const card = wallet.card;
@@ -106,13 +156,14 @@ class CustomerCardService {
             const businessId = business.id;
 
             if (!businessMap.has(businessId)) {
-                // Find points for this business
-                const history = rewardHistories.find(h => h.businessId === businessId);
-                
+                // Find points for this business (sum across branches if applicable)
+                const histories = latestRewardHistories.filter(h => h.businessId === businessId);
+                const totalPoints = histories.reduce((sum, h) => sum + (h.rewardPoints || 0), 0);
+
                 businessMap.set(businessId, {
                     businessId: businessId,
                     businessName: business.name,
-                    points: history ? history.rewardPoints : 0,
+                    points: totalPoints,
                     cards: []
                 });
             }
@@ -121,7 +172,7 @@ class CustomerCardService {
                 ...card,
                 isAddedToGoogleWallet: wallet.isAddedToGoogleWallet,
                 isAddedToAppleWallet: wallet.isAddedToAppleWallet,
-                isAddedToWallet: true // Explicit flag for UI/unified check
+                isAddedToWallet: true
             });
         }
 
