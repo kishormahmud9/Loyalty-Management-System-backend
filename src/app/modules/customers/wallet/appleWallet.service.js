@@ -51,6 +51,7 @@ class AppleWalletService {
                 sharingProhibited: false,
                 backgroundColor: card.cardBackground,
                 labelColor: card.textColor,
+                foregroundColor: card.textColor,
                 barcodes: [
                     {
                         format: "PKBarcodeFormatQR",
@@ -58,6 +59,7 @@ class AppleWalletService {
                         messageEncoding: "iso-8859-1",
                     },
                 ],
+                // PKPass generator requires one of the pass types (storeCard, generic, etc.)
                 storeCard: {
                     primaryFields: [
                         {

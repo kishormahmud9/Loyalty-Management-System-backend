@@ -7,7 +7,7 @@ const router = express.Router();
 // Get all cards for a business
 router.get(
     "/business/:businessId",
-    // customerAuthMiddleware, // Optional: depends if public or restricted
+    customerAuthMiddleware,
     CustomerCardController.getByBusiness
 );
 
