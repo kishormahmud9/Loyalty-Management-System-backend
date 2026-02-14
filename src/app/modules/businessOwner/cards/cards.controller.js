@@ -44,6 +44,7 @@ class CardController {
                 ...req.body,
                 ...imageUrls,
                 userId,
+                businessId: req.body.businessId || businessId,
             });
 
             return sendResponse(res, {
@@ -65,8 +66,19 @@ class CardController {
     static async getByBusiness(req, res) {
         try {
             const { businessId } = req.user;
+            const businessIdFromQuery = req.query.businessId;
+            const targetBusinessId = businessIdFromQuery || businessId;
 
-            const cards = await CardService.getCardsByBusiness(businessId);
+            if (!targetBusinessId) {
+                return sendResponse(res, {
+                    statusCode: 400,
+                    success: false,
+                    message: "Business ID is required",
+                    data: null,
+                });
+            }
+
+            const cards = await CardService.getCardsByBusiness(targetBusinessId);
 
             sendResponse(res, {
                 statusCode: 200,
@@ -124,6 +136,10 @@ class CardController {
                     if (req.files[field] && req.files[field][0]) {
                         const filePath = req.files[field][0].path.replace(/\\/g, "/");
                         imageUrls[field] = `${baseUrl}/${filePath}`;
+
+                        if (field === "logo") imageUrls.logoFilePath = filePath;
+                        if (field === "stampBackground")
+                            imageUrls.stampBackgroundPath = filePath;
                     }
                 });
             }

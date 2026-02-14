@@ -5,12 +5,34 @@ import { Role } from "../utils/role.js";
 
 export const authenticate = async (req, res, next) => {
     try {
-        const token = req.headers.authorization;
+        let token = req.headers.authorization;
+        let source = "header.authorization";
+
+        if (!token && req.headers.accesstoken) {
+            token = req.headers.accesstoken;
+            source = "header.accesstoken";
+        }
+        if (!token && req.cookies?.accessToken) {
+            token = req.cookies.accessToken;
+            source = "cookie.accessToken";
+        }
+        if (!token && req.query.token) {
+            token = req.query.token;
+            source = "query.token";
+        }
+
         if (!token) {
             return res.status(401).json({ success: false, message: "No token provided" });
         }
 
-        const jwtToken = token.replace(/^Bearer\s*/i, "");
+        const jwtToken = token.replace(/^Bearer\s*/i, "").trim();
+
+        if (!jwtToken) {
+            console.error(`Empty token from ${source} for ${req.originalUrl}`);
+            return res.status(401).json({ success: false, message: "Invalid token format" });
+        }
+
+        console.log(`Verifying token from ${source} for ${req.originalUrl}`);
         const decoded = jwt.verify(jwtToken, envVars.JWT_SECRET_TOKEN);
 
         // Fetch user from DB to check current status (especially isVerified)
@@ -43,6 +65,7 @@ export const authenticate = async (req, res, next) => {
 
         next();
     } catch (error) {
+        console.error("authenticate middleware error:", error);
         return res.status(401).json({ success: false, message: "Invalid or expired token" });
     }
 };

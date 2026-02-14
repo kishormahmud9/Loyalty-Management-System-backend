@@ -9,9 +9,9 @@ async function main() {
   // 🔐 Same password for all users
   const commonPasswordHash = await bcrypt.hash("11", saltRounds);
 
-  // =========================
+  // 
   // SYSTEM OWNER
-  // =========================
+  // 
   const systemOwner = await prisma.user.upsert({
     where: { email: "system@test.com" },
     update: {},
@@ -24,9 +24,9 @@ async function main() {
     },
   });
 
-  // =========================
+  // 
   // BUSINESS OWNER
-  // =========================
+  // 
   const businessOwner = await prisma.user.upsert({
     where: { email: "business@test.com" },
     update: {},
@@ -39,9 +39,9 @@ async function main() {
     },
   });
 
-  // =========================
+  // 
   // STAFF USER
-  // =========================
+  // 
   const staffUser = await prisma.user.upsert({
     where: { email: "staff@test.com" },
     update: {},
@@ -54,9 +54,9 @@ async function main() {
     },
   });
 
-  // =========================
+  // 
   // CUSTOMER
-  // =========================
+  // 
   const customer = await prisma.customer.upsert({
     where: { email: "customer@test.com" },
     update: {},

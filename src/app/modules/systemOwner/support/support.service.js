@@ -1,8 +1,8 @@
 import prisma from "../../../prisma/client.js";
 
-/* =========================
+/* 
    LIST SUPPORT TICKETS
-========================= */
+ */
 export const getSystemOwnerSupportTicketsService = async (query) => {
   const { page = 1, limit = 10, status, priority, search } = query;
 
@@ -51,9 +51,9 @@ export const getSystemOwnerSupportTicketsService = async (query) => {
   };
 };
 
-/* =========================
+/* 
    VIEW SUPPORT TICKET (BY ID)
-========================= */
+ */
 export const getSystemOwnerSupportTicketByIdService = async (id) => {
   return prisma.support.findUnique({
     where: { id },
@@ -72,9 +72,9 @@ export const getSystemOwnerSupportTicketByIdService = async (id) => {
   });
 };
 
-/* =========================
+/* 
    UPDATE SUPPORT TICKET STATUS
-========================= */
+ */
 export const updateSystemOwnerSupportTicketStatusByIdService = async (
   id,
   status,

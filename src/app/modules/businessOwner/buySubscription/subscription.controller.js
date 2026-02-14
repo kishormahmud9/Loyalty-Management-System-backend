@@ -102,10 +102,31 @@ const getAllAvailablePlans = async (req, res) => {
     }
 };
 
+const getMySubscriptions = async (req, res) => {
+    try {
+        const { id: ownerId } = req.user;
+        const result = await SubscriptionServices.getMySubscriptionHistoryFromDB(ownerId);
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: "Your subscription history retrieved successfully",
+            data: result,
+        });
+    } catch (err) {
+        sendResponse(res, {
+            statusCode: 500,
+            success: false,
+            message: err.message || "Something went wrong",
+            data: null,
+        });
+    }
+};
+
 export const SubscriptionControllers = {
     createSubscription,
     getAllSubscription,
     getSubscriptionById,
     updateSubscription,
     getAllAvailablePlans,
+    getMySubscriptions
 };

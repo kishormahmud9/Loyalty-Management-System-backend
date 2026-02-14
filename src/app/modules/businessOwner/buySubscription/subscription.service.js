@@ -52,10 +52,29 @@ const getAllAvailablePlansFromDB = async () => {
     return result;
 };
 
+const getMySubscriptionHistoryFromDB = async (ownerId) => {
+    const result = await prisma.businessSubscription.findMany({
+        where: {
+            business: {
+                ownerId: ownerId
+            }
+        },
+        include: {
+            business: true,
+            plan: true
+        },
+        orderBy: {
+            createdAt: "desc"
+        }
+    });
+    return result;
+};
+
 export const SubscriptionServices = {
     createSubscriptionIntoDB,
     getAllSubscriptionFromDB,
     getSubscriptionByIdFromDB,
     updateSubscriptionIntoDB,
     getAllAvailablePlansFromDB,
+    getMySubscriptionHistoryFromDB
 };

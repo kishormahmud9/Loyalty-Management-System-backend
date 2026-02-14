@@ -5,9 +5,9 @@ export const getStaffTransactions = async ({ staff, query }) => {
   const limit = Number(query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  /* ===============================
+  /* 
      FETCH TRANSACTIONS
-  =============================== */
+   */
   const [transactions, total] = await Promise.all([
     prisma.pointTransaction.findMany({
       where: {
@@ -38,9 +38,9 @@ export const getStaffTransactions = async ({ staff, query }) => {
     };
   }
 
-  /* ===============================
+  /* 
      LOAD RELATED DATA
-  =============================== */
+   */
   const customerIds = transactions.map((t) => t.customerId).filter(Boolean);
 
   const transactionIds = transactions.map((t) => t.id);
@@ -67,9 +67,9 @@ export const getStaffTransactions = async ({ staff, query }) => {
     undoRequests.map((u) => [u.adjustmentRequestId, u.status]),
   );
 
-  /* ===============================
+  /* 
      FORMAT RESPONSE
-  =============================== */
+   */
   const formatted = transactions.map((tx) => {
     const undoStatus = undoMap[tx.id];
 
@@ -98,9 +98,9 @@ export const getStaffTransactions = async ({ staff, query }) => {
 export const requestUndo = async ({ staff, body }) => {
   const { transactionId, reason } = body;
 
-  /* ===============================
+  /* 
      VALIDATION
-  =============================== */
+   */
   if (!transactionId) {
     throw new Error("Transaction ID is required");
   }
@@ -109,9 +109,9 @@ export const requestUndo = async ({ staff, body }) => {
     throw new Error("Undo reason is required");
   }
 
-  /* ===============================
+  /* 
      FETCH TRANSACTION
-  =============================== */
+   */
   const transaction = await prisma.pointTransaction.findUnique({
     where: { id: transactionId },
   });
@@ -120,16 +120,16 @@ export const requestUndo = async ({ staff, body }) => {
     throw new Error("Transaction not found");
   }
 
-  /* ===============================
+  /* 
      AUTHORIZATION
-  =============================== */
+   */
   if (transaction.branchId !== staff.branchId) {
     throw new Error("You are not allowed to undo this transaction");
   }
 
-  /* ===============================
+  /* 
      CHECK EXISTING UNDO
-  =============================== */
+   */
   const existingUndo = await prisma.transactionUndoRequest.findFirst({
     where: {
       adjustmentRequestId: transaction.id,
@@ -140,9 +140,9 @@ export const requestUndo = async ({ staff, body }) => {
     throw new Error("Undo already requested for this transaction");
   }
 
-  /* ===============================
+  /* 
      CREATE UNDO REQUEST
-  =============================== */
+   */
   await prisma.transactionUndoRequest.create({
     data: {
       adjustmentRequestId: transaction.id, // link to transaction
