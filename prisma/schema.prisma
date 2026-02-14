@@ -181,6 +181,7 @@ model Customer {
   reviews                    Review[]
   rewardHistory              RewardHistory[]
   undoRequests               TransactionUndoRequest[]
+  geoNotificationStates      GeoNotificationState[]
 }
 
 model CustomerNotification {
@@ -377,36 +378,42 @@ model Business {
 }
 
 model Branch {
-  id                   String                     @id @default(uuid())
-  businessId           String
-  name                 String?
-  address              String
-  city                 String?
-  isActive             Boolean                    @default(true)
-  createdAt            DateTime                   @default(now())
-  updatedAt            DateTime                   @updatedAt
-  country              String?
+  id         String   @id @default(uuid())
+  businessId String
+  name       String?
+  address    String
+  city       String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  country    String?
+
+  latitude  Float?
+  longitude Float?
+
   businessName         String?
   managerName          String?
-  staffCount           Int                        @default(0)
+  staffCount           Int     @default(0)
   branchQrCode         String?
   branchQrCodeFilePath String?
   branchQrCodeUrl      String?
   branchImageFilePath  String?
   branchImageUrl       String?
-  business             Business                   @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  claims               ClaimReward[]
-  customerBranchData   CustomerBranchData[]
-  earnRewards          EarnReward[]
-  adjustmentRequests   PointAdjustmentRequest[]
-  pointTransactions    PointTransaction[]
-  redeemRewards        RedeemReward[]
-  reviews              Review[]
-  rewardHistory        RewardHistory[]
-  staff                Staff[]
-  supports             Support[]
-  undoRequests         TransactionUndoRequest[]
-  notificationSetting  BranchNotificationSetting?
+
+  business              Business                   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  claims                ClaimReward[]
+  customerBranchData    CustomerBranchData[]
+  earnRewards           EarnReward[]
+  adjustmentRequests    PointAdjustmentRequest[]
+  pointTransactions     PointTransaction[]
+  redeemRewards         RedeemReward[]
+  reviews               Review[]
+  rewardHistory         RewardHistory[]
+  staff                 Staff[]
+  supports              Support[]
+  undoRequests          TransactionUndoRequest[]
+  notificationSetting   BranchNotificationSetting?
+  geoNotificationStates GeoNotificationState[]
 }
 
 model RewardHistory {
@@ -707,4 +714,27 @@ model CustomerCardWallet {
   @@unique([customerId, cardId])
   @@index([customerId])
   @@index([cardId])
+}
+
+model PlatformGeoSetting {
+  id            String   @id @default(uuid())
+  isEnabled     Boolean  @default(true)
+  radiusMeters  Int      @default(100)
+  cooldownHours Int      @default(8)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model GeoNotificationState {
+  id         String   @id @default(uuid())
+  customerId String
+  branchId   String
+  lastSentAt DateTime
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  branch   Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, branchId])
+  @@index([customerId])
+  @@index([branchId])
 }

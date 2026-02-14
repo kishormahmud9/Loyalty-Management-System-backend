@@ -8,6 +8,7 @@ import tenantRouter from "../modules/systemOwner/tenant/tenant.route.js";
 import { SupportRoutes } from "../modules/systemOwner/support/support.routes.js";
 import { AuditLogRoutes } from "../modules/systemOwner/auditLog/auditLog.route.js";
 import { PlanRoutes } from "../modules/systemOwner/plan/plan.route.js";
+import { GeoRoutes } from "../modules/systemOwner/geo/geo.route.js";
 
 import { BusinessOwnerSupport } from "../modules/businessOwner/sendSupport/support.route.js";
 import OverviewRoutes from "../modules/businessOwner/overview/overview.route.js";
@@ -213,6 +214,12 @@ const moduleRoutes = [
     path: "/business/active-plan",
     route: ActivePlanRoutes,
   },
+
+  {
+    path: "/system-owner/geo",
+    route: GeoRoutes,
+  },
+
   // system owner ends
 
   // staff routes
