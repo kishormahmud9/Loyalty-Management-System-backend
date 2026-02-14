@@ -106,6 +106,62 @@ class AllCustomersService {
             where: { id: customerId }
         });
     }
+    /**
+     * Get all wallet additions for customers of the logged-in business owner
+     * @param {string} ownerId 
+     * @returns {Promise<Array>}
+     */
+    static async getCustomerWalletsByBusiness(ownerId) {
+        if (!ownerId) {
+            throw new AppError(401, "Unauthorized");
+        }
+
+        // 1. Find all businesses owned by this user
+        const businesses = await prisma.business.findMany({
+            where: { ownerId },
+            select: { id: true }
+        });
+
+        if (businesses.length === 0) {
+            return [];
+        }
+
+        const businessIds = businesses.map(b => b.id);
+
+        // 2. Fetch cards belonging to these businesses
+        const cards = await prisma.card.findMany({
+            where: { businessId: { in: businessIds } },
+            select: { id: true, companyName: true, cardDesc: true }
+        });
+
+        const cardIds = cards.map(c => c.id);
+
+        // 3. Fetch wallets for these cards
+        const wallets = await prisma.customerCardWallet.findMany({
+            where: {
+                cardId: { in: cardIds },
+            },
+            include: {
+                customer: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    }
+                },
+                card: {
+                    select: {
+                        id: true,
+                        companyName: true,
+                        cardDesc: true,
+                    }
+                }
+            },
+            orderBy: { lastSyncedAt: 'desc' }
+        });
+
+        return wallets;
+    }
 }
 
 export default AllCustomersService;

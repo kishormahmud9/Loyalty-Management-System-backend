@@ -31,6 +31,17 @@ class CustomerCardController {
                 });
             }
 
+            // 🔍 RESOLVE: Check if the provided ID is actually a branchId
+            const potentialBranch = await req.prisma.branch.findUnique({
+                where: { id: businessId },
+                select: { businessId: true }
+            });
+
+            if (potentialBranch) {
+                console.log(`🔄 [RESOLVE] Resolved branchId ${businessId} to businessId ${potentialBranch.businessId}`);
+                businessId = potentialBranch.businessId;
+            }
+
             const customerId = req.user?.id;
             const cards = await CustomerCardService.getCardsByBusiness(businessId, customerId);
 

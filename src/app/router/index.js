@@ -23,6 +23,7 @@ import { StaffPermissionRoutes } from "../modules/businessOwner/staffPermission/
 import { BusinessReviewRoutes } from "../modules/businessOwner/review/review.route.js";
 import { CardRoutes } from "../modules/businessOwner/cards/cards.route.js";
 import { BusinessProfileRoutes } from "../modules/businessOwner/businessProfile/businessProfile.route.js";
+import { NotificationSettingsRoutes } from "../modules/businessOwner/notificationSettings/notificationSettings.route.js";
 import { CustomerCardRoutes } from "../modules/customers/cardsCustomer/cardsCustomer.route.js";
 
 import { CustomerRoutes } from "../modules/customers/customer/customer.route.js";
@@ -171,6 +172,10 @@ const moduleRoutes = [
   {
     path: "/business-owner/profile",
     route: BusinessProfileRoutes,
+  },
+  {
+    path: "/business-owner/notification-settings",
+    route: NotificationSettingsRoutes,
   },
   {
     path: "/customers/cards",

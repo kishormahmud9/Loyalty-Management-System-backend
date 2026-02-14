@@ -14,8 +14,8 @@ const startServer = async () => {
     console.log(`Environment: ${envVars.NODE_ENV}`);
 
     // 1️⃣ Connect Redis
-    await connectRedis();
-    console.log("Redis Connected Successfully 🚚✅");
+    connectRedis();
+    // console.log("Redis Connected Successfully 🚚✅");
 
     // 2️⃣ Create HTTP server
     server = http.createServer(app);

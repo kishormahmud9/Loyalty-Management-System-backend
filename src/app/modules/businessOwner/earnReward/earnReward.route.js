@@ -2,6 +2,7 @@
 import express from "express";
 import EarnRewardController from "./earnReward.controller.js";
 import { authenticate, authorize, businessScope } from "../../../middleware/auth.middleware.js";
+import { enforceSubscription } from "../../../middleware/enforceSubscription.js";
 import { PERMISSIONS } from "../../../config/permissions.js";
 import { upload } from "../../../utils/fileUpload.js";
 
@@ -12,6 +13,7 @@ router.post(
     authenticate,
     authorize(PERMISSIONS.REWARD.EARN.CREATE),
     businessScope,
+    enforceSubscription,
     upload.single("rewardImage"),
     EarnRewardController.create
 );
@@ -21,6 +23,7 @@ router.get(
     authenticate,
     authorize(PERMISSIONS.BUSINESS.READ),
     businessScope,
+    enforceSubscription,
     EarnRewardController.getAll
 );
 
@@ -29,6 +32,7 @@ router.get(
     authenticate,
     authorize(PERMISSIONS.BUSINESS.READ),
     businessScope,
+    enforceSubscription,
     EarnRewardController.getOne
 );
 
@@ -37,6 +41,7 @@ router.get(
     authenticate,
     authorize(PERMISSIONS.BUSINESS.READ),
     businessScope,
+    enforceSubscription,
     EarnRewardController.getByBusiness
 );
 // this is for customer only,,, no auth middleware
@@ -53,6 +58,7 @@ router.patch(
     authenticate,
     authorize(PERMISSIONS.REWARD.EARN.CREATE),
     businessScope,
+    enforceSubscription,
     upload.single("rewardImage"),
     EarnRewardController.update
 );
@@ -62,6 +68,7 @@ router.delete(
     authenticate,
     authorize(PERMISSIONS.REWARD.EARN.CREATE),
     businessScope,
+    enforceSubscription,
     EarnRewardController.remove
 );
 

@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt";
 
-/* =========================
+/* 
    TENANT LIST (TABLE PAGE)
-========================= */
+ */
 export const getTenantListService = async (prisma, query) => {
   const page = Number(query.page) || 1;
   const limit = Number(query.limit) || 10;
@@ -64,9 +64,9 @@ export const getTenantListService = async (prisma, query) => {
   };
 };
 
-/* =========================
+/* 
    CREATE TENANT
-========================= */
+ */
 export const createTenantService = async (prisma, payload) => {
   const { owner, business, branch } = payload;
 
@@ -130,9 +130,9 @@ export const createTenantService = async (prisma, payload) => {
   });
 };
 
-/* =========================
+/* 
    TENANT DETAILS (VIEW)
-========================= */
+ */
 export const getTenantDetailsService = async (prisma, tenantId) => {
   if (!tenantId) {
     const error = new Error("Tenant ID is required");
@@ -206,9 +206,9 @@ export const getTenantDetailsService = async (prisma, tenantId) => {
   };
 };
 
-/* =========================
+/* 
    UPDATE TENANT
-========================= */
+ */
 export const updateTenantService = async (prisma, tenantId, payload) => {
   if (!tenantId) {
     const err = new Error("Tenant ID is required");
@@ -266,9 +266,9 @@ export const updateTenantService = async (prisma, tenantId, payload) => {
   });
 };
 
-/* =========================
+/* 
    DELETE TENANT
-========================= */
+ */
 export const deleteTenantService = async (prisma, tenantId) => {
   if (!tenantId) {
     const err = new Error("Tenant ID is required");
@@ -296,9 +296,9 @@ export const deleteTenantService = async (prisma, tenantId) => {
   return true;
 };
 
-/* =========================
+/* 
    DISABLE TENANT BRANCHES
-========================= */
+ */
 export const updateBranchStatusService = async (
   prisma,
   tenantId,

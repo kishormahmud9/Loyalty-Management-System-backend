@@ -12,9 +12,9 @@ const rewardTypeMap = {
 };
 
 class RedeemRewardService {
-  /* =========================
+  /* 
      CREATE REDEEM REWARD
-  ========================= */
+   */
   static async createRedeemReward(data) {
     let {
       rewardName,
@@ -91,9 +91,9 @@ class RedeemRewardService {
     return createdRedeemReward;
   }
 
-  /* =========================
+  /* 
      GET ALL REDEEM REWARDS
-  ========================= */
+   */
   static async getAllRedeemRewards() {
     return prisma.redeemReward.findMany({
       orderBy: { createdAt: "desc" },
@@ -120,9 +120,9 @@ class RedeemRewardService {
     });
   }
 
-  /* =========================
+  /* 
      UPDATE REDEEM REWARD
-  ========================= */
+   */
   static async updateRedeemReward(id, data) {
     if (!id) throw new AppError(400, "Redeem Reward ID is required");
 
@@ -183,9 +183,9 @@ class RedeemRewardService {
     return updatedRedeemReward;
   }
 
-  /* =========================
+  /* 
      DELETE REDEEM REWARD
-  ========================= */
+   */
   static async deleteRedeemReward(id) {
     const deletedRedeemReward = await prisma.redeemReward.delete({
       where: { id },
