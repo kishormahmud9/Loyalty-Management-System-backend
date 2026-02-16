@@ -85,7 +85,8 @@ class CustomerCardController {
     static async getMyCards(req, res) {
         try {
             const customerId = req.user.id;
-            const result = await CustomerCardService.getMyCards(customerId);
+            const { businessId } = req.params;
+            const result = await CustomerCardService.getMyCards(customerId, businessId);
 
             sendResponse(res, {
                 statusCode: 200,

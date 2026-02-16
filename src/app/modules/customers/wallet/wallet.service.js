@@ -31,13 +31,6 @@ class CustomerWalletService {
         // 4. Generate Link
         const link = googleWalletService.createSaveLink(customerId, cardId, currentPoints);
 
-        // 5. Register intent in our tracker
-        await prisma.customerCardWallet.upsert({
-            where: { customerId_cardId: { customerId, cardId } },
-            update: { lastSyncedAt: new Date(), isAddedToGoogleWallet: true },
-            create: { customerId, cardId, isAddedToGoogleWallet: true }
-        }).catch(err => console.error("Failed to register wallet intent:", err));
-
         return { link };
     }
 
@@ -51,31 +44,25 @@ class CustomerWalletService {
             throw new AppError(404, "Card not found");
         }
 
-        // 2. Ensure CustomerCardWallet record exists (to get a unique public ID)
-        const wallet = await prisma.customerCardWallet.upsert({
-            where: { customerId_cardId: { customerId, cardId } },
-            update: {},
-            create: { customerId, cardId }
-        });
-
-        // 3. Generate absolute URL (No token needed anymore!)
-        const passUrl = `${envVars.SERVER_URL}/api/customer/wallet/apple-wallet-pass/${wallet.id}`;
+        // 2. Generate absolute URL using customerId and cardId
+        const passUrl = `${envVars.SERVER_URL}/api/customer/wallet/apple-wallet-pass/${customerId}/${cardId}`;
 
         return { link: passUrl };
     }
 
-    static async getAppleWalletPass(walletId) {
-        // 1. Find the wallet record (Public access via unique UUID)
-        const wallet = await prisma.customerCardWallet.findUnique({
-            where: { id: walletId },
-            include: { card: true, customer: true }
+    static async getAppleWalletPass(customerId, cardId) {
+        // 1. Find the card and customer
+        const card = await prisma.card.findUnique({
+            where: { id: cardId }
         });
 
-        if (!wallet) {
-            throw new AppError(404, "Wallet record not found");
-        }
+        const customer = await prisma.customer.findUnique({
+            where: { id: customerId }
+        });
 
-        const { customer, card } = wallet;
+        if (!card || !customer) {
+            throw new AppError(404, "Card or Customer not found");
+        }
 
         // 2. Get customer's current points
         const rewardHistory = await prisma.rewardHistory.findFirst({
@@ -95,16 +82,37 @@ class CustomerWalletService {
         // 3. Generate Pass
         const buffer = await appleWalletService.generatePass(data, card);
 
-        // 4. Update tracker
-        await prisma.customerCardWallet.update({
-            where: { id: walletId },
-            data: { lastSyncedAt: new Date(), isAddedToAppleWallet: true }
-        }).catch(err => console.error("Failed to update Apple Wallet status:", err));
-
         return {
             buffer,
             filename: `${card.companyName.replace(/\s+/g, '_')}_Loyalty.pkpass`
         };
+    }
+
+    static async saveCard(customerId, cardId) {
+        // 1. Verify card exists
+        const card = await prisma.card.findUnique({
+            where: { id: cardId }
+        });
+
+        if (!card) {
+            throw new AppError(404, "Card not found");
+        }
+
+        // 2. Upsert the wallet record and mark as added
+        return prisma.customerCardWallet.upsert({
+            where: { customerId_cardId: { customerId, cardId } },
+            update: {
+                lastSyncedAt: new Date(),
+                isAddedToGoogleWallet: true,
+                isAddedToAppleWallet: true
+            },
+            create: {
+                customerId,
+                cardId,
+                isAddedToGoogleWallet: true,
+                isAddedToAppleWallet: true
+            }
+        });
     }
 
     static async getWalletHistory(customerId) {
@@ -187,7 +195,7 @@ class CustomerWalletService {
         return Object.values(history);
     }
 
-    static async getMyWallets(customerId) {
+    static async getMyWallets(customerId, businessId) {
         // 1. Identify all businesses the customer has interacted with
         const rewardHistories = await prisma.rewardHistory.findMany({
             where: { customerId },
@@ -233,6 +241,9 @@ class CustomerWalletService {
         return prisma.customerCardWallet.findMany({
             where: {
                 customerId,
+                card: {
+                    businessId: businessId // Filter by businessId
+                },
                 OR: [
                     { isAddedToGoogleWallet: true },
                     { isAddedToAppleWallet: true }

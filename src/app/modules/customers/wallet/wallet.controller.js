@@ -50,9 +50,9 @@ const getAppleWalletLink = async (req, res) => {
 
 const addAppleWallet = async (req, res) => {
     try {
-        const { walletId } = req.params;
+        const { customerId, cardId } = req.params;
 
-        const { buffer, filename } = await CustomerWalletService.getAppleWalletPass(walletId);
+        const { buffer, filename } = await CustomerWalletService.getAppleWalletPass(customerId, cardId);
 
         // Set headers for .pkpass download
         res.setHeader("Content-Type", "application/vnd.apple.pkpass");
@@ -64,6 +64,29 @@ const addAppleWallet = async (req, res) => {
             statusCode: error.statusCode || httpStatus.INTERNAL_SERVER_ERROR,
             success: false,
             message: error.message || "Apple Wallet pass generation failed",
+            data: null,
+        });
+    }
+}
+
+const saveCard = async (req, res) => {
+    try {
+        const customerId = req.user.id;
+        const { cardId } = req.params;
+
+        const result = await CustomerWalletService.saveCard(customerId, cardId);
+
+        sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: "Card saved to wallet successfully",
+            data: result,
+        });
+    } catch (error) {
+        sendResponse(res, {
+            statusCode: error.statusCode || httpStatus.INTERNAL_SERVER_ERROR,
+            success: false,
+            message: error.message || "Failed to save card to wallet",
             data: null,
         });
     }
@@ -93,7 +116,8 @@ const getWalletHistory = async (req, res) => {
 const getMyWallets = async (req, res) => {
     try {
         const customerId = req.user.id;
-        const result = await CustomerWalletService.getMyWallets(customerId);
+        const { businessId } = req.params;
+        const result = await CustomerWalletService.getMyWallets(customerId, businessId);
 
         sendResponse(res, {
             statusCode: httpStatus.OK,
@@ -116,5 +140,6 @@ export const CustomerWalletController = {
     getAppleWalletLink,
     addAppleWallet,
     getWalletHistory,
-    getMyWallets
+    getMyWallets,
+    saveCard
 };
