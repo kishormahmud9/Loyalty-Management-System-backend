@@ -11,9 +11,16 @@ router.get(
     CustomerCardController.getByBusiness
 );
 
-// Get all cards for the logged-in customer
+// Get cards for the logged-in customer using active branch
 router.get(
     "/my-cards",
+    customerAuthMiddleware,
+    CustomerCardController.getMyCards
+);
+
+// Get cards for the logged-in customer for a specific business
+router.get(
+    "/my-cards/:businessId",
     customerAuthMiddleware,
     CustomerCardController.getMyCards
 );
