@@ -17,8 +17,14 @@ router.get(
 );
 
 router.get(
-    "/apple-wallet-pass/:walletId",
+    "/apple-wallet-pass/:customerId/:cardId",
     CustomerWalletController.addAppleWallet
+);
+
+router.post(
+    "/save-card/:cardId",
+    customerAuthMiddleware,
+    CustomerWalletController.saveCard
 );
 
 router.get(
@@ -28,7 +34,7 @@ router.get(
 );
 
 router.get(
-    "/my-wallets",
+    "/my-wallets/:businessId",
     customerAuthMiddleware,
     CustomerWalletController.getMyWallets
 );

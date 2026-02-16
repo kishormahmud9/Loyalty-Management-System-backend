@@ -73,59 +73,41 @@ class CustomerCardService {
         return card;
     }
 
-    static async getMyCards(customerId) {
-        // 1. Identify all businesses the customer has interacted with
-        const rewardHistories = await prisma.rewardHistory.findMany({
-            where: { customerId },
-            select: { businessId: true }
-        });
-        const businessIds = [...new Set(rewardHistories.map(h => h.businessId))];
+    static async getMyCards(customerId, businessId = null) {
+        let activeBranchId = null;
 
-        if (businessIds.length === 0) return [];
+        // 1. Resolve businessId if not provided
+        if (!businessId) {
+            const customer = await prisma.customer.findUnique({
+                where: { id: customerId },
+                select: { activeBranchId: true }
+            });
 
-        // 2. Fetch all active cards for these businesses
-        const activeCards = await prisma.card.findMany({
-            where: {
-                businessId: { in: businessIds },
-                isActive: true,
-                OR: [
-                    { expiryDate: null },
-                    { expiryDate: { gt: new Date() } }
-                ]
-            },
-            include: { business: true }
-        });
-
-        // 3. Proactive Discovery: Check status for these cards and update tracker
-        await Promise.all(activeCards.map(async (card) => {
-            try {
-                // Check if we already have a record
-                const existingWallet = await prisma.customerCardWallet.findUnique({
-                    where: { customerId_cardId: { customerId, cardId: card.id } }
-                });
-
-                if (!existingWallet) {
-                    // Try to discover from Google Wallet
-                    const walletObject = await googleWalletService.getLoyaltyObject(customerId, card.id);
-                    if (walletObject && walletObject.state === 'ACTIVE') {
-                        await prisma.customerCardWallet.create({
-                            data: {
-                                customerId,
-                                cardId: card.id,
-                                isAddedToGoogleWallet: true
-                            }
-                        }).catch(() => { });
-                    }
-                }
-            } catch (error) {
-                // Fail silently
+            if (!customer?.activeBranchId) {
+                return [];
             }
-        }));
 
-        // 4. Fetch the final list of added wallets for this customer
+            activeBranchId = customer.activeBranchId;
+
+            const activeBranch = await prisma.branch.findUnique({
+                where: { id: activeBranchId },
+                select: { businessId: true }
+            });
+
+            if (!activeBranch) {
+                return [];
+            }
+
+            businessId = activeBranch.businessId;
+        }
+
+        // 2. Fetch all cards for this business that the customer has added to their wallet
         const addedWallets = await prisma.customerCardWallet.findMany({
             where: {
                 customerId,
+                card: {
+                    businessId: businessId
+                },
                 OR: [
                     { isAddedToGoogleWallet: true },
                     { isAddedToAppleWallet: true }
@@ -133,50 +115,58 @@ class CustomerCardService {
             },
             include: {
                 card: {
-                    include: { business: true }
+                    include: {
+                        business: true
+                    }
                 }
             },
             orderBy: { lastSyncedAt: 'desc' }
         });
 
-        // 5. Group by Business
-        const businessMap = new Map();
-
-        // Re-fetch points to ensure we have them for the grouping
-        const latestRewardHistories = await prisma.rewardHistory.findMany({
-            where: {
-                customerId,
-                businessId: { in: [...new Set(addedWallets.map(w => w.card.businessId))] }
-            }
-        });
-
-        for (const wallet of addedWallets) {
-            const card = wallet.card;
-            const business = card.business;
-            const businessId = business.id;
-
-            if (!businessMap.has(businessId)) {
-                // Find points for this business (sum across branches if applicable)
-                const histories = latestRewardHistories.filter(h => h.businessId === businessId);
-                const totalPoints = histories.reduce((sum, h) => sum + (h.rewardPoints || 0), 0);
-
-                businessMap.set(businessId, {
-                    businessId: businessId,
-                    businessName: business.name,
-                    points: totalPoints,
-                    cards: []
-                });
-            }
-
-            businessMap.get(businessId).cards.push({
-                ...card,
-                isAddedToGoogleWallet: wallet.isAddedToGoogleWallet,
-                isAddedToAppleWallet: wallet.isAddedToAppleWallet,
-                isAddedToWallet: true
-            });
+        if (addedWallets.length === 0) {
+            return [];
         }
 
-        return Array.from(businessMap.values());
+        // 3. Fetch points for this customer in this business
+        // If we have an active branch, prioritze branch-specific points.
+        // Otherwise, sum points for all branches of this business for this customer.
+        let points = 0;
+        if (activeBranchId) {
+            const rewardHistory = await prisma.rewardHistory.findUnique({
+                where: {
+                    customerId_branchId: {
+                        customerId,
+                        branchId: activeBranchId
+                    }
+                }
+            });
+            points = rewardHistory?.rewardPoints || 0;
+        } else {
+            const rewardHistories = await prisma.rewardHistory.findMany({
+                where: {
+                    customerId,
+                    businessId
+                }
+            });
+            points = rewardHistories.reduce((sum, h) => sum + (h.rewardPoints || 0), 0);
+        }
+
+        const businessData = addedWallets[0].card.business;
+
+        // 4. Construct the response
+        return [
+            {
+                businessId: businessId,
+                businessName: businessData.name,
+                points: points,
+                cards: addedWallets.map(wallet => ({
+                    ...wallet.card,
+                    isAddedToGoogleWallet: wallet.isAddedToGoogleWallet,
+                    isAddedToAppleWallet: wallet.isAddedToAppleWallet,
+                    isAddedToWallet: true
+                }))
+            }
+        ];
     }
 }
 
