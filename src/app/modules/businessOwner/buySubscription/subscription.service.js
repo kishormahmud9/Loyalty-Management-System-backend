@@ -5,6 +5,8 @@ const prisma = new PrismaClient();
 const createSubscriptionIntoDB = async (payload) => {
     const result = await prisma.billing.create({
         data: payload,
+
+        
     });
     return result;
 };
