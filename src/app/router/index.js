@@ -39,6 +39,8 @@ import { EarnRewardCustomerRoutes } from "../modules/customers/earnRewardCustome
 import { CustomerTransactionHistoryRoutes } from "../modules/customers/transactionHistoryCustomer/transactionHistoryCustomer.route.js";
 import { CustomerWalletRoutes } from "../modules/customers/wallet/wallet.route.js";
 import { ActivePlanRoutes } from "../modules/systemOwner/plan/activePlan.route.js";
+import { CustomerGeoRoutes } from "../modules/customers/geo/geo.route.js";
+
 
 import staffRoutes from "../modules/staff/customer/customer.route.js";
 import transactionRoutes from "../modules/staff/transaction/transaction.route.js";
@@ -49,6 +51,7 @@ import staffNotificationRoutes from "../modules/staff/notification/notification.
 import staffSettingsRoutes from "../modules/staff/settings/settings.route.js";
 
 import paymentRoutes from "../modules/payment/payment.route.js";
+
 
 export const router = Router();
 
@@ -113,6 +116,11 @@ const moduleRoutes = [
   {
     path: "/otp",
     route: OtpRouter,
+  },
+
+  {
+    path: "/customer/geo",
+    route: CustomerGeoRoutes,
   },
 
   // business owner starts
@@ -264,6 +272,8 @@ const moduleRoutes = [
     path: "/payments",
     route: paymentRoutes,
   },
+
+
 ];
 
 moduleRoutes.forEach((route) => {
