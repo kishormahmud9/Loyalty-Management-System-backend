@@ -169,6 +169,7 @@ model Customer {
   qrCodeUrl                  String?
   address                    String?
   phone                      String?
+  fcmToken                   String?
   avatarFilePath             String?
   activeBranchId             String?
   claims                     ClaimReward[]
