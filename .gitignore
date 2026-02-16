@@ -47,3 +47,4 @@ service-account.json
 # upload files
 /uploads
 
+firebase-service-account.json
