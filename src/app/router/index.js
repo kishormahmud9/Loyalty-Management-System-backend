@@ -278,10 +278,6 @@ const moduleRoutes = [
     route: paymentRoutes,
   },
 
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 ];
 
 moduleRoutes.forEach((route) => {

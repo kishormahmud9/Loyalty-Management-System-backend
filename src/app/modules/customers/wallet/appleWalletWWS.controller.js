@@ -16,7 +16,7 @@ class AppleWalletWWSController {
             return res.status(401).send();
         }
 
-        const authToken = authHeader.replace("ApplePass ", "");
+        const authToken = authHeader.replace("ApplePass ", "").trim();
 
         // 1. Verify pass exists and auth token matches
         const passRecord = await prisma.applePass.findUnique({
@@ -24,6 +24,12 @@ class AppleWalletWWSController {
         });
 
         if (!passRecord || passRecord.authenticationToken !== authToken) {
+            console.log(`[WWS_DEBUG] ❌ Auth Failed for serial: ${serialNumber}`);
+            if (passRecord) {
+                console.log(`[WWS_DEBUG] Expected: ${passRecord.authenticationToken}, Received: ${authToken}`);
+            } else {
+                console.log(`[WWS_DEBUG] Pass record not found for serial: ${serialNumber}`);
+            }
             return res.status(401).send();
         }
 
@@ -66,7 +72,7 @@ class AppleWalletWWSController {
             return res.status(401).send();
         }
 
-        const authToken = authHeader.replace("ApplePass ", "");
+        const authToken = authHeader.replace("ApplePass ", "").trim();
 
         // 1. Verify pass exists and auth token matches
         const passRecord = await prisma.applePass.findUnique({
@@ -138,7 +144,7 @@ class AppleWalletWWSController {
             return res.status(401).send();
         }
 
-        const authToken = authHeader.replace("ApplePass ", "");
+        const authToken = authHeader.replace("ApplePass ", "").trim();
 
         // 1. Verify pass exists and auth token matches
         const passRecord = await prisma.applePass.findUnique({
@@ -148,7 +154,6 @@ class AppleWalletWWSController {
         if (!passRecord || passRecord.authenticationToken !== authToken || passRecord.passTypeIdentifier !== passTypeIdentifier) {
             return res.status(401).send();
         }
-
         try {
             // 2. Parse customerId and cardId from serialNumber (format: customerId_cardId)
             const [customerId, cardId] = serialNumber.split("_");

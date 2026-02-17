@@ -49,21 +49,41 @@ class CustomerWalletService {
         // 2. Generate absolute URL using customerId and cardId
         const passUrl = `${envVars.SERVER_URL}/api/customer/wallet/apple-wallet-pass/${customerId}/${cardId}`;
 
-        return { link: passUrl };
+        const applePass = await prisma.applePass.findUnique({
+            where: { serialNumber: `${customerId}_${card.id}` }
+        });
+
+        return {
+            downloadLink: passUrl,
+            authenticationToken: applePass ? applePass.authenticationToken : null
+        };
     }
 
     static async getAppleWalletPass(customerId, cardId) {
+        console.log(`🔍 [APPLE_PASS_DEBUG] Fetching pass for Customer: ${customerId}, Card: ${cardId}`);
+
         // 1. Find the card and customer
         const card = await prisma.card.findUnique({
             where: { id: cardId }
         });
 
-        const customer = await prisma.customer.findUnique({
+        let customer = await prisma.customer.findUnique({
             where: { id: customerId }
         });
 
-        if (!card || !customer) {
-            throw new AppError(404, "Card or Customer not found");
+        // If not found by ID, try finding by qrCode
+        if (!customer) {
+            customer = await prisma.customer.findUnique({
+                where: { qrCode: customerId }
+            });
+        }
+
+        if (!card) {
+            throw new AppError(404, "Apple Wallet Card not found");
+        }
+
+        if (!customer) {
+            throw new AppError(404, "Customer not found");
         }
 
         // 2. Get customer's current points

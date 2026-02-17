@@ -48,8 +48,36 @@ const getAppleWalletLink = async (req, res) => {
     }
 }
 
+const getAppleWalletLinkBySerial = async (req, res) => {
+    try {
+        const { serialNumber } = req.params;
+        const [customerId, cardId] = serialNumber.split("_");
+
+        if (!customerId || !cardId) {
+            throw new AppError(400, "Invalid serial number format");
+        }
+
+        const result = await CustomerWalletService.getAppleWalletLink(customerId, cardId);
+
+        sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: "Apple Wallet link retrieved successfully",
+            data: result,
+        });
+    } catch (error) {
+        sendResponse(res, {
+            statusCode: error.statusCode || httpStatus.INTERNAL_SERVER_ERROR,
+            success: false,
+            message: error.message || "Apple Wallet link retrieval failed",
+            data: null,
+        });
+    }
+};
+
 const addAppleWallet = async (req, res) => {
     try {
+        const { customerId, cardId } = req.params;
         const { buffer, filename, authenticationToken } = await CustomerWalletService.getAppleWalletPass(customerId, cardId);
 
         // Set headers for .pkpass download
@@ -138,6 +166,7 @@ export const CustomerWalletController = {
     getGoogleWalletLink,
     getAppleWalletLink,
     addAppleWallet,
+    getAppleWalletLinkBySerial,
     getWalletHistory,
     getMyWallets,
     saveCard
