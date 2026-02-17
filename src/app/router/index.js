@@ -51,6 +51,7 @@ import staffNotificationRoutes from "../modules/staff/notification/notification.
 import staffSettingsRoutes from "../modules/staff/settings/settings.route.js";
 
 import paymentRoutes from "../modules/payment/payment.route.js";
+import { AppleWalletWWSRoutes } from "../modules/customers/wallet/appleWalletWWS.route.js";
 
 
 export const router = Router();
@@ -111,6 +112,10 @@ const moduleRoutes = [
   {
     path: "/customer/wallet",
     route: CustomerWalletRoutes,
+  },
+  {
+    path: "/customer/apple-wallet-wws/v1",
+    route: AppleWalletWWSRoutes,
   },
 
   {

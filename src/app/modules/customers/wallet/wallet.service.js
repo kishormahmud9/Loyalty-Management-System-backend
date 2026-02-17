@@ -1,7 +1,9 @@
+import { v4 as uuidv4 } from "uuid";
 import prisma from "../../../prisma/client.js";
 import { AppError } from "../../../errorHelper/appError.js";
 import { googleWalletService } from "../../../utils/googleWallet.service.js";
 import { appleWalletService } from "./appleWallet.service.js";
+import { apnsService } from "../../../utils/apns.service.js";
 import { envVars } from "../../../config/env.js";
 
 class CustomerWalletService {
@@ -47,7 +49,14 @@ class CustomerWalletService {
         // 2. Generate absolute URL using customerId and cardId
         const passUrl = `${envVars.SERVER_URL}/api/customer/wallet/apple-wallet-pass/${customerId}/${cardId}`;
 
-        return { link: passUrl };
+        const applePass = await prisma.applePass.findUnique({
+            where: { serialNumber: `${customerId}_${card.id}` }
+        });
+
+        return {
+            downloadLink: passUrl,
+            authenticationToken: applePass ? applePass.authenticationToken : null
+        };
     }
 
     static async getAppleWalletPass(customerId, cardId) {
@@ -56,12 +65,23 @@ class CustomerWalletService {
             where: { id: cardId }
         });
 
-        const customer = await prisma.customer.findUnique({
+        let customer = await prisma.customer.findUnique({
             where: { id: customerId }
         });
 
-        if (!card || !customer) {
-            throw new AppError(404, "Card or Customer not found");
+        // If not found by ID, try finding by qrCode
+        if (!customer) {
+            customer = await prisma.customer.findUnique({
+                where: { qrCode: customerId }
+            });
+        }
+
+        if (!card) {
+            throw new AppError(404, "Apple Wallet Card not found");
+        }
+
+        if (!customer) {
+            throw new AppError(404, "Customer not found");
         }
 
         // 2. Get customer's current points
@@ -72,20 +92,74 @@ class CustomerWalletService {
             }
         });
 
+        const serialNumber = `${customer.id}_${card.id}`;
+
+        // 3. Upsert ApplePass record to store authenticationToken
+        const applePass = await prisma.applePass.upsert({
+            where: { serialNumber },
+            update: { lastUpdated: new Date() },
+            create: {
+                serialNumber,
+                passTypeIdentifier: envVars.APPLE_WALLET.PASS_TYPE_ID,
+                authenticationToken: uuidv4().replace(/-/g, ""),
+            }
+        });
+
         const data = {
-            serialNumber: `${customer.id}_${card.id}`,
+            serialNumber,
             customerId: customer.id,
             customerName: customer.name,
-            points: rewardHistory ? rewardHistory.rewardPoints : 0
+            points: rewardHistory ? rewardHistory.rewardPoints : 0,
+            authenticationToken: applePass.authenticationToken,
         };
 
-        // 3. Generate Pass
+        // 4. Generate Pass
         const buffer = await appleWalletService.generatePass(data, card);
 
         return {
             buffer,
-            filename: `${card.companyName.replace(/\s+/g, '_')}_Loyalty.pkpass`
+            filename: `${card.companyName.replace(/\s+/g, '_')}_Loyalty.pkpass`,
+            authenticationToken: applePass.authenticationToken
         };
+    }
+
+    /**
+     * Trigger Apple Wallet push notification for a specific customer and card (business)
+     * @param {string} customerId 
+     * @param {string} businessId 
+     */
+    static async handleApplePassUpdate(customerId, businessId) {
+        try {
+            // 1. Find the card for this business
+            const card = await prisma.card.findFirst({
+                where: { businessId, isActive: true }
+            });
+
+            if (!card) return;
+
+            const serialNumber = `${customerId}_${card.id}`;
+
+            // 2. Update the pass record timestamp
+            await prisma.applePass.update({
+                where: { serialNumber },
+                data: { lastUpdated: new Date() }
+            });
+
+            // 3. Find all device registrations for this pass
+            const registrations = await prisma.appleRegistration.findMany({
+                where: { serialNumber },
+                include: { device: true }
+            });
+
+            // 4. Send push to each registered device
+            const pushPromises = registrations.map(reg =>
+                apnsService.sendPassUpdatePush(reg.device.pushToken)
+            );
+
+            await Promise.all(pushPromises);
+        } catch (error) {
+            console.error("Error triggering Apple Wallet pass update push:", error);
+        }
     }
 
     static async saveCard(customerId, cardId) {

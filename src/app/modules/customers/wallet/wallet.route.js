@@ -17,6 +17,11 @@ router.get(
 );
 
 router.get(
+    "/apple-wallet-info/:serialNumber",
+    CustomerWalletController.getAppleWalletLinkBySerial
+);
+
+router.get(
     "/apple-wallet-pass/:customerId/:cardId",
     CustomerWalletController.addAppleWallet
 );

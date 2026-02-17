@@ -126,6 +126,8 @@ const loadEnvVars = () => {
       P12_PATH: process.env.APPLE_P12_PATH,
       SIGNER_CERT_PATH: process.env.APPLE_SIGNER_CERT_PATH || "signerCert.pem",
       SIGNER_KEY_PATH: process.env.APPLE_SIGNER_KEY_PATH || "signerKey.pem",
+      APNS_KEY_PATH: process.env.APPLE_APNS_KEY_PATH, // .p8 file path
+      APNS_KEY_ID: process.env.APPLE_APNS_KEY_ID,
     },
   };
 };

@@ -739,3 +739,37 @@ model GeoNotificationState {
   @@index([customerId])
   @@index([branchId])
 }
+
+model ApplePass {
+  id                  String              @id @default(uuid())
+  passTypeIdentifier  String
+  serialNumber        String              @unique
+  authenticationToken String
+  lastUpdated         DateTime            @default(now())
+  registrations       AppleRegistration[]
+
+  @@index([passTypeIdentifier, serialNumber])
+}
+
+model AppleDevice {
+  id                      String              @id @default(uuid())
+  deviceLibraryIdentifier String              @unique
+  pushToken               String
+  registrations           AppleRegistration[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AppleRegistration {
+  id                      String      @id @default(uuid())
+  deviceLibraryIdentifier String
+  passTypeIdentifier      String
+  serialNumber            String
+  device                  AppleDevice @relation(fields: [deviceLibraryIdentifier], references: [deviceLibraryIdentifier], onDelete: Cascade)
+  pass                    ApplePass   @relation(fields: [serialNumber], references: [serialNumber], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([deviceLibraryIdentifier, passTypeIdentifier, serialNumber])
+}
