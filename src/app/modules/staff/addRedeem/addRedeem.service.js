@@ -1,4 +1,5 @@
 import prisma from "../../../prisma/client.js";
+import CustomerWalletService from "../../customers/wallet/wallet.service.js";
 
 export const searchCustomerService = async ({ body, staff }) => {
   const { code } = body;
@@ -128,6 +129,11 @@ export const addPointsInstantService = async ({ body, staff }) => {
       });
 
       return { transaction, reward };
+    });
+
+    // 3️⃣ Trigger Apple Wallet Update (Background)
+    CustomerWalletService.handleApplePassUpdate(customerId, businessId).catch(err => {
+      console.error("Apple Wallet Push Update Error:", err);
     });
 
     console.log(`✅ [STAFF_POINTS_SUCCESS] Points successfully added by staff ${staffId}. New Total: ${result.reward.rewardPoints}`);

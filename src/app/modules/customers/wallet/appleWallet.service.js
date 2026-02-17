@@ -70,6 +70,8 @@ class AppleWalletService {
                 backgroundColor: card.cardBackground,
                 labelColor: card.textColor,
                 foregroundColor: card.textColor,
+                webServiceURL: `${envVars.SERVER_URL}/api/customer/apple-wallet-wws`,
+                authenticationToken: data.authenticationToken,
             });
 
             // 4. Set Barcodes
