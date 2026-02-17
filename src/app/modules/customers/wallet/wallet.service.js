@@ -60,12 +60,6 @@ class CustomerWalletService {
     }
 
     static async getAppleWalletPass(customerId, cardId) {
-        console.log(`🔍 [APPLE_PASS_DEBUG] Fetching pass for Customer: ${customerId}, Card: ${cardId}`);
-
-        return { link: passUrl };
-    }
-
-    static async getAppleWalletPass(customerId, cardId) {
         // 1. Find the card and customer
         const card = await prisma.card.findUnique({
             where: { id: cardId }
@@ -88,12 +82,6 @@ class CustomerWalletService {
 
         if (!customer) {
             throw new AppError(404, "Customer not found");
-        const customer = await prisma.customer.findUnique({
-            where: { id: customerId }
-        });
-
-        if (!card || !customer) {
-            throw new AppError(404, "Card or Customer not found");
         }
 
         // 2. Get customer's current points
@@ -106,7 +94,7 @@ class CustomerWalletService {
 
         const serialNumber = `${customer.id}_${card.id}`;
 
-        // 2. Upsert ApplePass record to store authenticationToken
+        // 3. Upsert ApplePass record to store authenticationToken
         const applePass = await prisma.applePass.upsert({
             where: { serialNumber },
             update: { lastUpdated: new Date() },
@@ -123,14 +111,9 @@ class CustomerWalletService {
             customerName: customer.name,
             points: rewardHistory ? rewardHistory.rewardPoints : 0,
             authenticationToken: applePass.authenticationToken,
-        const data = {
-            serialNumber: `${customer.id}_${card.id}`,
-            customerId: customer.id,
-            customerName: customer.name,
-            points: rewardHistory ? rewardHistory.rewardPoints : 0
         };
 
-        // 3. Generate Pass
+        // 4. Generate Pass
         const buffer = await appleWalletService.generatePass(data, card);
 
         return {
@@ -177,10 +160,6 @@ class CustomerWalletService {
         } catch (error) {
             console.error("Error triggering Apple Wallet pass update push:", error);
         }
-    }
-
-            filename: `${card.companyName.replace(/\s+/g, '_')}_Loyalty.pkpass`
-        };
     }
 
     static async saveCard(customerId, cardId) {
