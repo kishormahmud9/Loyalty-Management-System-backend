@@ -48,6 +48,7 @@ service-account.json
 /uploads
 
 firebase-service-account.json
+*.json
 
 # apple wallet 
 /AuthKey_C3ADY65UHD.p8

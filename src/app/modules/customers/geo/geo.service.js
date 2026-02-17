@@ -1,5 +1,6 @@
 import prisma from "../../../prisma/client.js";
 import { calculateDistanceInMeters } from "../../../lib/geoDistance.js";
+import admin from "../../../config/firebase.js";
 
 export const handleCustomerLocationService = async (
   customerId,
@@ -48,7 +49,7 @@ export const handleCustomerLocationService = async (
     return { message: "No nearby branch within radius" };
   }
 
-  // 🔔 4️⃣ Get customer + notification preferences FIRST
+  // 🔔 4️⃣ Get customer + notification preferences
   const customer = await prisma.customer.findUnique({
     where: { id: customerId },
     include: {
@@ -71,7 +72,7 @@ export const handleCustomerLocationService = async (
     };
   }
 
-  // 🧊 6️⃣ Cooldown Check (after preference passes)
+  // 🧊 6️⃣ Cooldown Check
   const geoState = await prisma.geoNotificationState.findUnique({
     where: {
       customerId_branchId: {
@@ -97,7 +98,24 @@ export const handleCustomerLocationService = async (
     }
   }
 
-  // 🔔 7️⃣ Send Push (if token exists)
+  // ✅ 7️⃣ CREATE NOTIFICATION IN DATABASE
+  const notification = await prisma.notification.create({
+    data: {
+      businessId: nearestBranch.businessId,
+      branchId: nearestBranch.id,
+      message: `You're near ${nearestBranch.name}. Check out our latest offers!`,
+      sentByStaff: "SYSTEM",
+    },
+  });
+
+  await prisma.notificationCustomerState.create({
+    data: {
+      notificationId: notification.id,
+      customerId: customerId,
+    },
+  });
+
+  // 🔔 8️⃣ Send Push (if token exists)
   if (customer.fcmToken) {
     try {
       await admin.messaging().send({
@@ -114,7 +132,7 @@ export const handleCustomerLocationService = async (
     console.log("No FCM token found. Push skipped.");
   }
 
-  // 📝 8️⃣ Update cooldown state ONLY after successful trigger
+  // 📝 9️⃣ Update cooldown state
   await prisma.geoNotificationState.upsert({
     where: {
       customerId_branchId: {
@@ -140,16 +158,16 @@ export const handleCustomerLocationService = async (
 };
 
 export const updateFcmTokenService = async (customerId, fcmToken) => {
-    if (!fcmToken) {
-        throw new Error("FCM token is required");
-    }
+  if (!fcmToken) {
+    throw new Error("FCM token is required");
+  }
 
-    const updatedCustomer = await prisma.customer.update({
-        where: { id: customerId },
-        data: {
-            fcmToken,
-        },
-    });
+  const updatedCustomer = await prisma.customer.update({
+    where: { id: customerId },
+    data: {
+      fcmToken,
+    },
+  });
 
-    return updatedCustomer;
+  return updatedCustomer;
 };
