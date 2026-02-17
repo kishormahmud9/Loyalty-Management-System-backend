@@ -48,3 +48,4 @@ service-account.json
 /uploads
 
 firebase-service-account.json
+*.json
