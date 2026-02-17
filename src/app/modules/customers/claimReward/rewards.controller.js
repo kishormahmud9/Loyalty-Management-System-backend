@@ -4,6 +4,7 @@ import prisma from "../../../prisma/client.js";
 import { sendResponse } from "../../../utils/sendResponse.js";
 import { CustomerRewardService } from "./rewards.service.js";
 import { AppError } from "../../../errorHelper/appError.js";
+import CustomerWalletService from "../wallet/wallet.service.js";
 
 const getBranchRewards = async (req, res, next) => {
     try {
@@ -74,6 +75,13 @@ const claimReward = async (req, res, next) => {
             customerId,
             rewardId
         );
+
+        // 3. Trigger Apple Wallet Update (Background)
+        if (result && result.redeemReward) {
+            CustomerWalletService.handleApplePassUpdate(customerId, result.redeemReward.businessId).catch(err => {
+                console.error("Apple Wallet Push Update Error (Claim):", err);
+            });
+        }
 
         sendResponse(res, {
             statusCode: StatusCodes.CREATED,
