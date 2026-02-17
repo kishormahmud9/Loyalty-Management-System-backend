@@ -278,6 +278,7 @@ const moduleRoutes = [
     route: paymentRoutes,
   },
 
+
 ];
 
 moduleRoutes.forEach((route) => {

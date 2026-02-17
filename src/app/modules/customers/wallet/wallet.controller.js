@@ -79,6 +79,11 @@ const addAppleWallet = async (req, res) => {
     try {
         const { customerId, cardId } = req.params;
         const { buffer, filename, authenticationToken } = await CustomerWalletService.getAppleWalletPass(customerId, cardId);
+const addAppleWallet = async (req, res) => {
+    try {
+        const { customerId, cardId } = req.params;
+
+        const { buffer, filename } = await CustomerWalletService.getAppleWalletPass(customerId, cardId);
 
         // Set headers for .pkpass download
         res.setHeader("Content-Type", "application/vnd.apple.pkpass");
