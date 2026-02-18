@@ -189,6 +189,42 @@ class AppleWalletWWSController {
             return res.status(500).send();
         }
     }
+    /**
+     * GET /v1/passes/{passTypeIdentifier}/{serialNumber}/download-link
+     * Returns the download link and authenticationToken for a specific serial number.
+     */
+    static async getPassDownloadLink(req, res) {
+        const { passTypeIdentifier, serialNumber } = req.params;
+
+        try {
+            const [customerId, cardId] = serialNumber.split("_");
+            if (!customerId || !cardId) {
+                return res.status(400).json({ success: false, message: "Invalid serial number format" });
+            }
+
+            // Verify pass exists
+            const passRecord = await prisma.applePass.findUnique({
+                where: { serialNumber }
+            });
+
+            if (!passRecord || passRecord.passTypeIdentifier !== passTypeIdentifier) {
+                return res.status(404).json({ success: false, message: "Pass not found" });
+            }
+
+            const result = await CustomerWalletService.getAppleWalletLink(customerId, cardId);
+
+            return res.status(200).json({
+                success: true,
+                data: {
+                    ...result,
+                    serialNumber
+                }
+            });
+        } catch (error) {
+            console.error("Error fetching pass download link:", error);
+            return res.status(500).json({ success: false, message: "Error fetching link" });
+        }
+    }
 }
 
 export default AppleWalletWWSController;
