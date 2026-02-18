@@ -4,6 +4,12 @@ import { customerAuthMiddleware } from "../../../middleware/customerAuthMiddlewa
 
 const router = express.Router();
 
+router.use((req, res, next) => {
+    console.log(`[Wallet Route Hit]: ${req.method} ${req.originalUrl}`);
+    next();
+});
+
+
 router.get(
     "/google-wallet-link/:cardId",
     customerAuthMiddleware,

@@ -3,6 +3,12 @@ import AppleWalletWWSController from "./appleWalletWWS.controller.js";
 
 const router = express.Router();
 
+router.use((req, res, next) => {
+    console.log(`[Apple Wallet WWS Route Hit]: ${req.method} ${req.originalUrl}`);
+    next();
+});
+
+
 /**
  * Apple Wallet Web Service (WWS) Protocol Endpoints
  * Note: These endpoints MUST follow Apple's required path structure exactly.
