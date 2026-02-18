@@ -57,17 +57,26 @@ class CustomerWalletService {
     // 2. Generate absolute URL using customerId and cardId
     const passUrl = `${envVars.SERVER_URL}/api/customer/wallet/apple-wallet-pass/${customerId}/${cardId}`;
     console.log(`[AppleWalletLink] Generated pass URL: ${passUrl}`);
-    const applePass = await prisma.applePass.findUnique({
-      where: { serialNumber: `${customerId}_${card.id}` },
+    const serialNumber = `${customerId}_${card.id}`;
+
+    // 2. Upsert ApplePass record to ensure authenticationToken exists
+    const applePass = await prisma.applePass.upsert({
+      where: { serialNumber },
+      update: { lastUpdated: new Date() },
+      create: {
+        serialNumber,
+        passTypeIdentifier: envVars.APPLE_WALLET.PASS_TYPE_ID,
+        authenticationToken: uuidv4().replace(/-/g, ""),
+      },
     });
 
     console.log(
-      `[AppleWalletLink] Serial: ${customerId}_${card.id}, Found Pass: ${!!applePass}, Token: ${applePass?.authenticationToken}`,
+      `[AppleWalletLink] Serial: ${serialNumber}, Token: ${applePass.authenticationToken}`,
     );
 
     return {
       downloadLink: passUrl,
-      authenticationToken: applePass ? applePass.authenticationToken : null,
+      authenticationToken: applePass.authenticationToken,
     };
   }
 
@@ -245,7 +254,7 @@ class CustomerWalletService {
                       isAddedToGoogleWallet: true,
                     },
                   })
-                  .catch(() => {});
+                  .catch(() => { });
               }
             }
           } catch (error) {
@@ -334,7 +343,7 @@ class CustomerWalletService {
                     isAddedToGoogleWallet: true,
                   },
                 })
-                .catch(() => {});
+                .catch(() => { });
             }
           }
         } catch (error) {
