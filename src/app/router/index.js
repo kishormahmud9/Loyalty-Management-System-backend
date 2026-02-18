@@ -40,6 +40,7 @@ import { CustomerTransactionHistoryRoutes } from "../modules/customers/transacti
 import { CustomerWalletRoutes } from "../modules/customers/wallet/wallet.route.js";
 import { ActivePlanRoutes } from "../modules/systemOwner/plan/activePlan.route.js";
 import { CustomerGeoRoutes } from "../modules/customers/geo/geo.route.js";
+import { CustomerGetNotificationRoutes } from "../modules/customers/notification/customer.notification.route.js";
 
 
 import staffRoutes from "../modules/staff/customer/customer.route.js";
@@ -126,6 +127,11 @@ const moduleRoutes = [
   {
     path: "/customer/geo",
     route: CustomerGeoRoutes,
+  },
+
+  {
+    path: "/customer/notification",
+    route: CustomerGetNotificationRoutes,
   },
 
   // business owner starts

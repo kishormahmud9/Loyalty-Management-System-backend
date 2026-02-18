@@ -33,3 +33,20 @@ export const getNotificationHistory = async (req, res) => {
     });
   }
 };
+
+export const deleteNotification = async (req, res) => {
+  try {
+    const data = await notificationService.deleteNotification(req);
+
+    return res.status(200).json({
+      success: true,
+      message: "Notification deleted successfully",
+      data,
+    });
+  } catch (error) {
+    return res.status(error.message.includes("Unauthorized") ? 403 : 400).json({
+      success: false,
+      message: error.message || "Failed to delete notification",
+    });
+  }
+};
