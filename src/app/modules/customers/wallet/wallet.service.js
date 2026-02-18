@@ -76,6 +76,7 @@ class CustomerWalletService {
 
     return {
       downloadLink: passUrl,
+      serialNumber: serialNumber,
       authenticationToken: applePass.authenticationToken,
     };
   }
