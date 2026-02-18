@@ -111,6 +111,11 @@ class AppleWalletWWSController {
         const { deviceLibraryIdentifier, passTypeIdentifier } = req.params;
         const passesUpdatedSince = req.query.passesUpdatedSince;
 
+        console.log(`[WWS_DEBUG] Querying updated passes for:`);
+        console.log(` - Device: ${deviceLibraryIdentifier}`);
+        console.log(` - PassType: ${passTypeIdentifier}`);
+        console.log(` - UpdatedSince: ${passesUpdatedSince}`);
+
         // 1. Find all registrations for this device and pass type
         const registrations = await prisma.appleRegistration.findMany({
             where: {
@@ -124,6 +129,8 @@ class AppleWalletWWSController {
                 pass: true
             }
         });
+
+        console.log(`[WWS_DEBUG] Found ${registrations.length} registrations.`);
 
         if (registrations.length === 0) {
             return res.status(204).send();

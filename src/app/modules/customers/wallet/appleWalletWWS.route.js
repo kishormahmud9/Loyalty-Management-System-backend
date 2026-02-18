@@ -27,7 +27,7 @@ router.delete(
     AppleWalletWWSController.unregisterDevice
 );
 
-// List Updated Passes
+// Get Serial Numbers for a Device
 router.get(
     "/devices/:deviceLibraryIdentifier/registrations/:passTypeIdentifier",
     AppleWalletWWSController.getUpdatedPasses
