@@ -1,4 +1,3 @@
-import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -11,7 +10,7 @@ import { globalErrorHandler } from "./app/middleware/globalErrorHandeler.js";
 import { router } from "./app/router/index.js";
 import "./app/config/passport.config.js";
 
-dotenv.config();
+
 
 const app = express();
 
