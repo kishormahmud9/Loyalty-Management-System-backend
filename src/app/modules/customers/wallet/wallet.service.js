@@ -46,14 +46,16 @@ class CustomerWalletService {
             throw new AppError(404, "Card not found");
         }
 
+        console.log(`[AppleWalletLink] Found card: ${card.id} for business: ${card.businessId}`);
+
         // 2. Generate absolute URL using customerId and cardId
         const passUrl = `${envVars.SERVER_URL}/api/customer/wallet/apple-wallet-pass/${customerId}/${cardId}`;
-
+console.log(`[AppleWalletLink] Generated pass URL: ${passUrl}`);
         const applePass = await prisma.applePass.findUnique({
             where: { serialNumber: `${customerId}_${card.id}` }
         });
 
-        console.log(`[AppleWalletLink] Serial: ${customerId}_${card.id}, Found Pass: ${!!applePass}, Token: ${applePass?.authenticationToken || 'null'}`);
+        console.log(`[AppleWalletLink] Serial: ${customerId}_${card.id}, Found Pass: ${!!applePass}, Token: ${applePass?.authenticationToken}`);
 
         return {
             downloadLink: passUrl,
