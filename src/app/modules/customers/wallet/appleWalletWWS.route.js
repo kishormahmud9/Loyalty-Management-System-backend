@@ -39,6 +39,12 @@ router.get(
     AppleWalletWWSController.getLatestPass
 );
 
+// Get Download Link for Serial Number
+router.get(
+    "/passes/:passTypeIdentifier/:serialNumber/download-link",
+    AppleWalletWWSController.getPassDownloadLink
+);
+
 // Logging endpoint (Optional but recommended by Apple)
 router.post("/log", (req, res) => {
     console.log("Apple Wallet Log:", req.body);
