@@ -12,6 +12,8 @@ class AppleWalletWWSController {
         const pushToken = req.body.pushToken;
         const authHeader = req.headers.authorization;
 
+        console.log(`[WWS_DEBUG] Request to registerDevice. Headers:`, JSON.stringify(req.headers));
+
         if (!authHeader || !authHeader.startsWith("ApplePass ")) {
             return res.status(401).send();
         }
