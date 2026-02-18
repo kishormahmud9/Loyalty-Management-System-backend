@@ -53,6 +53,8 @@ class CustomerWalletService {
             where: { serialNumber: `${customerId}_${card.id}` }
         });
 
+        console.log(`[AppleWalletLink] Serial: ${customerId}_${card.id}, Found Pass: ${!!applePass}, Token: ${applePass?.authenticationToken || 'null'}`);
+
         return {
             downloadLink: passUrl,
             authenticationToken: applePass ? applePass.authenticationToken : null
@@ -104,6 +106,8 @@ class CustomerWalletService {
                 authenticationToken: uuidv4().replace(/-/g, ""),
             }
         });
+
+        console.log(`[AppleWalletPass] Upserted Pass for serial: ${serialNumber}, Token: ${applePass.authenticationToken}`);
 
         const data = {
             serialNumber,
