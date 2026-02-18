@@ -17,6 +17,9 @@ class AppleWalletWWSController {
         }
 
         const authToken = authHeader.replace("ApplePass ", "").trim();
+        console.log(`[WWS_AUTH] Verifying token for serial: ${serialNumber}`);
+        console.log(`[WWS_AUTH] Received Token: ${authToken}`);
+
 
         // 1. Verify pass exists and auth token matches
         const passRecord = await prisma.applePass.findUnique({
@@ -73,6 +76,9 @@ class AppleWalletWWSController {
         }
 
         const authToken = authHeader.replace("ApplePass ", "").trim();
+        console.log(`[WWS_AUTH] Unregistering device. Verifying token for serial: ${serialNumber}`);
+        console.log(`[WWS_AUTH] Received Token: ${authToken}`);
+
 
         // 1. Verify pass exists and auth token matches
         const passRecord = await prisma.applePass.findUnique({
@@ -145,6 +151,9 @@ class AppleWalletWWSController {
         }
 
         const authToken = authHeader.replace("ApplePass ", "").trim();
+        console.log(`[WWS_AUTH] Getting latest pass. Verifying token for serial: ${serialNumber}`);
+        console.log(`[WWS_AUTH] Received Token: ${authToken}`);
+
 
         // 1. Verify pass exists and auth token matches
         const passRecord = await prisma.applePass.findUnique({
