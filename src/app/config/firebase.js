@@ -7,8 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const serviceAccountPath = path.join(
-    __dirname,
-    "belbaida-firebase-adminsdk-fbsvc-2d2535fcb7.json"
+    __dirname,process.env.FIREBASE_KEY_FILE
 );
 
 const serviceAccount = JSON.parse(

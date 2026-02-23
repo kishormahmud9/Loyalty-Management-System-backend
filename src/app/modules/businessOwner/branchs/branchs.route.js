@@ -65,4 +65,14 @@ router.delete(
   BranchController.delete,
 );
 
+// 📍 Geo-fencing: Set branch GPS coordinates
+router.patch(
+  "/:id/location",
+  authenticate,
+  authorize(PERMISSIONS.BRANCH.UPDATE),
+  businessScope,
+  enforceSubscription,
+  BranchController.updateLocation,
+);
+
 export const BranchRoute = router;

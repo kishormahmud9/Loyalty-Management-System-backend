@@ -141,6 +141,62 @@ export const BranchController = {
     }
   },
 
+  updateLocation: async (req, res, next) => {
+    try {
+      const { id: ownerId, businessId } = req.user;
+      const { latitude, longitude } = req.body;
+
+      if (latitude === undefined || longitude === undefined) {
+        return sendResponse(res, {
+          statusCode: 400,
+          success: false,
+          message: "latitude and longitude are required",
+        });
+      }
+
+      const lat = parseFloat(latitude);
+      const lng = parseFloat(longitude);
+
+      if (isNaN(lat) || isNaN(lng)) {
+        return sendResponse(res, {
+          statusCode: 400,
+          success: false,
+          message: "latitude and longitude must be valid numbers",
+        });
+      }
+
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        return sendResponse(res, {
+          statusCode: 400,
+          success: false,
+          message: "Invalid coordinates. lat must be -90 to 90, lng must be -180 to 180",
+        });
+      }
+
+      const branch = await BranchService.updateGeoLocation(
+        req.prisma,
+        req.params.id,
+        businessId,
+        lat,
+        lng,
+      );
+
+      sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Branch location updated successfully. Geo-fencing is now active for this branch.",
+        data: {
+          id: branch.id,
+          name: branch.name,
+          latitude: branch.latitude,
+          longitude: branch.longitude,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   delete: async (req, res, next) => {
     try {
       const { id: ownerId, businessId } = req.user;
