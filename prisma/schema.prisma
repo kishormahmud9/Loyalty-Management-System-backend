@@ -183,6 +183,7 @@ model Customer {
   rewardHistory              RewardHistory[]
   undoRequests               TransactionUndoRequest[]
   geoNotificationStates      GeoNotificationState[]
+  preferences                Json?                       @default("{}")
 }
 
 model CustomerNotification {
@@ -480,6 +481,7 @@ model PointTransaction {
   adjustmentRequest   PointAdjustmentRequest? @relation(fields: [adjustmentRequestId], references: [id])
   branch              Branch?                 @relation(fields: [branchId], references: [id])
   business            Business                @relation(fields: [businessId], references: [id])
+  category            String?
 
   @@index([businessId])
   @@index([branchId])
@@ -647,6 +649,7 @@ model PointAdjustmentRequest {
   customer    Customer          @relation(fields: [customerId], references: [id])
   staff       Staff?            @relation(fields: [staffId], references: [id])
   transaction PointTransaction?
+  category    String?
 
   @@index([staffId, customerId])
   @@index([branchId])
@@ -661,6 +664,7 @@ model Notification {
   sentByStaff    String
   createdAt      DateTime                    @default(now())
   customerStates NotificationCustomerState[]
+  targetCategory String?
 
   @@index([businessId])
   @@index([createdAt])

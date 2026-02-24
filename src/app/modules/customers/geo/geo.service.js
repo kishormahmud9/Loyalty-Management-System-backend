@@ -98,31 +98,75 @@ export const handleCustomerLocationService = async (
     }
   }
 
-  // ✅ 7️⃣ CREATE NOTIFICATION IN DATABASE
-  const notification = await prisma.notification.create({
+  // 🎯 7️⃣ FIND PERSONALIZED NOTIFICATION
+  // Get top category from preferences
+  let topCategory = null;
+  if (customer.preferences && typeof customer.preferences === "object") {
+    const prefs = customer.preferences;
+    let maxCount = 0;
+    let categoriesWithMax = [];
+
+    for (const [cat, count] of Object.entries(prefs)) {
+      if (count > maxCount) {
+        maxCount = count;
+        categoriesWithMax = [cat];
+      } else if (count === maxCount && maxCount > 0) {
+        categoriesWithMax.push(cat);
+      }
+    }
+
+    // Only pick a top category if there is a clear winner (Case 1 & 2)
+    // If there's a tie (Case 3) or no preferences, topCategory remains null
+    if (categoriesWithMax.length === 1) {
+      topCategory = categoriesWithMax[0];
+    }
+  }
+
+  // Find most recent notification for this branch with matching category OR null category
+  const targetNotification = await prisma.notification.findFirst({
+    where: {
+      branchId: nearestBranch.id,
+      OR: [
+        { targetCategory: topCategory },
+        { targetCategory: null }
+      ]
+    },
+    orderBy: [
+      { targetCategory: "desc" }, // prioritized matching category (not null first)
+      { createdAt: "desc" }
+    ]
+  });
+
+  const message = targetNotification
+    ? targetNotification.message
+    : `You're near ${nearestBranch.name}. Check out our latest offers!`;
+
+  // ✅ 8️⃣ CREATE NOTIFICATION IN DATABASE
+  const notificationRecord = await prisma.notification.create({
     data: {
       businessId: nearestBranch.businessId,
       branchId: nearestBranch.id,
-      message: `You're near ${nearestBranch.name}. Check out our latest offers!`,
+      message: message,
       sentByStaff: "SYSTEM",
+      targetCategory: topCategory, // Mark which category triggered this
     },
   });
 
   await prisma.notificationCustomerState.create({
     data: {
-      notificationId: notification.id,
+      notificationId: notificationRecord.id,
       customerId: customerId,
     },
   });
 
-  // 🔔 8️⃣ Send Push (if token exists)
+  // 🔔 9️⃣ Send Push (if token exists)
   if (customer.fcmToken) {
     try {
       await admin.messaging().send({
         token: customer.fcmToken,
         notification: {
           title: `You're near ${nearestBranch.name}`,
-          body: "Check out our latest offers!",
+          body: message,
         },
       });
     } catch (error) {

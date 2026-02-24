@@ -100,9 +100,27 @@ export const addPointsInstantService = async ({ body, staff }) => {
           staffId,
           customerId,
           points,
+          category: body.category || null,
           type: "EARN",
         },
       });
+
+      // Update customer preferences if category is provided
+      if (body.category) {
+        const customer = await tx.customer.findUnique({
+          where: { id: customerId },
+          select: { preferences: true },
+        });
+
+        const currentPrefs = customer.preferences || {};
+        const newPrefs = { ...currentPrefs };
+        newPrefs[body.category] = (newPrefs[body.category] || 0) + 1;
+
+        await tx.customer.update({
+          where: { id: customerId },
+          data: { preferences: newPrefs },
+        });
+      }
 
       // Update reward history
       const reward = await tx.rewardHistory.upsert({
