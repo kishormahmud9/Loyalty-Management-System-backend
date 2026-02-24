@@ -2,7 +2,7 @@ import prisma from "../../../prisma/client.js";
 import { getIO } from "../../../socket.js";
 
 export const sendNotification = async ({ staff, body }) => {
-  const { message } = body;
+  const { message, targetCategory } = body;
 
   if (!message || message.trim().length < 3) {
     throw new Error("Message is required");
@@ -15,6 +15,7 @@ export const sendNotification = async ({ staff, body }) => {
         businessId: staff.businessId,
         branchId: staff.branchId,
         message: message.trim(),
+        targetCategory: targetCategory || null,
         sentByStaff: staff.id,
       },
     });
