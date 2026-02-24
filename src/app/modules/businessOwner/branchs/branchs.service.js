@@ -114,31 +114,7 @@ export const BranchService = {
     return updatedBranch;
   },
 
-  async updateGeoLocation(prisma, branchId, businessId, latitude, longitude) {
-    const branch = await prisma.branch.findUnique({
-      where: { id: branchId },
-    });
 
-    if (!branch) {
-      throw new Error("Branch not found");
-    }
-
-    if (branch.businessId !== businessId) {
-      throw new Error("You do not have permission to update this branch");
-    }
-
-    const updated = await prisma.branch.update({
-      where: { id: branchId },
-      data: {
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
-      },
-    });
-
-    console.log(`✅ [BRANCH_GEO] Updated coordinates for branch: ${branchId} → lat:${latitude}, lng:${longitude}`);
-
-    return updated;
-  },
 
   async remove(prisma, id, data) {
     const { ownerId, businessId } = data;

@@ -31,6 +31,8 @@ export const BranchController = {
         address: req.body.branchLocation,
         city: req.body.city,
         country: req.body.country,
+        latitude: req.body.latitude ? parseFloat(req.body.latitude) : null,
+        longitude: req.body.longitude ? parseFloat(req.body.longitude) : null,
         staffCount: req.body.staffCount ? parseInt(req.body.staffCount) : 0,
         branchImageUrl,
         branchImageFilePath,
@@ -122,75 +124,26 @@ export const BranchController = {
         branchImageUrl = `${baseUrl}/${branchImageFilePath}`;
       }
 
-      const branch = await BranchService.update(req.prisma, req.params.id, {
+      const updateData = {
         ...req.body,
         branchImageUrl,
         branchImageFilePath,
         ownerId, // 🔥 audit only
         businessId, // 🔥 audit only
-      });
+      };
+
+      if (req.body.branchName) updateData.name = req.body.branchName;
+      if (req.body.branchLocation) updateData.address = req.body.branchLocation;
+      if (req.body.latitude) updateData.latitude = parseFloat(req.body.latitude);
+      if (req.body.longitude) updateData.longitude = parseFloat(req.body.longitude);
+
+      const branch = await BranchService.update(req.prisma, req.params.id, updateData);
 
       sendResponse(res, {
         statusCode: 200,
         success: true,
         message: "Branch updated successfully",
         data: branch,
-      });
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  updateLocation: async (req, res, next) => {
-    try {
-      const { id: ownerId, businessId } = req.user;
-      const { latitude, longitude } = req.body;
-
-      if (latitude === undefined || longitude === undefined) {
-        return sendResponse(res, {
-          statusCode: 400,
-          success: false,
-          message: "latitude and longitude are required",
-        });
-      }
-
-      const lat = parseFloat(latitude);
-      const lng = parseFloat(longitude);
-
-      if (isNaN(lat) || isNaN(lng)) {
-        return sendResponse(res, {
-          statusCode: 400,
-          success: false,
-          message: "latitude and longitude must be valid numbers",
-        });
-      }
-
-      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        return sendResponse(res, {
-          statusCode: 400,
-          success: false,
-          message: "Invalid coordinates. lat must be -90 to 90, lng must be -180 to 180",
-        });
-      }
-
-      const branch = await BranchService.updateGeoLocation(
-        req.prisma,
-        req.params.id,
-        businessId,
-        lat,
-        lng,
-      );
-
-      sendResponse(res, {
-        statusCode: 200,
-        success: true,
-        message: "Branch location updated successfully. Geo-fencing is now active for this branch.",
-        data: {
-          id: branch.id,
-          name: branch.name,
-          latitude: branch.latitude,
-          longitude: branch.longitude,
-        },
       });
     } catch (err) {
       next(err);
