@@ -71,6 +71,21 @@ const getMySubscriptionHistoryFromDB = async (ownerId) => {
     });
     return result;
 };
+const getCurrentSubscriptionFromDB = async (businessId) => {
+    const result = await prisma.businessSubscription.findFirst({
+        where: {
+            businessId: businessId,
+            status: "ACTIVE",
+        },
+        include: {
+            plan: true,
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+    return result;
+};
 
 export const SubscriptionServices = {
     createSubscriptionIntoDB,
@@ -78,5 +93,6 @@ export const SubscriptionServices = {
     getSubscriptionByIdFromDB,
     updateSubscriptionIntoDB,
     getAllAvailablePlansFromDB,
-    getMySubscriptionHistoryFromDB
+    getMySubscriptionHistoryFromDB,
+    getCurrentSubscriptionFromDB
 };

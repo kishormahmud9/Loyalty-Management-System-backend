@@ -121,6 +121,57 @@ const getMySubscriptions = async (req, res) => {
         });
     }
 };
+const getCurrentSubscription = async (req, res) => {
+    try {
+        const { businessId } = req.user;
+        const result = await SubscriptionServices.getCurrentSubscriptionFromDB(businessId);
+        
+        if (!result) {
+            return sendResponse(res, {
+                statusCode: 200,
+                success: true,
+                message: "No active subscription found",
+                data: null,
+            });
+        }
+
+        // Determine plan type (monthly/yearly) based on stripe price or other logic
+        const planType = result.stripePriceId === result.plan.stripeYearlyPriceId ? "Yearly" : "Monthly";
+
+        let renewalDate = result.endDate;
+
+        // Fallback for old records where endDate (renewalDate) might be null
+        if (!renewalDate && result.startDate) {
+            renewalDate = new Date(result.startDate);
+            if (planType === "Yearly") {
+                renewalDate.setDate(renewalDate.getDate() + 365);
+            } else {
+                renewalDate.setDate(renewalDate.getDate() + 30);
+            }
+        }
+
+        const formattedData = {
+            name: result.plan.name,
+            status: result.status,
+            planType: planType,
+            renewalDate: renewalDate,
+        };
+
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: "Current subscription retrieved successfully",
+            data: formattedData,
+        });
+    } catch (err) {
+        sendResponse(res, {
+            statusCode: 500,
+            success: false,
+            message: err.message || "Something went wrong",
+            data: null,
+        });
+    }
+};
 
 export const SubscriptionControllers = {
     createSubscription,
@@ -128,5 +179,6 @@ export const SubscriptionControllers = {
     getSubscriptionById,
     updateSubscription,
     getAllAvailablePlans,
-    getMySubscriptions
+    getMySubscriptions,
+    getCurrentSubscription
 };

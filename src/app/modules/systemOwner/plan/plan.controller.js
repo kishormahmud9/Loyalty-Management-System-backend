@@ -32,7 +32,7 @@ export const getAllPlans = async (req, res) => {
 };
 
 export const activatePlanForBusiness = async (req, res) => {
-  const { businessId, planId } = req.body;
+  const { businessId, planId, billingCycle } = req.body;
 
   if (!businessId || !planId) {
     return sendResponse(res, {
@@ -46,6 +46,7 @@ export const activatePlanForBusiness = async (req, res) => {
   const result = await activatePlanForBusinessService({
     businessId,
     planId,
+    billingCycle: billingCycle || "MONTHLY",
     userId: req.user?.id || "SYSTEM",
   });
 

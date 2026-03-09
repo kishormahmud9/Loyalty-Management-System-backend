@@ -23,12 +23,9 @@ export const getAllPlansService = async () => {
   }
 };
 
-export const activatePlanForBusinessService = async ({
-  businessId,
-  planId,
-  userId,
-}) => {
+export const activatePlanForBusinessService = async (payload) => {
   try {
+    const { businessId, planId, userId, billingCycle } = payload;
     // 🔐 Guard Prisma models
     if (!prisma.plan || !prisma.businessSubscription) {
       return { error: "Plan system not ready" };
@@ -55,26 +52,39 @@ export const activatePlanForBusinessService = async ({
       return { error: "Business not found" };
     }
 
-    // 3️⃣ Existing subscription
-    const existing = await prisma.businessSubscription.findUnique({
-      where: { businessId },
-    });
-
-    let endDate = null;
+    // 3️⃣ Calculate renewal date (endDate)
+    let endDate = new Date();
     if (plan.name === "Free Trial") {
-      endDate = new Date();
       endDate.setDate(endDate.getDate() + 7);
+    } else if (billingCycle === "YEARLY") {
+      endDate.setDate(endDate.getDate() + 365);
+    } else {
+      // Default to MONTHLY (30 days)
+      endDate.setDate(endDate.getDate() + 30);
     }
 
-    if (existing) {
+    // 4️⃣ Find existing subscription to update
+    const existing = await prisma.businessSubscription.findFirst({
+      where: { businessId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const subscriptionData = {
+      planId,
+      status: "ACTIVE",
+      startDate: new Date(),
+      endDate,
+      planName: plan.name,
+      price: plan.price,
+      maxBranches: plan.maxBranches,
+      maxStaff: plan.maxStaff,
+      maxCards: plan.maxCards,
+    };
+
+    if (existing && existing.status === "ACTIVE") {
       const updated = await prisma.businessSubscription.update({
-        where: { businessId },
-        data: {
-          planId,
-          status: "ACTIVE",
-          startDate: new Date(),
-          endDate,
-        },
+        where: { id: existing.id },
+        data: subscriptionData,
       });
 
       return { subscription: updated };
@@ -82,11 +92,8 @@ export const activatePlanForBusinessService = async ({
 
     const created = await prisma.businessSubscription.create({
       data: {
+        ...subscriptionData,
         businessId,
-        planId,
-        status: "ACTIVE",
-        startDate: new Date(),
-        endDate,
       },
     });
 

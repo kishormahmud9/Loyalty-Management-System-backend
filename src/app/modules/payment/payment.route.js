@@ -15,7 +15,6 @@ router.post("/checkout", checkAuthMiddleware("BUSINESS_OWNER"), createCheckout);
 
 router.post(
   "/webhook",
-  express.raw({ type: "application/json" }),
   handleStripeWebhook,
 );
 
