@@ -151,6 +151,7 @@ const getCurrentSubscription = async (req, res) => {
         }
 
         const formattedData = {
+            planId: result.plan.id,
             name: result.plan.name,
             status: result.status,
             planType: planType,
