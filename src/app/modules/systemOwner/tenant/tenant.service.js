@@ -91,10 +91,10 @@ export const createTenantService = async (prisma, payload) => {
         phone: owner.phone,
         address: owner.address,
         role: "BUSINESS_OWNER",
-        isVerified: false,
+        isVerified: true,
       },
     });
-    
+
     // 3️⃣ Create Business (Tenant)
     const trialEndsAt = new Date();
     trialEndsAt.setDate(trialEndsAt.getDate() + 7);
