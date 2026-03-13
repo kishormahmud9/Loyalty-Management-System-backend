@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import passport from "passport";
-
+import { envVars } from "./app/config/env.js";
 import prisma from "../src/app/prisma/client.js";
 import paymentRoutes from "./app/modules/payment/payment.route.js";
 import { notFound } from "./app/middleware/notFound.js";
