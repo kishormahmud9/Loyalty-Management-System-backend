@@ -4,6 +4,17 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
+  // Check if seed has already run by looking for the system owner
+  const existingSystemOwner = await prisma.user.findUnique({
+    where: { email: "system@test.com" },
+  });
+
+  if (existingSystemOwner) {
+    console.log("ℹ️ Seed already runed");
+    return;
+  }
+
+  console.log("🌱 Starting seeding...");
   const saltRounds = 10;
   const commonPasswordHash = await bcrypt.hash("11", saltRounds);
 
@@ -57,28 +68,40 @@ async function main() {
   //
   // 4️⃣ BUSINESS
   //
-  const business = await prisma.business.create({
-    data: {
-      name: "Test Business",
-      ownerId: businessOwner.id,
-      qrCode: "BUSINESS123",
-      city: "Dhaka",
-      country: "Bangladesh",
-    },
+  let business = await prisma.business.findUnique({
+    where: { qrCode: "BUSINESS123" }
   });
+
+  if (!business) {
+    business = await prisma.business.create({
+      data: {
+        name: "Test Business",
+        ownerId: businessOwner.id,
+        qrCode: "BUSINESS123",
+        city: "Dhaka",
+        country: "Bangladesh",
+      },
+    });
+  }
 
   //
   // 5️⃣ BRANCH
   //
-  const branch = await prisma.branch.create({
-    data: {
-      name: "Main Branch",
-      address: "Dhaka Main Road",
-      city: "Dhaka",
-      country: "Bangladesh",
-      businessId: business.id,
-    },
+  let branch = await prisma.branch.findFirst({
+    where: { businessId: business.id }
   });
+
+  if (!branch) {
+    branch = await prisma.branch.create({
+      data: {
+        name: "Main Branch",
+        address: "Dhaka Main Road",
+        city: "Dhaka",
+        country: "Bangladesh",
+        businessId: business.id,
+      },
+    });
+  }
 
   //
   // 6️⃣ STAFF USER
@@ -95,14 +118,20 @@ async function main() {
     },
   });
 
-  await prisma.staff.create({
-    data: {
-      userId: staffUser.id,
-      businessId: business.id,
-      branchId: branch.id,
-      role: StaffRole.MANAGER,
-    },
+  const existingStaff = await prisma.staff.findFirst({
+    where: { userId: staffUser.id }
   });
+
+  if (!existingStaff) {
+    await prisma.staff.create({
+      data: {
+        userId: staffUser.id,
+        businessId: business.id,
+        branchId: branch.id,
+        role: StaffRole.MANAGER,
+      },
+    });
+  }
 
   //
   // 7️⃣ CUSTOMER
@@ -122,18 +151,24 @@ async function main() {
   //
   // 8️⃣ BUSINESS SUBSCRIPTION
   //
-  await prisma.businessSubscription.create({
-    data: {
-      businessId: business.id,
-      planId: plan.id,
-      status: SubscriptionStatus.ACTIVE,
-      planName: plan.name,
-      price: plan.price,
-      maxBranches: plan.maxBranches,
-      maxCards: plan.maxCards,
-      maxStaff: plan.maxStaff,
-    },
+  const existingSubscription = await prisma.businessSubscription.findFirst({
+    where: { businessId: business.id }
   });
+
+  if (!existingSubscription) {
+    await prisma.businessSubscription.create({
+      data: {
+        businessId: business.id,
+        planId: plan.id,
+        status: SubscriptionStatus.ACTIVE,
+        planName: plan.name,
+        price: plan.price,
+        maxBranches: plan.maxBranches,
+        maxCards: plan.maxCards,
+        maxStaff: plan.maxStaff,
+      },
+    });
+  }
 
   console.log("✅ Full Seed Completed Successfully");
   console.log("🔐 All passwords: 11");

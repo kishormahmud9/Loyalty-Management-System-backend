@@ -25,9 +25,18 @@ const startServer = async () => {
     initSocket(server);
     console.log("Socket.io initialized 🔌✅");
 
-    // 4️⃣ Start server
+    // 4️⃣ Run Database Seed
+    try {
+      const { execSync } = await import("child_process");
+      console.log("🌱 Checking database seed...");
+      execSync("node prisma/seed.js", { stdio: "inherit" });
+    } catch (seedError) {
+      console.error("⚠️ Seed skipped or failed (this is usually fine if DB is already seeded)");
+    }
+
+    // 5️⃣ Start server
     server.listen(PORT, () => {
-      console.log(`Server running on port 🛺✅ ${PORT}`);
+      console.log(`Server running on port 😉🚲✅ ${PORT}`);
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);
