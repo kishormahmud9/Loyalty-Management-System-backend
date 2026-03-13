@@ -78,8 +78,8 @@ export const getSystemOwnerDashboardOverviewService = async () => {
    */
   try {
     const [totalTickets, ticketByPriority] = await Promise.all([
-      prisma.supportTicket.count(),
-      prisma.supportTicket.groupBy({
+      prisma.support.count(),
+      prisma.support.groupBy({
         by: ["priority"],
         _count: { priority: true },
       }),
