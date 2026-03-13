@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Plan" ALTER COLUMN "monthlyPrice" DROP DEFAULT,
+ALTER COLUMN "yearlyPrice" DROP DEFAULT;
