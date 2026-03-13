@@ -539,7 +539,8 @@ model ActivityLog {
 model Plan {
   id                    String                 @id @default(uuid())
   name                  String                 @unique
-  price                 Int
+  monthlyPrice          Int
+  yearlyPrice           Int
   maxBranches           Int
   maxStaff              Int
   maxCards              Int

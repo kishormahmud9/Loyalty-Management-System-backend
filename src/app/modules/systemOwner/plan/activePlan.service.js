@@ -26,7 +26,8 @@ export const getActivePlanForBusinessService = async (businessId) => {
     return {
       planId: subscription.plan.id,
       planName: subscription.plan.name,
-      price: subscription.plan.price,
+      monthlyPrice: subscription.plan.monthlyPrice,
+      yearlyPrice: subscription.plan.yearlyPrice,
       limits: {
         maxStaff: subscription.plan.maxStaff,
         maxBranches: subscription.plan.maxBranches,

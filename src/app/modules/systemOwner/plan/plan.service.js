@@ -4,13 +4,14 @@ export const getAllPlansService = async () => {
   try {
     const plans = await prisma.plan.findMany({
       where: { isActive: true },
-      orderBy: { price: "asc" },
+      orderBy: { monthlyPrice: "asc" },
     });
 
     return plans.map((plan) => ({
       id: plan.id,
       name: plan.name,
-      price: plan.price,
+      monthlyPrice: plan.monthlyPrice,
+      yearlyPrice: plan.yearlyPrice,
       features: {
         maxCards: plan.maxCards,
         maxBranches: plan.maxBranches,
@@ -52,15 +53,20 @@ export const activatePlanForBusinessService = async (payload) => {
       return { error: "Business not found" };
     }
 
-    // 3️⃣ Calculate renewal date (endDate)
+    // 3️⃣ Calculate renewal date (endDate) and select price
     let endDate = new Date();
+    let price = plan.monthlyPrice;
+
     if (plan.name === "Free Trial") {
       endDate.setDate(endDate.getDate() + 7);
+      price = 0;
     } else if (billingCycle === "YEARLY") {
       endDate.setDate(endDate.getDate() + 365);
+      price = plan.yearlyPrice;
     } else {
       // Default to MONTHLY (30 days)
       endDate.setDate(endDate.getDate() + 30);
+      price = plan.monthlyPrice;
     }
 
     // 4️⃣ Find existing subscription to update
@@ -75,7 +81,7 @@ export const activatePlanForBusinessService = async (payload) => {
       startDate: new Date(),
       endDate,
       planName: plan.name,
-      price: plan.price,
+      price: price,
       maxBranches: plan.maxBranches,
       maxStaff: plan.maxStaff,
       maxCards: plan.maxCards,
@@ -110,7 +116,8 @@ export const createPlanService = async (data) => {
   try {
     const {
       name,
-      price,
+      monthlyPrice,
+      yearlyPrice,
       maxBranches,
       maxStaff,
       maxCards,
@@ -120,7 +127,10 @@ export const createPlanService = async (data) => {
 
     // 🔒 Validation (NO THROW)
     if (!name) return { error: "Plan name is required" };
-    if (price == null || price < 0) return { error: "Invalid price" };
+    if (monthlyPrice == null || monthlyPrice < 0)
+      return { error: "Invalid monthly price" };
+    if (yearlyPrice == null || yearlyPrice < 0)
+      return { error: "Invalid yearly price" };
     if (maxBranches == null || maxBranches < 0)
       return { error: "Invalid maxBranches" };
     if (maxStaff == null || maxStaff < 0) return { error: "Invalid maxStaff" };
@@ -146,7 +156,8 @@ export const createPlanService = async (data) => {
     const plan = await prisma.plan.create({
       data: {
         name,
-        price,
+        monthlyPrice,
+        yearlyPrice,
         maxBranches,
         maxStaff,
         maxCards,
@@ -172,7 +183,15 @@ export const updatePlanService = async (planId, data) => {
       return { error: "Plan ID is required" };
     }
 
-    const { name, price, maxBranches, maxStaff, maxCards, isActive } = data;
+    const {
+      name,
+      monthlyPrice,
+      yearlyPrice,
+      maxBranches,
+      maxStaff,
+      maxCards,
+      isActive,
+    } = data;
 
     // 🔎 Check plan exists
     const existingPlan = await prisma.plan.findUnique({
@@ -184,8 +203,12 @@ export const updatePlanService = async (planId, data) => {
     }
 
     // 🔒 Validate fields (only if provided)
-    if (price !== undefined && price < 0) {
-      return { error: "Invalid price" };
+    if (monthlyPrice !== undefined && monthlyPrice < 0) {
+      return { error: "Invalid monthly price" };
+    }
+ 
+    if (yearlyPrice !== undefined && yearlyPrice < 0) {
+      return { error: "Invalid yearly price" };
     }
 
     if (maxBranches !== undefined && maxBranches < 0) {
@@ -216,7 +239,8 @@ export const updatePlanService = async (planId, data) => {
       where: { id: planId },
       data: {
         name,
-        price,
+        monthlyPrice,
+        yearlyPrice,
         maxBranches,
         maxStaff,
         maxCards,
