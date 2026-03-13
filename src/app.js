@@ -26,7 +26,13 @@ app.post(
 // 
 // Global middlewares
 // 
-app.use(cors());
+app.use(
+  cors({
+    origin: (origin, callback) => callback(null, true),
+    credentials: true,
+  }),
+);
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(passport.initialize());

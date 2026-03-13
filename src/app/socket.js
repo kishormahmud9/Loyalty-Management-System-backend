@@ -9,7 +9,8 @@ let io = null;
 export const initSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: {
-      origin: "*", // adjust later if needed
+      origin: (origin, callback) => callback(null, true),
+      credentials: true,
       methods: ["GET", "POST"],
     },
   });
