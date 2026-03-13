@@ -10,7 +10,7 @@ export const getSystemOwnerSupportTicketsService = async (query) => {
     ...(status && { status }),
     ...(priority && { priority }),
     ...(search && {
-      subject: {
+      issue: {
         contains: search,
         mode: "insensitive",
       },
@@ -35,10 +35,10 @@ export const getSystemOwnerSupportTicketsService = async (query) => {
   return {
     tickets: tickets.map((t) => ({
       id: t.id,
-      ticketNo: t.ticketNo,
+      ticketNo: t.ticketId,
       businessName: t.business?.name ?? "System",
       date: t.createdAt,
-      issue: t.subject,
+      issue: t.issue,
       priority: t.priority,
       status: t.status,
     })),
