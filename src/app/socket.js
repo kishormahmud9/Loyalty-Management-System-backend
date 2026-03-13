@@ -11,7 +11,7 @@ export const initSocket = (httpServer) => {
     cors: {
       origin: (origin, callback) => callback(null, true),
       credentials: true,
-      methods: ["GET", "POST"],
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     },
   });
 

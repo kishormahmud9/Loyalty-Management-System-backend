@@ -26,10 +26,29 @@ app.post(
 // 
 // Global middlewares
 // 
+const allowedOrigins = [
+  envVars.FRONT_END_URL,
+  "https://aminpass.com",
+  "https://api.aminpass.com",
+  "http://localhost:3000",
+  "http://localhost:5173",
+];
+
 app.use(
   cors({
-    origin: (origin, callback) => callback(null, true),
+    origin: (origin, callback) => {
+      // allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) !== -1 || origin.startsWith("http://localhost")) {
+        callback(null, true);
+      } else {
+        // Fallback to true to allow all origins as requested previously
+        callback(null, true);
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
   }),
 );
 
