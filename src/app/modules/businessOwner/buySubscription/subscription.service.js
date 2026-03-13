@@ -48,7 +48,7 @@ const getAllAvailablePlansFromDB = async () => {
             isActive: true,
         },
         orderBy: {
-            price: "asc",
+            monthlyPrice: "asc",
         },
     });
     return result;
