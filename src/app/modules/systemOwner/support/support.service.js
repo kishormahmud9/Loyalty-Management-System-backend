@@ -61,7 +61,7 @@ export const getSystemOwnerSupportTicketByIdService = async (id) => {
       business: {
         select: { name: true },
       },
-      creator: {
+      user: {
         select: {
           id: true,
           name: true,
@@ -80,14 +80,6 @@ export const updateSystemOwnerSupportTicketStatusByIdService = async (
   status,
 ) => {
   const updateData = { status };
-
-  if (status === "RESOLVED") {
-    updateData.resolvedAt = new Date();
-  }
-
-  if (status === "CLOSED") {
-    updateData.closedAt = new Date();
-  }
 
   return prisma.support.update({
     where: { id },
