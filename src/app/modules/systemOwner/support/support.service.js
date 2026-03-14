@@ -4,16 +4,32 @@ import prisma from "../../../prisma/client.js";
    LIST SUPPORT TICKETS
  */
 export const getSystemOwnerSupportTicketsService = async (query) => {
-  const { page = 1, limit = 10, status, priority, search } = query;
+  const { page = 1, limit = 10, status, priority, search, issue } = query;
 
   const where = {
     ...(status && { status }),
     ...(priority && { priority }),
-    ...(search && {
-      subject: {
-        contains: search,
+    ...(issue && {
+      issue: {
+        contains: issue,
         mode: "insensitive",
       },
+    }),
+    ...(search && {
+      OR: [
+        {
+          issue: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          ticketId: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+      ],
     }),
   };
 
@@ -35,10 +51,10 @@ export const getSystemOwnerSupportTicketsService = async (query) => {
   return {
     tickets: tickets.map((t) => ({
       id: t.id,
-      ticketNo: t.ticketNo,
+      ticketNo: t.ticketId,
       businessName: t.business?.name ?? "System",
       date: t.createdAt,
-      issue: t.subject,
+      issue: t.issue,
       priority: t.priority,
       status: t.status,
     })),
