@@ -55,7 +55,7 @@ export const staffLoginService = async (prisma, payload) => {
 
     return {
       token,
-      requirePinSetup: user.isPinSet,
+      requirePinSetup: !user.isPinSet,
       branchId: user.staffProfile.branchId,
     };
   } catch (error) {
