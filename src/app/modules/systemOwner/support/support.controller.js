@@ -75,7 +75,7 @@ export const updateSystemOwnerSupportTicketStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const allowedStatus = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
+    const allowedStatus = ["PENDING", "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
 
     if (!allowedStatus.includes(status)) {
       return sendResponse(res, {
