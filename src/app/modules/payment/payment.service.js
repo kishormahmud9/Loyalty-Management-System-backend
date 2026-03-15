@@ -114,8 +114,8 @@ export const processStripeWebhook = async (payload, signature) => {
       await onSubscriptionDeleted(event.data.object);
       break;
 
-    case "invoice.payment_failed":
-      await onPaymentFailed(event.data.object);
+    case "invoice.payment_succeeded":
+      await onPaymentSucceeded(event.data.object);
       break;
 
     default:
@@ -124,6 +124,38 @@ export const processStripeWebhook = async (payload, signature) => {
 };
 
 // WEBHOOK HELPERS
+
+const onPaymentSucceeded = async (invoice) => {
+  // Find businessId from subscription metadata or customer stripe ID
+  let businessId = invoice.subscription_details?.metadata?.businessId;
+
+  if (!businessId && invoice.customer) {
+    const business = await prisma.business.findFirst({
+      where: { stripeCustomerId: invoice.customer },
+    });
+    businessId = business?.id;
+  }
+
+  if (!businessId) {
+    console.error("Could not find businessId for invoice:", invoice.id);
+    return;
+  }
+
+  // Save billing record
+  await prisma.billing.create({
+    data: {
+      businessId,
+      status: "PAID",
+      invoiceNo: invoice.number,
+      amount: invoice.amount_paid / 100, // Stripe uses cents
+      planName: invoice.lines.data[0]?.description || "Subscription",
+      invoiceUrl: invoice.hosted_invoice_url,
+      invoicePath: invoice.invoice_pdf,
+      date: new Date(invoice.created * 1000),
+      issue: false,
+    },
+  });
+};
 
 const onSubscriptionCreated = async (subscription) => {
   const { businessId, planId } = subscription.metadata || {};

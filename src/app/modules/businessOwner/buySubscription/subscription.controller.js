@@ -174,6 +174,26 @@ const getCurrentSubscription = async (req, res) => {
     }
 };
 
+const getBillingHistory = async (req, res) => {
+    try {
+        const { id: ownerId } = req.user;
+        const result = await SubscriptionServices.getBillingHistoryFromDB(ownerId);
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: "Billing history retrieved successfully",
+            data: result,
+        });
+    } catch (err) {
+        sendResponse(res, {
+            statusCode: 500,
+            success: false,
+            message: err.message || "Something went wrong",
+            data: null,
+        });
+    }
+};
+
 export const SubscriptionControllers = {
     createSubscription,
     getAllSubscription,
@@ -181,5 +201,6 @@ export const SubscriptionControllers = {
     updateSubscription,
     getAllAvailablePlans,
     getMySubscriptions,
-    getCurrentSubscription
+    getCurrentSubscription,
+    getBillingHistory
 };

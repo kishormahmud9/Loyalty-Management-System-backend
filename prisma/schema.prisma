@@ -508,13 +508,19 @@ model SupportTicket {
 }
 
 model Billing {
-  id         String        @id @default(uuid())
-  businessId String
-  status     BillingStatus @default(PENDING)
-  issue      Boolean       @default(false)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  business   Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  id          String        @id @default(uuid())
+  businessId  String
+  status      BillingStatus @default(PENDING)
+  issue       Boolean       @default(false)
+  invoiceNo   String?
+  amount      Float?
+  planName    String?
+  invoiceUrl  String?
+  invoicePath String?
+  date        DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId])
   @@index([issue])
