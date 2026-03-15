@@ -28,10 +28,9 @@ const startServer = async () => {
     // 4️⃣ Run Database Seed
     try {
       const { execSync } = await import("child_process");
-      console.log("🌱 Checking database seed...");
       execSync("node prisma/seed.js", { stdio: "inherit" });
     } catch (seedError) {
-      console.error("⚠️ Seed skipped or failed (this is usually fine if DB is already seeded)");
+      console.error("⚠️ Seed process encountered an error (check if DB is connected)");
     }
 
     // 5️⃣ Start server

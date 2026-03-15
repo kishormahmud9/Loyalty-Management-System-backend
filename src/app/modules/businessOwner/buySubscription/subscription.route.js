@@ -12,6 +12,7 @@ router.get("/get-available-plans", SubscriptionControllers.getAllAvailablePlans)
 router.get("/current-plan", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.getCurrentSubscription);
 router.get("/available-plans", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.getAllAvailablePlans);
 router.get("/my-plans", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.getMySubscriptions);
+router.get("/billing-history", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.getBillingHistory);
 router.get("/", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.getAllSubscription);
 router.get("/:id", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.getSubscriptionById);
 router.patch("/:id", checkAuthMiddleware(Role.BUSINESS_OWNER), SubscriptionControllers.updateSubscription);

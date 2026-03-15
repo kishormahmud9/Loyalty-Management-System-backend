@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, StaffRole, SubscriptionStatus } from "@prisma/client";
+import { PrismaClient, StaffRole, SubscriptionStatus, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -10,7 +10,7 @@ async function main() {
   });
 
   if (existingSystemOwner) {
-    console.log("ℹ️ Seed already runed");
+    console.log("ℹ️ seed data already exist");
     return;
   }
 
@@ -26,7 +26,8 @@ async function main() {
     update: {},
     create: {
       name: "Test 001",
-      price: 0,
+      monthlyPrice: 50,
+      yearlyPrice: 600,
       maxBranches: 5,
       maxStaff: 10,
       maxCards: 3,
@@ -162,7 +163,7 @@ async function main() {
         planId: plan.id,
         status: SubscriptionStatus.ACTIVE,
         planName: plan.name,
-        price: plan.price,
+        price: plan.monthlyPrice,
         maxBranches: plan.maxBranches,
         maxCards: plan.maxCards,
         maxStaff: plan.maxStaff,

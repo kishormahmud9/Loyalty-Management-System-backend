@@ -4,9 +4,11 @@ const prisma = new PrismaClient();
 
 const createSubscriptionIntoDB = async (payload) => {
     const result = await prisma.billing.create({
-        data: payload,
-
-        
+        data: {
+            ...payload,
+            invoiceNo: payload.invoiceNo || `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+            date: payload.date || new Date(),
+        },
     });
     return result;
 };
@@ -87,6 +89,23 @@ const getCurrentSubscriptionFromDB = async (businessId) => {
     return result;
 };
 
+const getBillingHistoryFromDB = async (ownerId) => {
+    const result = await prisma.billing.findMany({
+        where: {
+            business: {
+                ownerId: ownerId
+            }
+        },
+        include: {
+            business: true
+        },
+        orderBy: {
+            date: "desc"
+        }
+    });
+    return result;
+};
+
 export const SubscriptionServices = {
     createSubscriptionIntoDB,
     getAllSubscriptionFromDB,
@@ -94,5 +113,6 @@ export const SubscriptionServices = {
     updateSubscriptionIntoDB,
     getAllAvailablePlansFromDB,
     getMySubscriptionHistoryFromDB,
-    getCurrentSubscriptionFromDB
+    getCurrentSubscriptionFromDB,
+    getBillingHistoryFromDB
 };
