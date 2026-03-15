@@ -4,6 +4,8 @@ import { generateSixDigitCode, generateAndSaveQRCode } from "../../../utils/qrGe
 import { envVars } from "../../../config/env.js";
 import { AppError } from "../../../errorHelper/appError.js";
 import { OtpService } from "../otp/otp.service.js";
+import NotificationBusinessService from "../../businessOwner/notificationBusiness/notificationBusiness.service.js";
+
 
 export const CustomerService = {
 
@@ -154,6 +156,10 @@ export const CustomerService = {
           availableRewards: 0
         }
       });
+
+      // Notify Business Owner
+      const customer = await tx.customer.findUnique({ where: { id: customerId }, select: { name: true } });
+      NotificationBusinessService.notifyCustomerRegistration(businessId, branchId, customer?.name).catch(err => console.error("Notification Error:", err));
 
       return registration;
     });

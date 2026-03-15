@@ -1,5 +1,6 @@
 import prisma from "../../../prisma/client.js";
 import CustomerWalletService from "../../customers/wallet/wallet.service.js";
+import NotificationBusinessService from "../../businessOwner/notificationBusiness/notificationBusiness.service.js";
 
 export const searchCustomerService = async ({ body, staff }) => {
   const { code } = body;
@@ -148,6 +149,18 @@ export const addPointsInstantService = async ({ body, staff }) => {
 
       return { transaction, reward };
     });
+
+    // Notify Business Owner
+    const customer = await prisma.customer.findUnique({ where: { id: customerId }, select: { name: true } });
+    const staffUser = await prisma.user.findUnique({ where: { id: staff.userId }, select: { name: true } });
+    NotificationBusinessService.notifyPointsAwarded({
+        businessId,
+        branchId,
+        customerName: customer?.name,
+        points,
+        staffName: staffUser?.name,
+        staffRole: staff.role
+    }).catch(err => console.error("Notification Error:", err));
 
     // 3️⃣ Trigger Apple Wallet Update (Background)
     CustomerWalletService.handleApplePassUpdate(customerId, businessId).catch(err => {

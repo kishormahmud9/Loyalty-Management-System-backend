@@ -2,6 +2,7 @@ import prisma from "../../../prisma/client.js";
 import { AppError } from "../../../errorHelper/appError.js";
 import { auditLog } from "../../../utils/auditLogger.js";
 import { googleWalletService } from "../../../utils/googleWallet.service.js";
+import NotificationBusinessService from "../notificationBusiness/notificationBusiness.service.js";
 
 const increaseRewardPoints = async (data) => {
     let {
@@ -154,6 +155,17 @@ const increaseRewardPoints = async (data) => {
 
             return history;
         });
+
+        // Notify Business Owner
+        const staff = staffProfile ? await prisma.user.findUnique({ where: { id: staffProfile.userId }, select: { name: true } }) : null;
+        NotificationBusinessService.notifyPointsAwarded({
+            businessId,
+            branchId,
+            customerName: customer.name,
+            points,
+            staffName: staff?.name,
+            staffRole: staffProfile?.role
+        }).catch(err => console.error("Notification Error:", err));
 
         // 🔐 SYNCHRONIZE POINTS WITH WALLETS (Google/Apple)
         try {
@@ -367,6 +379,24 @@ const updatePointsById = async (data) => {
 
             return history;
         });
+
+        // Notify Business Owner
+        const historyData = await prisma.rewardHistory.findUnique({
+            where: { id },
+            include: {
+                customer: { select: { name: true } },
+                user: { select: { name: true } } // Assuming business owner who initiated this
+            }
+        });
+
+        NotificationBusinessService.notifyPointsAwarded({
+            businessId: result.businessId,
+            branchId: result.branchId,
+            customerName: historyData?.customer?.name,
+            points,
+            staffName: null, // It's the business owner
+            staffRole: null
+        }).catch(err => console.error("Notification Error:", err));
 
         // 🔐 SYNCHRONIZE WITH WALLETS
         try {
