@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-async function main() {
+export async function runSeed() {
   // Check if seed has already run by looking for the system owner
   const existingSystemOwner = await prisma.user.findUnique({
     where: { email: "system@test.com" },
@@ -175,11 +175,17 @@ async function main() {
   console.log("🔐 All passwords: 11");
 }
 
-main()
-  .catch((e) => {
+async function main() {
+  try {
+    await runSeed();
+  } catch (e) {
     console.error("❌ Seed error:", e);
     process.exit(1);
-  })
-  .finally(async () => {
+  } finally {
     await prisma.$disconnect();
-  });
+  }
+}
+
+if (import.meta.url === process.argv[1] || import.meta.url === `file://${process.argv[1]}`) {
+  main();
+}

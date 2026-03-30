@@ -5,6 +5,7 @@ import { envVars } from "./app/config/env.js";
 import { connectRedis } from "./app/config/redis.config.js";
 import prisma from "./app/prisma/client.js";
 import { initSocket } from "./app/socket.js";
+import { runSeed } from "../prisma/seed.js";
 
 let server;
 
@@ -27,10 +28,9 @@ const startServer = async () => {
 
     // 4️⃣ Run Database Seed
     try {
-      const { execSync } = await import("child_process");
-      execSync("node prisma/seed.js", { stdio: "inherit" });
+      await runSeed();
     } catch (seedError) {
-      console.error("⚠️ Seed process encountered an error (check if DB is connected)");
+      console.error("⚠️ Seed process encountered an error (check if DB is connected)", seedError);
     }
 
     // 5️⃣ Start server
